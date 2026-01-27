@@ -22,3 +22,22 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = false
+
+[tool.black]
+line-length = 119
+skip-string-normalization = false
+
+[tool.isort]
+profile = "black"
+line_length = 119
+multi_line_output = 5
+
+[tool.flake8]
+max-line-length = 119
+
+
+[dependency-groups]
+dev = [
+    "flake8 (>=7.3.0,<8.0.0)",
+    "pre-commit (>=4.5.1,<5.0.0)"
+]

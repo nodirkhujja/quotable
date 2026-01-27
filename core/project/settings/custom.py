@@ -1,1 +1,1 @@
-IN_DOCKER=True
+IN_DOCKER = True

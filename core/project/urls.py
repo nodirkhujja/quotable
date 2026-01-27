@@ -6,5 +6,5 @@ print(settings.DEBUG)
 print(settings.SECRET_KEY)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
 ]
