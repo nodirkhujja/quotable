@@ -38,6 +38,5 @@ max-line-length = 119
 
 [dependency-groups]
 dev = [
-    "flake8 (>=7.3.0,<8.0.0)",
     "pre-commit (>=4.5.1,<5.0.0)"
 ]
