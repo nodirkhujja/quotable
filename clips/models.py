@@ -5,8 +5,12 @@ from django.db import models
 class Source(models.Model):
     """Full movie or TV show"""
 
+    class SourceType(models.TextChoices):
+        MOVIE = "movie", "Movie"
+        TV_SHOW = "tv_show", "TV Show"
+
     title = models.CharField(max_length=200)
-    source_type = models.CharField(max_length=50)  # movie, tv_show
+    source_type = models.CharField(max_length=50, choices=SourceType.choices)
     season = models.IntegerField(null=True, blank=True)
     episode = models.IntegerField(null=True, blank=True)
     year = models.IntegerField(null=True)
