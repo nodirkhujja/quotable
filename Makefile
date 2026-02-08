@@ -10,6 +10,10 @@ install-pre-commit:
 lint:
 	poetry run pre-commit run --all-files
 
+:PHONY: startapp
+startapp:
+	poetry run python -m core.manage startapp ${name}
+
 :PHONY: run-server
 run-server:
 	poetry run python -m core.manage runserver
