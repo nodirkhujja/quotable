@@ -10,8 +10,8 @@ class Source(models.Model):
     season = models.IntegerField(null=True, blank=True)
     episode = models.IntegerField(null=True, blank=True)
     year = models.IntegerField(null=True)
-    thumbnail = models.ImageField(upload_to="thumbnails/")
-    video_file = models.FileField(upload_to="videos/")  # Full video here
+    thumbnail = models.ImageField(upload_to="thumbnails/", blank=True, null=True)
+    video_file = models.FileField(upload_to="videos/", blank=True, null=True)  # Full video here
     duration = models.FloatField()  # Total duration in seconds
 
     def __str__(self):
