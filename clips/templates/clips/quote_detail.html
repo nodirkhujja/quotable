@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quotable - {{ quote.text|truncatewords:5 }}</title>
+    <style>
+        /* CSS stays inside style tags in the head */
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+        .quote-player {
+            max-width: 800px;
+            width: 100%;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        h2 { color: #f1c40f; margin-bottom: 10px; }
+        .source-info { color: #bbb; margin-bottom: 20px; }
+        video { border-radius: 8px; background: #000; }
+        .quote-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="quote-player">
+    <h2>"{{ quote.text }}"</h2>
+    <p class="source-info">From: {{ quote.source.title }}</p>
+
+    <video id="videoPlayer" controls width="100%">
+        <source src="{{ quote.source.video_file.url }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="quote-info">
+        <p>Timestamp: {{ quote.start_time }}s - {{ quote.end_time }}s</p>
+        <div>
+            <button onclick="playQuote()">Play Quote</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Your JavaScript logic
+    const video = document.getElementById('videoPlayer');
+    const startTime = parseFloat("{{ quote.start_time }}");
+    const endTime = parseFloat("{{ quote.end_time }}");
+    let isPlayingQuote = false;
+
+    function playQuote() {
+        video.currentTime = startTime;
+        isPlayingQuote = true;
+        video.play();
+    }
+
+    video.addEventListener('timeupdate', function() {
+        if (isPlayingQuote && video.currentTime >= endTime) {
+            video.pause();
+            isPlayingQuote = false;
+        }
+    });
+
+    video.addEventListener('play', function() {
+        if (video.currentTime < startTime || video.currentTime > endTime) {
+            isPlayingQuote = false;
+        }
+    });
+
+    // Seek to start position as soon as video loads
+    video.addEventListener('loadedmetadata', function() {
+        video.currentTime = startTime;
+    });
+</script>
+
+</body>
+</html>

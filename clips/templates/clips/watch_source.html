@@ -1,0 +1,408 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotable — {{ source }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0f0f0f;
+            --bg-surface: #181818;
+            --border: #303030;
+            --text-main: #f1f1f1;
+            --text-muted: #aaaaaa;
+            --accent: #d97757;
+            --btn-bg: #333;
+            --btn-hover: #444;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-page);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-page);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 48px;
+        }
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 48px;
+            flex: 1;
+        }
+        .logo {
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 1.65rem;
+        }
+        .search-container {
+            flex: 1;
+            max-width: 720px;
+            position: relative;
+        }
+        .search-bar {
+            width: 100%;
+            background: #121212;
+            border: 1px solid #303030;
+            color: white;
+            padding: 12px 16px 12px 56px;
+            border-radius: 999px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .search-bar:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(217,119,87,0.35);
+        }
+        .search-icon {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.25rem;
+        }
+        .main-layout {
+            max-width: 1750px;
+            margin: 0 auto;
+            padding: 24px 40px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 402px;
+            gap: 24px;
+        }
+        .video-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .player-wrapper {
+            aspect-ratio: 16 / 9;
+            background: black;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        video { width: 100%; height: 100%; }
+        .video-info {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Courier Prime', monospace;
+        }
+        .video-title {
+            font-size: 1.3rem;
+            color: var(--accent);
+            margin: 0 0 8px 0;
+        }
+        .video-meta {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0 0 12px 0;
+        }
+        .video-timestamp {
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        .selected-quote {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 24px 24px;  /* very tight top padding */
+            min-height: 60px;
+        }
+        .quote-scene {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+        }
+        .quote-character {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0 0 6px 0;
+        }
+        .quote-text {
+            font-size: 1.25rem;
+            line-height: 1.65;
+            margin: 0;
+        }
+        .highlighted-word {
+            background: rgba(255,251,0,0.28);
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: white;
+        }
+        .sync-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: var(--btn-bg);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            background: var(--btn-hover);
+        }
+        .btn-continue {
+            background: var(--accent);
+            font-weight: 600;
+        }
+        .btn-restart {
+            background: rgba(217,119,87,0.25);
+            color: var(--accent);
+            display: none;
+        }
+        .sidebar-header {
+            font-family: 'Courier Prime', monospace;
+            color: var(--accent);
+            font-size: 1.15rem;
+            text-transform: uppercase;
+        }
+        .matches-list {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .match-item {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .match-item:hover, .match-item.active {
+            background: rgba(217,119,87,0.14);
+            border-left: 5px solid var(--accent);
+        }
+        .match-text {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.08rem;
+            line-height: 1.55;
+        }
+        .match-time {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1100px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .sidebar { order: -1; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="logo-section">
+            <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-bar" placeholder="Search quotes..." value="{{ query|escape }}">
+            </div>
+        </div>
+        <div class="right-spacer"></div>
+    </nav>
+
+    <div class="main-layout">
+        <div class="video-column">
+            <div class="player-wrapper">
+                <video id="mainVideo" controls>
+                    <source src="{{ source.video_file.url }}" type="video/mp4">
+                </video>
+            </div>
+
+            <!-- Video info block like YouTube (name, episode/year, timestamp) -->
+            <div class="video-info">
+                <div class="video-title">{{ source }}</div>
+                <div class="video-meta">
+                    {% if source.source_type == 'tv_show' %}
+                        Season {{ source.season|default:"?" }} • Episode {{ source.episode|default:"?" }}
+                    {% else %}
+                        Movie • {{ source.year|default:"—" }}
+                    {% endif %}
+                </div>
+                <div class="video-timestamp">
+                    Current time: <span id="currentTime">0:00</span>
+                </div>
+            </div>
+
+            <div class="selected-quote" id="selectedQuote">
+                <div class="quote-scene" id="sceneHeading">—</div>
+                <div class="quote-character" id="characterName">—</div>
+                <div class="quote-text" id="quoteContent">Type to search...</div>
+
+                <div class="sync-controls">
+                    <button class="btn" onclick="adjustSync(-1)">← 1s</button>
+                    <button class="btn" onclick="adjustSync(1)">1s →</button>
+                    <button class="btn-continue" id="continueBtn" style="display:none;" onclick="stopLoop()">Continue Full Video</button>
+                    <button class="btn" id="restartBtn" style="display:none;" onclick="restartLoop()">Back to Quote</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header">Matches</div>
+            <div class="matches-list" id="matchesList"></div>
+        </div>
+    </div>
+
+    <script>
+        const quotes = {{ quotes_json|safe }};
+        let currentQuote = null;
+        let loopActive = false;
+        let listener = null;
+
+        const video = document.getElementById('mainVideo');
+        const search = document.getElementById('searchInput');
+        const list = document.getElementById('matchesList');
+        const scene = document.getElementById('sceneHeading');
+        const char = document.getElementById('characterName');
+        const textEl = document.getElementById('quoteContent');
+        const continueBtn = document.getElementById('continueBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const timeDisplay = document.getElementById('currentTime');
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        // Live timestamp update
+        video.addEventListener('timeupdate', () => {
+            timeDisplay.textContent = formatTime(video.currentTime);
+        });
+
+        function load(q, hl = '', el = null) {
+            currentQuote = q;
+            loopActive = true;
+
+            scene.textContent = q.scene || '—';
+            char.textContent = q.character || '—';
+
+            let txt = q.text;
+            if (hl) txt = txt.replace(new RegExp(`\\b(${hl})\\b`, 'gi'), '<span class="highlighted-word">$1</span>');
+            textEl.innerHTML = txt;
+
+            video.currentTime = q.startTime;
+
+            if (el) {
+                document.querySelectorAll('.match-item.active').forEach(i => i.classList.remove('active'));
+                el.classList.add('active');
+            }
+
+            continueBtn.style.display = 'inline-block';
+            restartBtn.style.display = 'none';
+            startLoop();
+        }
+
+        function startLoop() {
+            if (!currentQuote || !loopActive) return;
+
+            if (listener) video.removeEventListener('timeupdate', listener);
+
+            listener = () => {
+                if (video.currentTime >= currentQuote.endTime - 0.1) {
+                    video.pause();
+                    setTimeout(() => {
+                        video.currentTime = currentQuote.startTime;
+                        video.play().catch(() => {});
+                    }, 800);
+                }
+            };
+
+            video.addEventListener('timeupdate', listener);
+            video.currentTime = currentQuote.startTime;
+            video.play().catch(() => {});
+        }
+
+        function stopLoop() {
+            loopActive = false;
+            if (listener) {
+                video.removeEventListener('timeupdate', listener);
+                listener = null;
+            }
+            continueBtn.style.display = 'none';
+            restartBtn.style.display = 'inline-block';
+            video.play().catch(() => {});
+        }
+
+        function restartLoop() {
+            loopActive = true;
+            continueBtn.style.display = 'inline-block';
+            restartBtn.style.display = 'none';
+            startLoop();
+        }
+
+        function render(q) {
+            list.innerHTML = '';
+            if (!q.trim()) {
+                list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted);">Type to search</div>';
+                return;
+            }
+
+            const low = q.toLowerCase();
+            const m = quotes.filter(i =>
+                i.text.toLowerCase().includes(low) ||
+                (i.character||'').toLowerCase().includes(low) ||
+                (i.scene||'').toLowerCase().includes(low)
+            );
+
+            if (!m.length) {
+                list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted);">No matches</div>';
+                return;
+            }
+
+            m.forEach(i => {
+                const d = document.createElement('div');
+                d.className = 'match-item';
+                const snip = i.text.length > 140 ? i.text.substring(0,137)+'…' : i.text;
+                d.innerHTML = `<div class="match-text">"${snip}"</div><div class="match-time">${formatTime(i.startTime)} – ${formatTime(i.endTime)}</div>`;
+                d.onclick = () => load(i, q, d);
+                list.appendChild(d);
+            });
+        }
+
+        search.addEventListener('input', e => render(e.target.value));
+
+        window.addEventListener('load', () => {
+            video.addEventListener('loadedmetadata', () => {
+                if (quotes.length > 0) load(quotes[0]);
+            });
+            if (currentQuery) {
+                search.value = currentQuery;
+                render(currentQuery);
+            }
+        });
+
+        function adjustSync(d) {
+            if (!currentQuote) return;
+            video.currentTime += d;
+        }
+    </script>
+</body>
+</html>

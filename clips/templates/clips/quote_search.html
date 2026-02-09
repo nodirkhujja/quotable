@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Quotes</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; padding: 40px; }
+        .search-container { max-width: 800px; margin: 0 auto; }
+
+        /* Search Bar Styling */
+        .search-box { margin-bottom: 30px; }
+        input[type="text"] {
+            padding: 12px; width: 70%; border-radius: 5px; border: none; font-size: 16px;
+        }
+        button { padding: 12px 20px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 5px; font-weight: bold; }
+
+        /* Results Styling */
+        .results-list { list-style: none; padding: 0; }
+        .result-item {
+            background: #1e1e1e;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #f1c40f;
+            transition: transform 0.2s;
+        }
+        .result-item:hover { transform: scale(1.01); background: #252525; }
+        .result-item a {
+            color: #f1c40f;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .meta-info { color: #888; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <h1>Find a Quote</h1>
+
+    <div class="search-box">
+        <form method="GET" action="{% url 'clips:quote_list' %}">
+            <input type="text" name="q" placeholder="Search for text (e.g., Monica)..." value="{{ request.GET.q }}">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <ul class="results-list">
+        {% for quote in quotes %}
+            <li class="result-item">
+                <a href="{% url 'clips:watch_source' quote.source.id %}?t={{ quote.start_time }}">
+                    "{{ quote.text }}"
+                </a>
+                <div class="meta-info">
+                    From: <strong>{{ quote.source.title }}</strong> | Starts at: {{ quote.start_time }}s
+                </div>
+            </li>
+        {% empty %}
+            {% if request.GET.q %}
+                <p>No quotes found for "{{ request.GET.q }}".</p>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+</body>
+</html>

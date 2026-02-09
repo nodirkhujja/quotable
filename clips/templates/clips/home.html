@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotable — Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #d97757; --text-main: #faf9f5; --bg-surface: #1d1d1c; --border: #2e2e2c; }
+        body { background: #141413; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        h1 { color: var(--accent); font-family: 'Courier Prime', monospace; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-4px); }
+        a { color: var(--text-main); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quotable</h1>
+        <p style="text-align:center; color:#b0aea5;">Choose a movie or show to start searching quotes</p>
+
+        <div class="grid">
+            {% for source in sources %}
+                <a href="{% url 'clips:watch_source' source.id %}">
+                    <div class="card">
+                        <h3 style="margin:0; color:var(--accent);">{{ source }}</h3>
+                        <p style="margin:8px 0 0; color:#b0aea5; font-size:0.9rem;">
+                            {% if source.source_type == 'tv_show' %}
+                                S{{ source.season|default:"?" }}E{{ source.episode|default:"?" }}
+                            {% else %}
+                                {{ source.year|default:"—" }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </a>
+            {% empty %}
+                <p style="grid-column:1/-1; text-align:center; color:#b0aea5;">
+                    No videos added yet. Add some in the admin panel.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

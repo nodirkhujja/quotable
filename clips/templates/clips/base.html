@@ -1,0 +1,424 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotable — {{ source }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #141413;
+            --bg-surface: #1d1d1c;
+            --border: #2e2e2c;
+            --text-main: #faf9f5;
+            --text-muted: #b0aea5;
+            --accent: #d97757;
+            --highlight: #FFD700;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-page);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 30px;
+        }
+        nav {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-page);
+            gap: 20px;
+        }
+        .logo {
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
+        }
+        .logo:hover { color: var(--accent); }
+        .search-wrapper {
+            flex-grow: 1;
+            max-width: 600px;
+            position: relative;
+        }
+        .search-bar {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 2px solid var(--border);
+            color: var(--text-main);
+            padding: 14px 50px 14px 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .search-bar:focus {
+            border-color: var(--accent);
+            background: #242422;
+            box-shadow: 0 0 0 3px rgba(217,119,87,0.15);
+        }
+        .search-icon {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            font-size: 1.1rem;
+        }
+        .search-results-count {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        video { width: 100%; display: block; }
+        .results-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            display: none;
+        }
+        .results-header {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin: 0 0 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .results-list { display: flex; flex-direction: column; gap: 10px; }
+        .result-item {
+            background: #242422;
+            border: 1px solid var(--border);
+            padding: 14px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .result-item:hover {
+            border-color: var(--accent);
+            background: rgba(217,119,87,0.05);
+        }
+        .result-snippet {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1rem;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+        .result-time {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            align-self: flex-end;
+            margin-top: 6px;
+        }
+        .script-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 4px;
+        }
+        .scene-heading {
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+        .character-name {
+            font-family: 'Courier Prime', monospace;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            color: var(--accent);
+            font-size: 1rem;
+            display: block;
+        }
+        .dialogue {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.25rem;
+            line-height: 1.75;
+            letter-spacing: 0.3px;
+            max-width: 65ch;
+            margin: 0 auto 30px;
+            color: var(--text-main);
+        }
+        .highlighted-word {
+            color: #fff !important;
+            font-weight: 700;
+            background: rgba(255,255,255,0.12);
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-shadow: 0 0 12px rgba(255,255,255,0.7);
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .btn-nudge {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 18px;
+            font-family: 'Courier Prime', monospace;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+        .btn-nudge:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(217,119,87,0.08);
+        }
+        .status-text {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .recommendations {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+        }
+        .rec-header {
+            font-family: 'Courier Prime', monospace;
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .rec-item {
+            display: block;
+            background: #242422;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .rec-item:hover {
+            border-color: var(--accent);
+            background: rgba(217,119,87,0.08);
+        }
+        .rec-title { font-weight: 600; }
+        .rec-meta { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+        @media (max-width: 992px) {
+            .container { grid-template-columns: 1fr; }
+            .recommendations { order: -1; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+        <div class="search-wrapper">
+            <input type="text" id="searchInput" class="search-bar" placeholder="Search dialogue across this video..." value="{{ query|escape }}">
+            <span class="search-icon">🔍</span>
+            <span class="search-results-count" id="resultsCount" style="display:none;"></span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div>
+            <h2 style="text-align:center; color:var(--accent); font-family:'Courier Prime',monospace; margin-bottom:25px;">
+                {{ source }}
+            </h2>
+
+            <div class="video-container">
+                <video id="mainVideo" controls>
+                    <source src="{{ source.video_file.url }}" type="video/mp4">
+                    Your browser does not support video playback.
+                </video>
+            </div>
+
+            <div id="resultsPanel" class="results-panel">
+                <h3 class="results-header" id="resultsHeader">MATCHING QUOTES</h3>
+                <div id="resultsList" class="results-list"></div>
+            </div>
+
+            <div class="script-card">
+                <div class="scene-heading" id="sceneHeading">Select a quote to begin</div>
+                <span class="character-name" id="characterName"></span>
+                <p class="dialogue" id="quoteContent">Use the search above to find dialogue. Results will appear here with video sync.</p>
+
+                <div class="controls">
+                    <div class="status-text">
+                        SYNC OFFSET: <span id="syncStatus" style="color:var(--accent);">+0.0s</span>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn-nudge" onclick="adjustSync(-0.5)">← 0.5s</button>
+                        <button class="btn-nudge" onclick="adjustSync(0.5)">0.5s →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="recommendations">
+            <h3 class="rec-header">Watch Next</h3>
+            {% for rec in recommendations %}
+                <a href="{% url 'clips:watch_source' rec.id %}" class="rec-item">
+                    <div class="rec-title">{{ rec }}</div>
+                    <div class="rec-meta">
+                        {% if rec.source_type == 'tv_show' %}
+                            TV · S{{ rec.season|default:"?" }}E{{ rec.episode|default:"?" }}
+                        {% else %}
+                            Movie · {{ rec.year|default:"—" }}
+                        {% endif %}
+                    </div>
+                </a>
+            {% empty %}
+                <p style="color:var(--text-muted); font-style:italic;">No other videos available yet.</p>
+            {% endfor %}
+        </aside>
+    </div>
+
+    <script>
+        const quotesDB = {{ quotes_json|safe }};
+        let currentQuery = '{{ query|escapejs }}';
+        let currentQuote = null;
+
+        const video = document.getElementById('mainVideo');
+        const searchInput = document.getElementById('searchInput');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultsList = document.getElementById('resultsList');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsHeader = document.getElementById('resultsHeader');
+        const sceneHeadingEl = document.getElementById('sceneHeading');
+        const characterNameEl = document.getElementById('characterName');
+        const dialogueEl = document.getElementById('quoteContent');
+        const syncStatusEl = document.getElementById('syncStatus');
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        function loadQuote(quote, highlight = '') {
+            currentQuote = quote;
+            sceneHeadingEl.textContent = quote.scene || '—';
+            characterNameEl.textContent = quote.character || '—';
+
+            let text = quote.text;
+            if (highlight) {
+                const re = new RegExp(`\\b(${escapeRegex(highlight)})\\b`, 'gi');
+                text = text.replace(re, '<span class="highlighted-word">$1</span>');
+            }
+            dialogueEl.innerHTML = text;
+
+            video.currentTime = quote.startTime;
+            syncStatusEl.textContent = '+0.0s';
+        }
+
+        function renderSuggestions(q) {
+            q = q.trim();
+            currentQuery = q;
+            if (!q) {
+                resultsPanel.style.display = 'none';
+                return;
+            }
+
+            const matches = quotesDB.filter(item =>
+                item.text.toLowerCase().includes(q.toLowerCase()) ||
+                (item.character || '').toLowerCase().includes(q.toLowerCase()) ||
+                (item.scene || '').toLowerCase().includes(q.toLowerCase())
+            );
+
+            resultsList.innerHTML = '';
+            resultsCount.textContent = `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+            resultsCount.style.display = 'block';
+
+            if (matches.length === 0) {
+                resultsList.innerHTML = `<div class="result-item" style="opacity:0.6;">No matches found</div>`;
+                resultsHeader.textContent = 'NO RESULTS';
+            } else {
+                resultsHeader.textContent = `MATCHES (${matches.length})`;
+                matches.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'result-item';
+                    const snippet = item.text.length > 90 ? item.text.substring(0,87)+'…' : item.text;
+
+                    el.innerHTML = `
+                        <div class="result-snippet">"${snippet}"</div>
+                        <div class="result-time">${formatTime(item.startTime)}</div>
+                    `;
+                    el.onclick = () => {
+                        loadQuote(item, q);
+                        if (window.innerWidth < 992) resultsPanel.style.display = 'none';
+                    };
+                    resultsList.appendChild(el);
+                });
+            }
+            resultsPanel.style.display = 'block';
+        }
+
+        searchInput.addEventListener('input', e => renderSuggestions(e.target.value));
+
+        window.addEventListener('load', () => {
+            video.addEventListener('loadedmetadata', () => {
+                if (quotesDB.length > 0) {
+                    loadQuote(quotesDB[0]);
+                    video.play().catch(() => {});
+                }
+            });
+
+            if (currentQuery) renderSuggestions(currentQuery);
+        });
+
+        function adjustSync(delta) {
+            if (!currentQuote) return;
+            video.currentTime += delta;
+            const shift = video.currentTime - currentQuote.startTime;
+            syncStatusEl.textContent = (shift >= 0 ? '+' : '') + shift.toFixed(1) + 's';
+        }
+
+        function escapeRegex(s) {
+            return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+    </script>
+</body>
+</html>
