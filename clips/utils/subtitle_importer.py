@@ -1,185 +1,71 @@
-"""
-Subtitle Importer for Quotable
-Automatically import quotes from .srt subtitle files
-"""
+import pysrt
+
+from clips.models import Episode, Quote, Source
 
 
-def parse_srt_time(time_str):
+def import_quotes_from_srt(source_id, srt_file_path, episode_id=None, min_length=30):
     """
-    Convert SRT timestamp to seconds
-    Example: '00:00:55,422' -> 55.422
+    Automatically import quotes from SRT subtitle file.
+    Supports both Movies (Source only) and TV Shows (Source + Episode).
     """
-    # Split into hours, minutes, seconds, milliseconds
-    # Format: HH:MM:SS,mmm
-    hours, minutes, rest = time_str.split(":")
-    seconds, milliseconds = rest.split(",")
+    source = Source.objects.get(id=source_id)
 
-    total_seconds = int(hours) * 3600 + int(minutes) * 60 + int(seconds) + int(milliseconds) / 1000
-    return total_seconds
+    # Fetch episode if provided (mandatory for TV shows)
+    episode = None
+    if episode_id:
+        episode = Episode.objects.get(id=episode_id)
 
+    subs = pysrt.open(srt_file_path)
 
-def parse_srt_file(srt_file_path):
-    """
-    Parse an SRT file and return list of subtitle entries
-
-    Returns:
-        List of dicts with: {
-            'index': int,
-            'start_time': float (seconds),
-            'end_time': float (seconds),
-            'text': str
-        }
-    """
-    with open(srt_file_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    # Split by double newline (separates subtitle blocks)
-    blocks = content.strip().split("\n\n")
-
-    subtitles = []
-
-    for block in blocks:
-        lines = block.strip().split("\n")
-
-        if len(lines) < 3:
-            continue
-
-        # Line 1: Index number
-        try:
-            index = int(lines[0])
-        except ValueError:
-            continue
-
-        # Line 2: Timestamps
-        # Format: 00:00:55,422 --> 00:00:59,256
-        timestamp_line = lines[1]
-        if "-->" not in timestamp_line:
-            continue
-
-        start_str, end_str = timestamp_line.split("-->")
-        start_time = parse_srt_time(start_str.strip())
-        end_time = parse_srt_time(end_str.strip())
-
-        # Line 3+: Text (can be multiple lines)
-        text = "\n".join(lines[2:])
-
-        subtitles.append({"index": index, "start_time": start_time, "end_time": end_time, "text": text})
-
-    return subtitles
-
-
-def group_subtitles_into_quotes(subtitles, max_gap=2.0, min_length=20):
-    """
-    Group consecutive subtitles into meaningful quotes
-
-    Args:
-        subtitles: List of subtitle dicts from parse_srt_file()
-        max_gap: Maximum gap in seconds between subtitles to group them
-        min_length: Minimum character length for a quote
-
-    Returns:
-        List of quote dicts with start_time, end_time, and text
-    """
-    quotes = []
+    quotes_created_count = 0
     current_quote = []
-    current_start = None
-    last_end = 0
+    start_time = None
+    last_sub_end = 0
 
-    for sub in subtitles:
-        gap = sub["start_time"] - last_end
+    for _, sub in enumerate(subs):
+
+        def to_sec(t):
+            return t.hours * 3600 + t.minutes * 60 + t.seconds + t.milliseconds / 1000
+
+        sub_start = to_sec(sub.start)
+        sub_end = to_sec(sub.end)
+        text = sub.text_without_tags.replace("\n", " ").strip()
+
+        # Check gap between this sub and the last one
+        gap = sub_start - last_sub_end
 
         if not current_quote:
-            # Start new quote
-            current_start = sub["start_time"]
-            current_quote.append(sub["text"])
-            last_end = sub["end_time"]
-        elif gap < max_gap:
-            # Continue current quote
-            current_quote.append(sub["text"])
-            last_end = sub["end_time"]
+            start_time = sub_start
+            current_quote.append(text)
+            last_sub_end = sub_end
+        elif gap < 1.5:  # If gap is small, keep building the same quote
+            current_quote.append(text)
+            last_sub_end = sub_end
         else:
-            # Save current quote and start new one
+            # Save the accumulated quote before starting a new one
             full_text = " ".join(current_quote)
             if len(full_text) >= min_length:
-                quotes.append({"start_time": current_start, "end_time": last_end, "text": full_text})
+                Quote.objects.create(
+                    source=source,
+                    episode=episode,  # This will be None for Movies
+                    text=full_text,
+                    start_time=start_time,
+                    end_time=last_sub_end,
+                )
+                quotes_created_count += 1
 
-            # Start new quote
-            current_quote = [sub["text"]]
-            current_start = sub["start_time"]
-            last_end = sub["end_time"]
+            # Reset for new quote
+            current_quote = [text]
+            start_time = sub_start
+            last_sub_end = sub_end
 
-    # Don't forget the last quote
+    # Save the final quote in the file
     if current_quote:
         full_text = " ".join(current_quote)
         if len(full_text) >= min_length:
-            quotes.append({"start_time": current_start, "end_time": last_end, "text": full_text})
+            Quote.objects.create(
+                source=source, episode=episode, text=full_text, start_time=start_time, end_time=last_sub_end
+            )
+            quotes_created_count += 1
 
-    return quotes
-
-
-def import_quotes_from_srt(source_id, srt_file_path, max_gap=2.0, min_length=20):
-    """
-    Import quotes from SRT file into database
-
-    Args:
-        source_id: ID of the Source model (movie/TV show)
-        srt_file_path: Path to .srt file
-        max_gap: Maximum gap in seconds to group subtitles
-        min_length: Minimum character length for quotes
-
-    Returns:
-        Number of quotes created
-    """
-    # Import here to avoid circular imports
-    from clips.models import Quote, Source
-
-    # Get the source
-    try:
-        source = Source.objects.get(id=source_id)
-    except Source.DoesNotExist:
-        raise ValueError(f"Source with id {source_id} not found")
-
-    # Parse the SRT file
-    subtitles = parse_srt_file(srt_file_path)
-    print(f"Parsed {len(subtitles)} subtitle entries")
-
-    # Group into quotes
-    quotes = group_subtitles_into_quotes(subtitles, max_gap, min_length)
-    print(f"Grouped into {len(quotes)} quotes")
-
-    # Create Quote objects
-    created_count = 0
-    for quote_data in quotes:
-        Quote.objects.create(
-            source=source,
-            text=quote_data["text"],
-            start_time=quote_data["start_time"],
-            end_time=quote_data["end_time"],
-        )
-        created_count += 1
-
-    print(f"Successfully created {created_count} quotes!")
-    return created_count
-
-
-# For testing/debugging
-if __name__ == "__main__":
-    # Test parsing
-    srt_path = "/media/subtitles/file.srt"
-    subtitles = parse_srt_file(srt_path)
-
-    print(f"Total subtitles: {len(subtitles)}")
-    print("\nFirst 3 subtitles:")
-    for sub in subtitles[:3]:
-        print(f"\n{sub['index']}")
-        print(f"{sub['start_time']:.2f}s -> {sub['end_time']:.2f}s")
-        print(f"{sub['text']}")
-
-    # Test grouping
-    quotes = group_subtitles_into_quotes(subtitles)
-    print(f"\n\nTotal quotes: {len(quotes)}")
-    print("\nFirst 3 quotes:")
-    for i, quote in enumerate(quotes[:3], 1):
-        print(f"\nQuote {i}:")
-        print(f"{quote['start_time']:.2f}s -> {quote['end_time']:.2f}s")
-        print(f"{quote['text']}")
+    return quotes_created_count

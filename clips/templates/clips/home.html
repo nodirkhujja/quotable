@@ -1,53 +1,201 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotable — Home</title>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Quotable — Find Iconic Quotes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #d97757; --text-main: #faf9f5; --bg-surface: #1d1d1c; --border: #2e2e2c; }
-        body { background: #141413; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        h1 { color: var(--accent); font-family: 'Courier Prime', monospace; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            transition: 0.2s;
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-elevated: #1a1a1a;
+            --border-subtle: #282828;
+            --border-focus: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-tertiary: #737373;
+            /* Original Logo/Movie Color */
+            --tag-movie-text: #ff6b35;
+            /* REQUESTED: PALE GREEN */
+            --tag-pale-green: #98fb98;
+            --tag-pale-bg: rgba(152, 251, 152, 0.12);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .card:hover { border-color: var(--accent); transform: translateY(-4px); }
-        a { color: var(--text-main); text-decoration: none; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ NAVIGATION ============ */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 40px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--tag-movie-text); /* RESTORED TO ORANGE */
+            text-decoration: none;
+        }
+
+        .search-wrapper { flex: 0 1 420px; position: relative; }
+
+        .search-icon-svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%; height: 44px; background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle); border-radius: 22px;
+            padding: 0 20px 0 46px; font-size: 14px; color: var(--text-primary);
+            outline: none; transition: var(--transition-smooth);
+        }
+
+        /* ============ GRID ============ */
+        .container { max-width: 1440px; margin: 0 auto; padding: 48px 40px; }
+        .page-header { margin-bottom: 40px; text-align: center; }
+        h1 { font-family: 'Courier Prime', monospace; font-size: 1.8rem; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        /* ============ CARD DESIGN ============ */
+        .card {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-img {
+            transform: scale(1.05);
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* TAGS CHANGED TO PALE GREEN */
+        .info-badge {
+            align-self: flex-start;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: var(--tag-pale-bg);
+            color: var(--tag-pale-green);
+        }
+
+        @media (max-width: 768px) {
+            .top-nav { padding: 0 20px; height: auto; flex-direction: column; gap: 15px; padding: 15px 0; }
+            .container { padding: 30px 20px; }
+        }
     </style>
 </head>
 <body>
+
+    <nav class="top-nav">
+        <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+        <form class="search-wrapper" method="get">
+            <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" class="search-input" placeholder="Search..." value="{{ query|default:'' }}">
+        </form>
+        <div style="width: 120px;"></div>
+    </nav>
+
     <div class="container">
-        <h1>Quotable</h1>
-        <p style="text-align:center; color:#b0aea5;">Choose a movie or show to start searching quotes</p>
+        <header class="page-header">
+            <h1>{% if query %}Results for "{{ query }}"{% else %}The Script Archive{% endif %}</h1>
+        </header>
 
         <div class="grid">
             {% for source in sources %}
-                <a href="{% url 'clips:watch_source' source.id %}">
-                    <div class="card">
-                        <h3 style="margin:0; color:var(--accent);">{{ source }}</h3>
-                        <p style="margin:8px 0 0; color:#b0aea5; font-size:0.9rem;">
-                            {% if source.source_type == 'tv_show' %}
-                                S{{ source.season|default:"?" }}E{{ source.episode|default:"?" }}
-                            {% else %}
-                                {{ source.year|default:"—" }}
-                            {% endif %}
-                        </p>
+                <a href="{% url 'clips:watch_source' source.id %}" class="card">
+                    <div class="card-img-wrapper">
+                        {% if source.thumbnail %}
+                            <img src="{{ source.thumbnail.url }}" alt="{{ source.title }}" class="card-img">
+                        {% else %}
+                            <div class="card-img" style="font-size: 2rem;">🎬</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-body">
+                        <div class="card-title">{{ source.title }}</div>
+                        <div class="info-badge">
+                            {% if source.source_type == 'tv_show' %}TV Show{% else %}Movie{% endif %}
+                        </div>
                     </div>
                 </a>
-            {% empty %}
-                <p style="grid-column:1/-1; text-align:center; color:#b0aea5;">
-                    No videos added yet. Add some in the admin panel.
-                </p>
             {% endfor %}
         </div>
     </div>
+
 </body>
 </html>

@@ -4,405 +4,1787 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotable — {{ source }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>{{ source }} — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-page: #0f0f0f;
-            --bg-surface: #181818;
-            --border: #303030;
-            --text-main: #f1f1f1;
-            --text-muted: #aaaaaa;
-            --accent: #d97757;
-            --btn-bg: #333;
-            --btn-hover: #444;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-elevated: #1a1a1a;
+            --border-subtle: #282828;
+            --border-focus: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --text-tertiary: #737373;
+            --accent-orange: #ff6b35;
+            --accent-orange-hover: #ff8256;
+            --accent-dim: rgba(255, 107, 53, 0.15);
+            --highlight-bg: rgba(255, 215, 0, 0.2);
+            --highlight-text: #ffd700;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
         }
-        * { box-sizing: border-box; }
-        body {
-            background: var(--bg-page);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+
+        * {
             margin: 0;
-            min-height: 100vh;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ NAVIGATION ============ */
         .top-nav {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: var(--bg-page);
-            border-bottom: 1px solid var(--border);
-            padding: 12px 40px;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 32px;
+            height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 48px;
-        }
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 48px;
-            flex: 1;
-        }
-        .logo {
-            font-family: 'Courier Prime', monospace;
-            font-weight: 700;
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 1.65rem;
-        }
-        .search-container {
-            flex: 1;
-            max-width: 720px;
-            position: relative;
-        }
-        .search-bar {
-            width: 100%;
-            background: #121212;
-            border: 1px solid #303030;
-            color: white;
-            padding: 12px 16px 12px 56px;
-            border-radius: 999px;
-            font-size: 1rem;
-            outline: none;
-        }
-        .search-bar:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(217,119,87,0.35);
-        }
-        .search-icon {
-            position: absolute;
-            left: 22px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 1.25rem;
-        }
-        .main-layout {
-            max-width: 1750px;
-            margin: 0 auto;
-            padding: 24px 40px;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 402px;
-            gap: 24px;
-        }
-        .video-column {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .player-wrapper {
-            aspect-ratio: 16 / 9;
-            background: black;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        video { width: 100%; height: 100%; }
-        .video-info {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            font-family: 'Courier Prime', monospace;
-        }
-        .video-title {
-            font-size: 1.3rem;
-            color: var(--accent);
-            margin: 0 0 8px 0;
-        }
-        .video-meta {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            margin: 0 0 12px 0;
-        }
-        .video-timestamp {
-            font-size: 0.9rem;
-            color: var(--text-main);
-        }
-        .selected-quote {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 8px 24px 24px;  /* very tight top padding */
-            min-height: 60px;
-        }
-        .quote-scene {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin: 0 0 4px 0;
-            text-transform: uppercase;
-        }
-        .quote-character {
-            color: var(--accent);
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin: 0 0 6px 0;
-        }
-        .quote-text {
-            font-size: 1.25rem;
-            line-height: 1.65;
-            margin: 0;
-        }
-        .highlighted-word {
-            background: rgba(255,251,0,0.28);
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: white;
-        }
-        .sync-controls {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            background: var(--btn-bg);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 999px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.2s;
-        }
-        .btn:hover {
-            background: var(--btn-hover);
-        }
-        .btn-continue {
-            background: var(--accent);
-            font-weight: 600;
-        }
-        .btn-restart {
-            background: rgba(217,119,87,0.25);
-            color: var(--accent);
-            display: none;
-        }
-        .sidebar-header {
-            font-family: 'Courier Prime', monospace;
-            color: var(--accent);
-            font-size: 1.15rem;
-            text-transform: uppercase;
-        }
-        .matches-list {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .match-item {
-            padding: 18px 22px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-        }
-        .match-item:hover, .match-item.active {
-            background: rgba(217,119,87,0.14);
-            border-left: 5px solid var(--accent);
-        }
-        .match-text {
-            font-family: 'Courier Prime', monospace;
-            font-size: 1.08rem;
-            line-height: 1.55;
-        }
-        .match-time {
-            font-size: 0.88rem;
-            color: var(--text-muted);
+            gap: 32px;
         }
 
-        @media (max-width: 1100px) {
-            .main-layout { grid-template-columns: 1fr; }
-            .sidebar { order: -1; }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-orange);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+            transition: color 0.2s;
+        }
+
+        .logo:hover {
+            color: var(--accent-orange-hover);
+        }
+
+        .search-wrapper {
+            flex: 1;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 44px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 22px;
+            padding: 0 48px 0 44px;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-input:focus {
+            background: var(--bg-secondary);
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        .search-count {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--accent-orange);
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .search-count.visible {
+            opacity: 1;
+        }
+
+        /* ============ MAIN LAYOUT ============ */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 22px 20px 20px 20px;;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 32px;
+            align-items: start;
+        }
+
+        /* ============ VIDEO SECTION ============ */
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .player-container {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .loading-overlay.visible {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-subtle);
+            border-top-color: var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Video Info Card */
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .info-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .info-badge {
+            background: var(--accent-dim);
+            color: var(--accent-orange);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .info-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin: 16px 0;
+        }
+
+        .time-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Quote Card */
+        .quote-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 140px;
+        }
+
+        .quote-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .quote-character {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-orange);
+            margin-bottom: 12px;
+        }
+
+        .quote-text {
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .quote-text.empty {
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
+        .highlighted-word {
+            background: var(--highlight-bg);
+            color: var(--highlight-text);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            height: 36px;
+            padding: 0 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--border-focus);
+            color: var(--text-primary);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-orange-hover);
+            border-color: var(--accent-orange-hover);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-focus);
+        }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            position: sticky;
+            top: 96px;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+
+        .episode-filters {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .episode-select {
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .episode-select:hover {
+            border-color: var(--border-focus);
+        }
+
+        .episode-select:focus {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
+
+        .episode-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-tab {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--border-focus);
+            color: var(--text-primary);
+        }
+
+        .filter-tab.active {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: white;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-elevated);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .view-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .view-btn svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-tertiary);
+        }
+
+        .view-btn:hover svg {
+            color: var(--text-primary);
+        }
+
+        .view-btn.active {
+            background: var(--bg-secondary);
+        }
+
+        .view-btn.active svg {
+            color: var(--accent-orange);
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .results-badge {
+            background: var(--accent-dim);
+            color: var(--accent-orange);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .matches-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        .matches-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .matches-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .matches-container::-webkit-scrollbar-thumb {
+            background: var(--border-focus);
+            border-radius: 3px;
+        }
+
+        .matches-container::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        .match-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+            display: flex;
+            gap: 12px;
+        }
+
+        .match-item:last-child {
+            border-bottom: none;
+        }
+
+        .match-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent-orange);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .match-item:hover,
+        .match-item.active {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .match-item.active::before {
+            opacity: 1;
+        }
+
+        .match-thumbnail {
+            width: 120px;
+            height: 68px;
+            border-radius: 6px;
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .match-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .match-thumbnail-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            font-size: 24px;
+        }
+
+        .match-thumbnail-overlay {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .match-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .match-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .match-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .match-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .match-time {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .match-character {
+            font-size: 11px;
+            color: var(--accent-orange);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .match-episode {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .match-item:hover .match-actions {
+            opacity: 1;
+        }
+
+        .action-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-icon:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent-orange);
+        }
+
+        .action-icon svg {
+            width: 14px;
+            height: 14px;
+            color: var(--text-secondary);
+        }
+
+        .action-icon:hover svg {
+            color: var(--accent-orange);
+        }
+
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-tertiary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1200px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+
+            .matches-container {
+                max-height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 4px 16px;
+            }
+
+            .top-nav {
+                padding: 0 16px;
+                height: 56px;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .search-wrapper {
+                max-width: none;
+            }
+
+            .grid {
+                gap: 20px;
+            }
+
+            .quote-text {
+                font-size: 16px;
+            }
+        }
+
+        /* ============ ANIMATIONS ============ */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .match-item {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: var(--text-tertiary);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-subtle);
+            border-top-color: var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Keyboard shortcuts hint */
+        .shortcuts-hint {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-md);
+            display: none;
+        }
+
+        .shortcuts-hint.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .shortcut-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin: 4px 0;
+        }
+
+        .kbd {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-focus);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 11px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-lg);
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.visible {
+            display: flex;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--accent-orange);
         }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="top-nav">
-        <div class="logo-section">
-            <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="searchInput" class="search-bar" placeholder="Search quotes..." value="{{ query|escape }}">
-            </div>
+        <a href="{% url 'clips:home' %}" class="logo">Quotable</a>
+        <div class="search-wrapper">
+            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+                type="text"
+                id="searchInput"
+                class="search-input"
+                placeholder="Search dialogue, characters, or scenes..."
+                value="{{ query|escape }}"
+                autocomplete="off"
+            >
+            <span class="search-count" id="searchCount"></span>
         </div>
-        <div class="right-spacer"></div>
     </nav>
 
-    <div class="main-layout">
-        <div class="video-column">
-            <div class="player-wrapper">
-                <video id="mainVideo" controls>
-                    <source src="{{ source.video_file.url }}" type="video/mp4">
-                </video>
-            </div>
-
-            <!-- Video info block like YouTube (name, episode/year, timestamp) -->
-            <div class="video-info">
-                <div class="video-title">{{ source }}</div>
-                <div class="video-meta">
-                    {% if source.source_type == 'tv_show' %}
-                        Season {{ source.season|default:"?" }} • Episode {{ source.episode|default:"?" }}
+    <!-- Main Content -->
+    <div class="container">
+        <div class="grid">
+            <!-- Left Column: Video & Quote -->
+            <div class="video-section">
+                <!-- Video Player -->
+                <div class="player-container">
+                    {% if video_url %}
+                        <video id="videoPlayer" controls preload="metadata">
+                            <source src="{{ video_url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
                     {% else %}
-                        Movie • {{ source.year|default:"—" }}
+                        <div class="no-video-placeholder" style="background:#000; height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-tertiary);">
+                            <div style="text-align: center;">
+                                <p style="font-size: 32px;">🎞️</p>
+                                <p>No video files found for this show.</p>
+                                <p style="font-size: 12px; margin-top:8px;">Please upload video to the Episode model.</p>
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
-                <div class="video-timestamp">
-                    Current time: <span id="currentTime">0:00</span>
+
+                <!-- Video Info -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <h1 class="info-title">
+                            <span id="subTitle">{% if video_url %}Select a quote to begin{% else %}No video available{% endif %}</span>
+                        </h1>
+
+                        <div style="display: flex; gap: 8px;">
+                            <span class="info-badge" id="mainTitle" style="background: var(--accent-dim); color: var(--accent-orange);">
+                                {{ source.title }}
+                            </span>
+                            <span class="info-badge">
+                                {% if source.source_type == 'tv_show' %}TV Show{% else %}Movie{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="info-meta">
+                        {% if source.source_type == 'tv_show' %}
+                            <div class="info-meta-item">
+                                <span>S{{ source.season|default:"?" }}E{{ source.episode|default:"?" }}</span>
+                            </div>
+                        {% endif %}
+                        {% if source.year %}
+                            <div class="info-meta-item">
+                                <span>{{ source.year }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="time-display">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span id="currentTime">0:00</span>
+                        <span style="color: var(--text-tertiary);">/</span>
+                        <span id="duration">0:00</span>
+                    </div>
+                </div>
+
+                <!-- Current Quote -->
+                <div class="quote-card">
+                    <div class="quote-label" id="sceneLabel">Current Quote</div>
+                    <div class="quote-character" id="characterName"></div>
+                    <div class="quote-text empty" id="quoteText">
+                        Search to find and play quotes...
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn" onclick="adjustTime(-1)" title="Rewind 1 second">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                            </svg>
+                            -1s
+                        </button>
+                        <button class="btn" onclick="adjustTime(1)" title="Forward 1 second">
+                            +1s
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-primary" id="continueBtn" onclick="stopLoop()" style="display: none;">
+                            Continue Video
+                        </button>
+                        <button class="btn btn-ghost" id="restartBtn" onclick="restartLoop()" style="display: none;">
+                            Replay Quote
+                        </button>
+
+                        <button class="btn" id="favBtn" onclick="toggleFavorite()">
+                            <svg id="heartIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <span>Save to Favorites</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="selected-quote" id="selectedQuote">
-                <div class="quote-scene" id="sceneHeading">—</div>
-                <div class="quote-character" id="characterName">—</div>
-                <div class="quote-text" id="quoteContent">Type to search...</div>
+            <!-- Right Column: Matches -->
+            <div class="sidebar">
+                <div class="sidebar-controls">
+                    {% if source.source_type == 'tv_show' %}
+                    <!-- Season & Episode Filters for TV Shows -->
+                    <div class="episode-filters">
+                        <select class="episode-select" id="seasonFilter">
+                            <option value="">All Seasons</option>
+                        </select>
+                        <select class="episode-select" id="episodeFilter">
+                            <option value="">All Episodes</option>
+                        </select>
+                    </div>
+                    {% else %}
+                    <!-- Regular Filter Tabs for Movies -->
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="character">By Character</button>
+                        <button class="filter-tab" data-filter="scene">By Scene</button>
+                    </div>
+                    {% endif %}
 
-                <div class="sync-controls">
-                    <button class="btn" onclick="adjustSync(-1)">← 1s</button>
-                    <button class="btn" onclick="adjustSync(1)">1s →</button>
-                    <button class="btn-continue" id="continueBtn" style="display:none;" onclick="stopLoop()">Continue Full Video</button>
-                    <button class="btn" id="restartBtn" style="display:none;" onclick="restartLoop()">Back to Quote</button>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="list" title="List view">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn" data-view="grid" title="Grid view">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">Results</h2>
+                    <span class="results-badge" id="resultsBadge" style="display: none;">0</span>
+                </div>
+
+                <div class="matches-container" id="matchesList">
+                    <div class="empty-state">
+                        <div class="empty-icon">🎬</div>
+                        <div class="empty-title">Search to find quotes</div>
+                        <div class="empty-text">Type in the search bar to discover memorable moments</div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="sidebar">
-            <div class="sidebar-header">Matches</div>
-            <div class="matches-list" id="matchesList"></div>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toastMessage">Link copied!</span>
+    </div>
+
+    <!-- Keyboard Shortcuts (Toggle with '?') -->
+    <div class="shortcuts-hint" id="shortcutsHint">
+        <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Keyboard Shortcuts</div>
+        <div class="shortcut-item">
+            <span class="kbd">Space</span>
+            <span>Play / Pause</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="kbd">←</span>
+            <span class="kbd">→</span>
+            <span>Rewind / Forward</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="kbd">/</span>
+            <span>Focus search</span>
+        </div>
+        <div class="shortcut-item">
+            <span class="kbd">?</span>
+            <span>Toggle shortcuts</span>
+        </div>
+    </div>
+
+    <div id="translationTooltip" style="display: none; position: absolute; background: var(--bg-elevated); border: 1px solid var(--accent-orange); padding: 12px; border-radius: 12px; z-index: 10000; box-shadow: var(--shadow-lg); max-width: 250px; pointer-events: none;">
+        <div id="translationText" style="font-size: 13px; line-height: 1.4;">
+            <span style="color: var(--text-tertiary);">Highlight a word...</span>
         </div>
     </div>
 
     <script>
+        // Data
         const quotes = {{ quotes_json|safe }};
         let currentQuote = null;
-        let loopActive = false;
-        let listener = null;
+        let isLooping = false;
+        let loopListener = null;
 
-        const video = document.getElementById('mainVideo');
-        const search = document.getElementById('searchInput');
-        const list = document.getElementById('matchesList');
-        const scene = document.getElementById('sceneHeading');
-        const char = document.getElementById('characterName');
-        const textEl = document.getElementById('quoteContent');
+        // Elements
+        const video = document.getElementById('videoPlayer');
+        const searchInput = document.getElementById('searchInput');
+        const searchCount = document.getElementById('searchCount');
+        const matchesList = document.getElementById('matchesList');
+        const resultsBadge = document.getElementById('resultsBadge');
+        const sceneLabel = document.getElementById('sceneLabel');
+        const characterName = document.getElementById('characterName');
+        const quoteText = document.getElementById('quoteText');
+        const currentTime = document.getElementById('currentTime');
+        const duration = document.getElementById('duration');
         const continueBtn = document.getElementById('continueBtn');
         const restartBtn = document.getElementById('restartBtn');
-        const timeDisplay = document.getElementById('currentTime');
+        const loadingOverlay = document.getElementById('loadingOverlay');
 
-        function formatTime(s) {
-            const m = Math.floor(s / 60);
-            const sec = Math.floor(s % 60);
-            return `${m}:${sec.toString().padStart(2, '0')}`;
+        // Utilities
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // Live timestamp update
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Show/hide loading overlay
+        function showLoading() {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('visible');
+            }
+        }
+
+        function hideLoading() {
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('visible');
+            }
+        }
+
+        // Video time updates
         video.addEventListener('timeupdate', () => {
-            timeDisplay.textContent = formatTime(video.currentTime);
+            currentTime.textContent = formatTime(video.currentTime);
         });
 
-        function load(q, hl = '', el = null) {
-            currentQuote = q;
-            loopActive = true;
+        video.addEventListener('loadedmetadata', () => {
+            duration.textContent = formatTime(video.duration);
+        });
 
-            scene.textContent = q.scene || '—';
-            char.textContent = q.character || '—';
+        // Load and play quote WITH VIDEO SWITCHING
+        function loadQuote(quote, highlightQuery = '', element = null) {
+            currentQuote = quote;
+            isLooping = true;
 
-            let txt = q.text;
-            if (hl) txt = txt.replace(new RegExp(`\\b(${hl})\\b`, 'gi'), '<span class="highlighted-word">$1</span>');
-            textEl.innerHTML = txt;
-
-            video.currentTime = q.startTime;
-
-            if (el) {
-                document.querySelectorAll('.match-item.active').forEach(i => i.classList.remove('active'));
-                el.classList.add('active');
+            const subTitle = document.getElementById('subTitle');
+            if (subTitle) {
+                if (quote.season && quote.episode) {
+                    subTitle.innerHTML = `<span style="color: var(--accent-orange);">S${quote.season}E${quote.episode}:</span> ${quote.episodeTitle}`;
+                } else {
+                    subTitle.textContent = quote.episodeTitle || "{{ source.title }}";
+                }
             }
 
-            continueBtn.style.display = 'inline-block';
+            // ========== VIDEO SWITCHING LOGIC ==========
+            const videoSource = video.querySelector('source');
+            const currentVideoSrc = videoSource ? videoSource.src : '';
+            const quoteVideoUrl = quote.videoUrl;
+
+            // Normalize URLs for comparison (remove protocol and domain if present)
+            const normalizeUrl = (url) => {
+                if (!url) return '';
+                try {
+                    const urlObj = new URL(url, window.location.origin);
+                    return urlObj.pathname;
+                } catch {
+                    return url;
+                }
+            };
+
+            const currentPath = normalizeUrl(currentVideoSrc);
+            const quotePath = normalizeUrl(quoteVideoUrl);
+
+            if (quoteVideoUrl && currentPath !== quotePath) {
+                // Need to switch to a different episode's video
+                console.log('Switching video:', currentPath, '→', quotePath);
+
+                // Show loading indicator
+                showLoading();
+
+                // Pause current video
+                video.pause();
+
+                // Change video source
+                videoSource.src = quoteVideoUrl;
+                video.load();
+
+                // Wait for new video to load
+                const onLoadedMetadata = () => {
+                    video.removeEventListener('loadedmetadata', onLoadedMetadata);
+                    hideLoading();
+
+                    video.currentTime = quote.startTime;
+                    duration.textContent = formatTime(video.duration);
+
+                    video.play().catch(err => console.log('Play prevented:', err));
+                    startLoopAfterSwitch();
+                };
+
+                const onError = () => {
+                    video.removeEventListener('error', onError);
+                    hideLoading();
+                    showToast('Error loading video');
+                    console.error('Video load error');
+                };
+
+                video.addEventListener('loadedmetadata', onLoadedMetadata);
+                video.addEventListener('error', onError);
+            } else {
+                // Same video, just seek to timestamp
+                video.currentTime = quote.startTime;
+                video.play().catch(err => console.log('Play prevented:', err));
+                startLoop();
+            }
+            // ========== END VIDEO SWITCHING ==========
+
+            // Update UI
+            sceneLabel.textContent = quote.scene || 'Scene';
+            characterName.textContent = quote.character || '';
+            characterName.style.display = quote.character ? 'block' : 'none';
+
+            // Build episode badge for quote card
+            let episodeBadge = '';
+            if (quote.season && quote.episode) {
+                episodeBadge = ` <span style="font-size: 11px; color: var(--text-tertiary); font-weight: 500;">(S${quote.season} · E${quote.episode})</span>`;
+            }
+            sceneLabel.innerHTML = (quote.scene || 'Scene') + episodeBadge;
+
+            // Highlight search term
+            let text = quote.text;
+            if (highlightQuery) {
+                const regex = new RegExp(`\\b(${escapeRegex(highlightQuery)})\\b`, 'gi');
+                text = text.replace(regex, '<span class="highlighted-word">$1</span>');
+            }
+            quoteText.innerHTML = text;
+            quoteText.classList.remove('empty');
+
+            // Update active state
+            document.querySelectorAll('.match-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            if (element) {
+                element.classList.add('active');
+                // Scroll active item into view
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Show controls
+            continueBtn.style.display = 'inline-flex';
             restartBtn.style.display = 'none';
-            startLoop();
         }
 
-        function startLoop() {
-            if (!currentQuote || !loopActive) return;
+        function startLoopAfterSwitch() {
+            if (!currentQuote || !isLooping) return;
 
-            if (listener) video.removeEventListener('timeupdate', listener);
+            if (loopListener) {
+                video.removeEventListener('timeupdate', loopListener);
+            }
 
-            listener = () => {
+            loopListener = () => {
                 if (video.currentTime >= currentQuote.endTime - 0.1) {
                     video.pause();
                     setTimeout(() => {
                         video.currentTime = currentQuote.startTime;
-                        video.play().catch(() => {});
-                    }, 800);
+                        video.play().catch(err => console.log('Play prevented:', err));
+                    }, 600);
                 }
             };
 
-            video.addEventListener('timeupdate', listener);
+            video.addEventListener('timeupdate', loopListener);
+        }
+
+        function startLoop() {
+            if (!currentQuote || !isLooping) return;
+
+            if (loopListener) {
+                video.removeEventListener('timeupdate', loopListener);
+            }
+
+            loopListener = () => {
+                if (video.currentTime >= currentQuote.endTime - 0.1) {
+                    video.pause();
+                    setTimeout(() => {
+                        video.currentTime = currentQuote.startTime;
+                        video.play().catch(err => console.log('Play prevented:', err));
+                    }, 600);
+                }
+            };
+
+            video.addEventListener('timeupdate', loopListener);
             video.currentTime = currentQuote.startTime;
-            video.play().catch(() => {});
+            video.play().catch(err => console.log('Play prevented:', err));
         }
 
         function stopLoop() {
-            loopActive = false;
-            if (listener) {
-                video.removeEventListener('timeupdate', listener);
-                listener = null;
+            isLooping = false;
+            if (loopListener) {
+                video.removeEventListener('timeupdate', loopListener);
+                loopListener = null;
             }
             continueBtn.style.display = 'none';
-            restartBtn.style.display = 'inline-block';
-            video.play().catch(() => {});
+            restartBtn.style.display = 'inline-flex';
+            video.play().catch(err => console.log('Play prevented:', err));
         }
 
         function restartLoop() {
-            loopActive = true;
-            continueBtn.style.display = 'inline-block';
+            isLooping = true;
+            continueBtn.style.display = 'inline-flex';
             restartBtn.style.display = 'none';
             startLoop();
         }
 
-        function render(q) {
-            list.innerHTML = '';
-            if (!q.trim()) {
-                list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted);">Type to search</div>';
+        function adjustTime(seconds) {
+            video.currentTime += seconds;
+        }
+
+        // Search and render
+        function renderMatches(query) {
+            const trimmedQuery = query.trim();
+
+            if (!trimmedQuery) {
+                matchesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🎬</div>
+                        <div class="empty-title">Search to find quotes</div>
+                        <div class="empty-text">Type in the search bar to discover memorable moments</div>
+                    </div>
+                `;
+                searchCount.classList.remove('visible');
+                resultsBadge.style.display = 'none';
                 return;
             }
 
-            const low = q.toLowerCase();
-            const m = quotes.filter(i =>
-                i.text.toLowerCase().includes(low) ||
-                (i.character||'').toLowerCase().includes(low) ||
-                (i.scene||'').toLowerCase().includes(low)
+            const lowerQuery = trimmedQuery.toLowerCase();
+            const matches = quotes.filter(q =>
+                q.text.toLowerCase().includes(lowerQuery) ||
+                (q.character && q.character.toLowerCase().includes(lowerQuery)) ||
+                (q.scene && q.scene.toLowerCase().includes(lowerQuery))
             );
 
-            if (!m.length) {
-                list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted);">No matches</div>';
+            // Update count
+            const count = matches.length;
+            searchCount.textContent = `${count} ${count === 1 ? 'result' : 'results'}`;
+            searchCount.classList.add('visible');
+            resultsBadge.textContent = count;
+            resultsBadge.style.display = 'inline-block';
+
+            if (count === 0) {
+                matchesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <div class="empty-title">No results found</div>
+                        <div class="empty-text">Try different keywords or phrases</div>
+                    </div>
+                `;
                 return;
             }
 
-            m.forEach(i => {
-                const d = document.createElement('div');
-                d.className = 'match-item';
-                const snip = i.text.length > 140 ? i.text.substring(0,137)+'…' : i.text;
-                d.innerHTML = `<div class="match-text">"${snip}"</div><div class="match-time">${formatTime(i.startTime)} – ${formatTime(i.endTime)}</div>`;
-                d.onclick = () => load(i, q, d);
-                list.appendChild(d);
+            // Render matches
+            matchesList.innerHTML = '';
+            matches.forEach(quote => {
+                const item = document.createElement('div');
+                item.className = 'match-item';
+
+                const preview = quote.text.length > 120
+                    ? quote.text.substring(0, 120) + '...'
+                    : quote.text;
+
+                // Build episode/season info
+                let episodeInfo = '';
+                if (quote.season && quote.episode) {
+                    episodeInfo = `<span class="match-episode">S${quote.season} · E${quote.episode}</span>`;
+                } else if (quote.episode) {
+                    episodeInfo = `<span class="match-episode">Ep ${quote.episode}</span>`;
+                }
+
+                // Build thumbnail
+                const thumbnailHtml = quote.thumbnailUrl
+                    ? `<div class="match-thumbnail">
+                         <img src="${quote.thumbnailUrl}" alt="Quote thumbnail" loading="lazy">
+                         <div class="match-thumbnail-overlay">${formatTime(quote.startTime)}</div>
+                       </div>`
+                    : `<div class="match-thumbnail">
+                         <div class="match-thumbnail-placeholder">🎬</div>
+                         <div class="match-thumbnail-overlay">${formatTime(quote.startTime)}</div>
+                       </div>`;
+
+                item.innerHTML = `
+                    ${thumbnailHtml}
+                    <div class="match-content">
+                        <div class="match-text">"${preview}"</div>
+                        <div class="match-meta">
+                            <div class="match-meta-row">
+                                <span class="match-time">${formatTime(quote.startTime)} – ${formatTime(quote.endTime)}</span>
+                                ${episodeInfo}
+                            </div>
+                            <div class="match-meta-row">
+                                ${quote.character ? `<span class="match-character">${quote.character}</span>` : '<span></span>'}
+                                <div class="match-actions">
+                                    <button class="action-icon" onclick="shareQuote(event, ${quote.id || 0})" title="Share quote">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="action-icon" onclick="copyTimestamp(event, ${quote.startTime})" title="Copy timestamp">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                item.onclick = (e) => {
+                    if (e.target.closest('.match-actions')) return;
+                    loadQuote(quote, trimmedQuery, item);
+                };
+                matchesList.appendChild(item);
             });
         }
 
-        search.addEventListener('input', e => render(e.target.value));
+        // Search input handler
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Check if episode filters exist (TV show)
+                const seasonFilter = document.getElementById('seasonFilter');
+                if (seasonFilter) {
+                    applyEpisodeFilter(); // Use combined filter for TV shows
+                } else {
+                    renderMatches(e.target.value); // Regular search for movies
+                }
+            }, 150);
+        });
 
+        // Initialize
         window.addEventListener('load', () => {
-            video.addEventListener('loadedmetadata', () => {
-                if (quotes.length > 0) load(quotes[0]);
+            const urlQuery = searchInput.value;
+            if (urlQuery) {
+                renderMatches(urlQuery);
+            }
+
+            // Initialize season/episode filters for TV shows
+            initializeEpisodeFilters();
+        });
+
+        // Initialize episode filters
+        function initializeEpisodeFilters() {
+            const seasonFilter = document.getElementById('seasonFilter');
+            const episodeFilter = document.getElementById('episodeFilter');
+
+            if (!seasonFilter || !episodeFilter) return; // Not a TV show
+
+            // Get unique seasons and episodes
+            const seasons = new Set();
+            const episodesBySeason = {};
+
+            quotes.forEach(q => {
+                if (q.season) {
+                    seasons.add(q.season);
+                    if (!episodesBySeason[q.season]) {
+                        episodesBySeason[q.season] = new Set();
+                    }
+                    if (q.episode) {
+                        episodesBySeason[q.season].add(q.episode);
+                    }
+                }
             });
-            if (currentQuery) {
-                search.value = currentQuery;
-                render(currentQuery);
+
+            // Populate season dropdown
+            Array.from(seasons).sort((a, b) => a - b).forEach(season => {
+                const option = document.createElement('option');
+                option.value = season;
+                option.textContent = `Season ${season}`;
+                seasonFilter.appendChild(option);
+            });
+
+            // Season filter change handler
+            seasonFilter.addEventListener('change', (e) => {
+                const selectedSeason = e.target.value;
+
+                // Clear episode filter
+                episodeFilter.innerHTML = '<option value="">All Episodes</option>';
+
+                if (selectedSeason) {
+                    // Populate episodes for selected season
+                    const episodes = Array.from(episodesBySeason[selectedSeason] || []);
+                    episodes.sort((a, b) => a - b).forEach(ep => {
+                        const option = document.createElement('option');
+                        option.value = ep;
+                        option.textContent = `Episode ${ep}`;
+                        episodeFilter.appendChild(option);
+                    });
+                    episodeFilter.disabled = false;
+                } else {
+                    episodeFilter.disabled = true;
+                }
+
+                // Trigger filter
+                applyEpisodeFilter();
+            });
+
+            // Episode filter change handler
+            episodeFilter.addEventListener('change', applyEpisodeFilter);
+
+            episodeFilter.disabled = true;
+        }
+
+        // Apply episode filtering
+        function applyEpisodeFilter() {
+            const seasonFilter = document.getElementById('seasonFilter');
+            const episodeFilter = document.getElementById('episodeFilter');
+            const searchQuery = searchInput.value;
+
+            if (!seasonFilter || !episodeFilter) return;
+
+            const selectedSeason = seasonFilter.value;
+            const selectedEpisode = episodeFilter.value;
+
+            // Filter quotes
+            let filtered = quotes;
+
+            if (selectedSeason) {
+                filtered = filtered.filter(q => q.season == selectedSeason);
+            }
+
+            if (selectedEpisode) {
+                filtered = filtered.filter(q => q.episode == selectedEpisode);
+            }
+
+            // If there's a search query, apply it too
+            if (searchQuery.trim()) {
+                const lowerQuery = searchQuery.toLowerCase();
+                filtered = filtered.filter(q =>
+                    q.text.toLowerCase().includes(lowerQuery) ||
+                    (q.character && q.character.toLowerCase().includes(lowerQuery)) ||
+                    (q.scene && q.scene.toLowerCase().includes(lowerQuery))
+                );
+            }
+
+            // Render filtered results
+            renderFilteredMatches(filtered, searchQuery);
+        }
+
+        // Render filtered matches
+        function renderFilteredMatches(filteredQuotes, highlightQuery = '') {
+            const count = filteredQuotes.length;
+
+            // Update count
+            if (highlightQuery) {
+                searchCount.textContent = `${count} ${count === 1 ? 'result' : 'results'}`;
+                searchCount.classList.add('visible');
+            } else {
+                searchCount.classList.remove('visible');
+            }
+
+            resultsBadge.textContent = count;
+            resultsBadge.style.display = 'inline-block';
+
+            if (count === 0) {
+                matchesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <div class="empty-title">No results found</div>
+                        <div class="empty-text">Try different filters or search terms</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render matches
+            matchesList.innerHTML = '';
+            filteredQuotes.forEach(quote => {
+                const item = document.createElement('div');
+                item.className = 'match-item';
+
+                const preview = quote.text.length > 120
+                    ? quote.text.substring(0, 120) + '...'
+                    : quote.text;
+
+                // Build episode/season info with middle dot
+                let episodeInfo = '';
+                if (quote.season && quote.episode) {
+                    episodeInfo = `<span class="match-episode">S${quote.season} · E${quote.episode}</span>`;
+                } else if (quote.episode) {
+                    episodeInfo = `<span class="match-episode">Ep ${quote.episode}</span>`;
+                }
+
+                // Build thumbnail
+                const thumbnailHtml = quote.thumbnailUrl
+                    ? `<div class="match-thumbnail">
+                         <img src="${quote.thumbnailUrl}" alt="Quote thumbnail" loading="lazy">
+                         <div class="match-thumbnail-overlay">${formatTime(quote.startTime)}</div>
+                       </div>`
+                    : `<div class="match-thumbnail">
+                         <div class="match-thumbnail-placeholder">🎬</div>
+                         <div class="match-thumbnail-overlay">${formatTime(quote.startTime)}</div>
+                       </div>`;
+
+                item.innerHTML = `
+                    ${thumbnailHtml}
+                    <div class="match-content">
+                        <div class="match-text">"${preview}"</div>
+                        <div class="match-meta">
+                            <div class="match-meta-row">
+                                <span class="match-time">${formatTime(quote.startTime)} – ${formatTime(quote.endTime)}</span>
+                                ${episodeInfo}
+                            </div>
+                            <div class="match-meta-row">
+                                ${quote.character ? `<span class="match-character">${quote.character}</span>` : '<span></span>'}
+                                <div class="match-actions">
+                                    <button class="action-icon" onclick="shareQuote(event, ${quote.id || 0})" title="Share quote">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="action-icon" onclick="copyTimestamp(event, ${quote.startTime})" title="Copy timestamp">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                item.onclick = (e) => {
+                    if (e.target.closest('.match-actions')) return;
+                    loadQuote(quote, highlightQuery, item);
+                };
+                matchesList.appendChild(item);
+            });
+        }
+
+        // Share quote
+        function shareQuote(event, quoteId) {
+            event.stopPropagation();
+            const url = `${window.location.origin}${window.location.pathname}?quote=${quoteId}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Check out this quote',
+                    url: url
+                }).catch(err => {
+                    if (err.name !== 'AbortError') {
+                        copyToClipboard(url);
+                    }
+                });
+            } else {
+                copyToClipboard(url);
+            }
+        }
+
+        // Copy timestamp
+        function copyTimestamp(event, time) {
+            event.stopPropagation();
+            copyToClipboard(formatTime(time));
+        }
+
+        // Copy to clipboard helper
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            toast.classList.add('visible');
+
+            setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 2000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '?') {
+                e.preventDefault();
+                const hint = document.getElementById('shortcutsHint');
+                hint.classList.toggle('visible');
+                return;
+            }
+
+            if (e.key === '/') {
+                e.preventDefault();
+                searchInput.focus();
+                return;
+            }
+
+            if (e.key === ' ' && document.activeElement !== searchInput) {
+                e.preventDefault();
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+                return;
+            }
+
+            if (document.activeElement !== searchInput) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    adjustTime(-5);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    adjustTime(5);
+                }
             }
         });
 
-        function adjustSync(d) {
-            if (!currentQuote) return;
-            video.currentTime += d;
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const filter = tab.dataset.filter;
+                console.log('Filter by:', filter);
+            });
+        });
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const view = btn.dataset.view;
+                console.log('View mode:', view);
+            });
+        });
+
+        const quoteArea = document.getElementById('quoteText');
+        const tooltip = document.getElementById('translationTooltip');
+        const transText = document.getElementById('translationText');
+
+        quoteArea.addEventListener('mouseup', function(e) {
+            const selectedText = window.getSelection().toString().trim();
+
+            // Only trigger if a word is actually selected
+            if (selectedText.length > 0) {
+                // Position the tooltip near the mouse cursor
+                tooltip.style.left = `${e.pageX}px`;
+                tooltip.style.top = `${e.pageY - 40}px`;
+                tooltip.style.display = 'block';
+
+                // Call your translation function
+                translateWord(selectedText);
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        // Close tooltip if clicking elsewhere
+        document.addEventListener('mousedown', (e) => {
+            if (!tooltip.contains(e.target)) tooltip.style.display = 'none';
+        });
+
+        async function translateWord(word) {
+            transText.innerText = "Searching...";
+
+            try {
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|uz`
+                );
+
+                const data = await response.json();
+
+                if (data?.responseData?.translatedText) {
+                    const translation = data.responseData.translatedText;
+
+                    transText.innerHTML = `
+                        <b style="color: var(--accent-orange);">${word}:</b>
+                        <span style="color: #fff;"> ${translation}</span>
+                    `;
+                } else {
+                    transText.innerHTML = "Tarjima topilmadi (Translation not found).";
+                }
+            } catch (err) {
+                console.error(err);
+                transText.innerHTML = "Aloqa xatosi (Connection error).";
+            }
         }
+
     </script>
 </body>
 </html>
