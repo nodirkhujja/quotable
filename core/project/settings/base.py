@@ -14,6 +14,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "clips",
+    "users",
+    "learning",
 ]
 
 MIDDLEWARE = [
@@ -24,9 +26,12 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Vocabulary onboarding gate — must come after AuthenticationMiddleware
+    "learning.middleware.OnboardingGateMiddleware",
 ]
 
 ROOT_URLCONF = "core.project.urls"
+
 
 TEMPLATES = [
     {
@@ -93,6 +98,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+from pathlib import Path as _Path
+
+STATICFILES_DIRS = [_Path(__file__).resolve().parent.parent.parent.parent / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

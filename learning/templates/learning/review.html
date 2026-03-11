@@ -1,0 +1,780 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review — Quotable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0d0d0d;
+            --bg-elevated: #161616;
+            --bg-card: #1a1a1a;
+            --border-subtle: #2a2a2a;
+            --border-focus: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+            --text-tertiary: #6b6b6b;
+            --accent: #10b981;
+            --accent-hover: #34d399;
+            --accent-dim: rgba(16,185,129,0.12);
+            --accent-glow: rgba(16,185,129,0.25);
+            --red: #ef4444;
+            --red-dim: rgba(239,68,68,0.12);
+            --indigo: #6366f1;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        .nav {
+            position: sticky; top: 0; z-index: 100; height: 56px;
+            display: flex; align-items: center; padding: 0 24px;
+            background: rgba(13,13,13,0.92); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-back {
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none; display: flex; align-items: center; gap: 6px;
+            transition: color 0.15s;
+        }
+        .nav-back:hover { color: var(--text-primary); }
+        .nav-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+        .nav-title {
+            flex: 1; text-align: center; font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .nav-title span { color: var(--accent); }
+        .nav-spacer { width: 80px; }
+
+        /* ── MAIN STAGE ── */
+        .stage {
+            max-width: 440px; margin: 0 auto; padding: 32px 20px 80px;
+        }
+
+        /* ── PROGRESS DOTS ── */
+        .rv-dots {
+            display: flex; justify-content: center; gap: 8px; margin-bottom: 28px;
+        }
+        .rv-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--border-subtle); transition: all 0.3s;
+        }
+        .rv-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+        .rv-dot.correct { background: var(--accent); }
+        .rv-dot.wrong { background: var(--red); }
+
+        /* ── CARD ── */
+        .rv-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md);
+            transition: opacity 0.25s, transform 0.25s;
+        }
+        .rv-card.fade-out { opacity: 0; transform: translateY(8px); }
+
+        /* Video */
+        .rv-video-wrap {
+            position: relative; width: 100%; aspect-ratio: 16/9; background: #000;
+        }
+        .rv-video-wrap video {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        /* Source label on video */
+        .rv-source-label {
+            position: absolute; bottom: 8px; left: 10px;
+            font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6);
+            background: rgba(0,0,0,0.55); padding: 2px 8px; border-radius: 6px;
+            pointer-events: none;
+        }
+
+        /* Cloze body */
+        .rv-body { padding: 24px; }
+
+        .rv-cloze-text {
+            font-size: 18px; font-weight: 500; line-height: 1.6;
+            text-align: center; margin-bottom: 16px; min-height: 54px;
+        }
+        .rv-blank {
+            display: inline-block; border-bottom: 2px dashed var(--accent);
+            min-width: 60px; padding: 0 4px; color: transparent;
+            font-family: 'JetBrains Mono', monospace; letter-spacing: 2px;
+        }
+        .rv-blank.revealed {
+            color: var(--accent); border-bottom-style: solid;
+            animation: revealPulse 0.4s ease;
+        }
+        .rv-blank.wrong-reveal {
+            color: var(--red); border-bottom-color: var(--red); border-bottom-style: solid;
+        }
+
+        @keyframes revealPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .rv-hint {
+            text-align: center; font-size: 12px; color: var(--text-tertiary);
+            margin-bottom: 20px;
+        }
+        .rv-hint em { font-style: normal; color: var(--text-secondary); }
+
+        /* Input area */
+        .rv-input-row {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .rv-input {
+            flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+            border-radius: 10px; padding: 12px 16px; font-size: 16px;
+            color: var(--text-primary); font-family: 'JetBrains Mono', monospace;
+            outline: none; transition: border-color 0.2s;
+        }
+        .rv-input:focus { border-color: var(--accent); }
+        .rv-input.correct { border-color: var(--accent); background: rgba(16,185,129,0.06); }
+        .rv-input.wrong { border-color: var(--red); background: rgba(239,68,68,0.06); }
+        .rv-input::placeholder { color: var(--text-tertiary); }
+
+        .rv-check-btn {
+            background: var(--accent); color: #fff; border: none; border-radius: 10px;
+            padding: 12px 20px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+        }
+        .rv-check-btn:hover { opacity: 0.85; }
+        .rv-check-btn:disabled { opacity: 0.4; cursor: default; }
+
+        /* Skip link */
+        .rv-skip-btn {
+            display: inline-block; margin-top: 12px;
+            font-size: 12px; color: var(--text-tertiary); cursor: pointer;
+            background: none; border: none; transition: color 0.15s;
+        }
+        .rv-skip-btn:hover { color: var(--text-secondary); }
+
+        /* Feedback */
+        .rv-feedback {
+            margin-top: 16px; padding: 12px 16px; border-radius: 10px;
+            font-size: 14px; font-weight: 500; text-align: center;
+            display: none;
+        }
+        .rv-feedback.correct {
+            display: block; background: var(--accent-dim); color: var(--accent);
+        }
+        .rv-feedback.wrong {
+            display: block; background: var(--red-dim); color: var(--red);
+        }
+
+        .rv-word-info {
+            margin-top: 12px; text-align: center; font-size: 13px;
+            color: var(--text-secondary); display: none;
+        }
+        .rv-word-info.visible { display: block; }
+        .rv-word-info .word-tag {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            background: rgba(99,102,241,0.12); color: var(--indigo);
+            font-size: 12px; font-weight: 600; margin-top: 6px;
+        }
+
+        /* Next button */
+        .rv-next-btn {
+            display: none; width: 100%; margin-top: 16px; padding: 14px;
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+            border-radius: 10px; color: var(--text-primary); font-size: 14px;
+            font-weight: 600; cursor: pointer; transition: border-color 0.15s;
+        }
+        .rv-next-btn:hover { border-color: var(--accent); }
+        .rv-next-btn.visible { display: block; }
+
+        /* ── EMPTY STATE ── */
+        .rv-empty {
+            text-align: center; padding: 80px 20px;
+        }
+        .rv-empty-icon {
+            width: 64px; height: 64px; margin: 0 auto 20px;
+            background: var(--accent-dim); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .rv-empty-icon svg { width: 28px; height: 28px; stroke: var(--accent); fill: none; }
+        .rv-empty h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .rv-empty p { font-size: 14px; color: var(--text-secondary); max-width: 300px; margin: 0 auto 24px; }
+        .rv-empty a {
+            display: inline-block; padding: 10px 24px; background: var(--accent);
+            color: #fff; border-radius: 10px; text-decoration: none;
+            font-size: 14px; font-weight: 600;
+        }
+
+        /* ── SUMMARY ── */
+        .rv-summary {
+            text-align: center; padding: 40px 20px; display: none;
+        }
+        .rv-summary.visible { display: block; }
+        .rv-summary h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .rv-summary .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+
+        .rv-stats {
+            display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;
+        }
+        .rv-stat-val {
+            font-size: 28px; font-weight: 700; display: block;
+        }
+        .rv-stat-val.green { color: var(--accent); }
+        .rv-stat-label {
+            font-size: 12px; color: var(--text-tertiary); margin-top: 2px;
+        }
+
+        .rv-summary-btns {
+            display: flex; gap: 10px; justify-content: center;
+        }
+        .rv-summary-btn {
+            padding: 12px 24px; border-radius: 10px; font-size: 14px;
+            font-weight: 600; text-decoration: none; cursor: pointer;
+            border: 1px solid var(--border-subtle); background: var(--bg-elevated);
+            color: var(--text-primary); transition: border-color 0.15s;
+        }
+        .rv-summary-btn:hover { border-color: var(--accent); }
+        .rv-summary-btn.primary {
+            background: var(--accent); border-color: var(--accent); color: #fff;
+        }
+
+        /* Replay + controls row */
+        .rv-controls-row {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 14px;
+        }
+        .rv-ctrl-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px;
+            background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+            border-radius: 8px; color: var(--text-secondary); font-size: 12px;
+            font-weight: 500; cursor: pointer; transition: border-color 0.15s;
+        }
+        .rv-ctrl-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+        .rv-ctrl-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+        .rv-ctrl-btn kbd {
+            font-family: 'DM Sans', sans-serif; font-size: 10px;
+            padding: 1px 5px; border-radius: 3px;
+            background: var(--border-subtle); color: var(--text-tertiary);
+        }
+
+        @media (max-width: 480px) {
+            .stage { padding: 20px 16px 60px; }
+            .rv-cloze-text { font-size: 16px; }
+            .rv-input { font-size: 15px; padding: 10px 14px; }
+            .rv-ctrl-btn kbd { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'learning:practice' %}" class="nav-back">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Practice
+    </a>
+    <div class="nav-title" id="navTitle">
+        Review <span id="navCounter"></span>
+    </div>
+    <div class="nav-spacer"></div>
+</nav>
+
+{% if not words %}
+<div class="stage">
+    <div class="rv-empty">
+        <div class="rv-empty-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+        </div>
+        <h2>No words to review</h2>
+        <p>Save some words while watching, then come back to test yourself.</p>
+        <a href="{% url 'learning:word_note_list' %}">Go to My Words</a>
+    </div>
+</div>
+{% else %}
+
+<!-- Hidden data store -->
+<div id="wordData" style="display:none;">
+    {% for note in words %}
+    <div class="rv-word"
+         data-id="{{ note.id }}"
+         data-word="{{ note.word }}"
+         data-pos="{{ note.pos }}"
+         data-definition="{{ note.definition }}"
+         data-translation="{{ note.translation }}"
+         data-video-url="{{ note.video_url }}"
+         data-start-time="{{ note.video_start }}"
+         data-end-time="{{ note.video_end }}"
+         data-quote-text="{{ note.context_text|default:'' }}"
+         data-source-title="{{ note.context_source.title|default:'' }}"
+         data-confidence="{{ note.confidence|default:0 }}"
+         data-stage="{{ note.stage }}">
+    </div>
+    {% endfor %}
+</div>
+
+<div class="stage" id="mainStage">
+    <div class="rv-dots" id="rvDots"></div>
+
+    <div class="rv-card" id="rvCard">
+        <div class="rv-video-wrap">
+            <video id="rvVideo" playsinline preload="auto"></video>
+            <div class="rv-source-label" id="rvSource"></div>
+        </div>
+        <div class="rv-body">
+            <div class="rv-cloze-text" id="rvCloze"></div>
+            <div class="rv-hint" id="rvHint"></div>
+            <div class="rv-input-row" id="rvInputRow">
+                <input type="text" class="rv-input" id="rvInput" placeholder="Type the missing word..." autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button class="rv-check-btn" id="rvCheckBtn">Check</button>
+            </div>
+            <button class="rv-skip-btn" id="rvSkipBtn">Skip this word</button>
+            <div class="rv-feedback" id="rvFeedback"></div>
+            <div class="rv-word-info" id="rvWordInfo"></div>
+            <div class="rv-controls-row">
+                <button class="rv-ctrl-btn" id="rvReplay">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                    </svg>
+                    Replay <kbd>R</kbd>
+                </button>
+            </div>
+            <button class="rv-next-btn" id="rvNextBtn">Next</button>
+        </div>
+    </div>
+</div>
+
+<div class="stage rv-summary" id="rvSummary">
+    <h2 id="summaryTitle"></h2>
+    <p class="sub" id="summarySub"></p>
+    <div class="rv-stats" id="summaryStats"></div>
+    <div class="rv-summary-btns">
+        <button class="rv-summary-btn" onclick="location.reload()">Review again</button>
+        <a href="{% url 'learning:practice' %}" class="rv-summary-btn primary">Practice hub</a>
+    </div>
+</div>
+
+<script>
+(function() {
+    const BATCH = 10;
+    const POS_MAP = {v:'verb', n:'noun', adj:'adjective', adv:'adverb', phr:'phrase', other:'word'};
+    const CSRF = '{{ csrf_token }}';
+
+    // ── Audio feedback ──
+    let audioCtx = null;
+    function getAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+    function playTone(freq, freq2, dur, type, vol) {
+        try {
+            const ctx = getAudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            if (freq2) osc.frequency.linearRampToValueAtTime(freq2, ctx.currentTime + dur * 0.6);
+            gain.gain.setValueAtTime(vol || 0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + dur);
+        } catch(e) {}
+    }
+    function sfxCorrect() { playTone(523,0,0.12,'sine',0.1); setTimeout(()=>playTone(659,0,0.2,'sine',0.1),100); }
+    function sfxWrong() { playTone(220,196,0.35,'triangle',0.08); }
+
+    // ── Collect word data ──
+    const els = document.querySelectorAll('#wordData .rv-word');
+    let allWords = [];
+    els.forEach(el => {
+        const qt = el.dataset.quoteText || '';
+        const w = el.dataset.word || '';
+        if (!qt || !w) return;
+        if (!qt.toLowerCase().includes(w.toLowerCase())) return;
+        allWords.push({
+            id: parseInt(el.dataset.id),
+            word: w,
+            pos: el.dataset.pos || '',
+            definition: el.dataset.definition || '',
+            translation: el.dataset.translation || '',
+            videoUrl: el.dataset.videoUrl || '',
+            startTime: parseFloat(el.dataset.startTime) || 0,
+            endTime: parseFloat(el.dataset.endTime) || 0,
+            quoteText: qt,
+            sourceTitle: el.dataset.sourceTitle || '',
+            confidence: parseInt(el.dataset.confidence) || 0,
+            stage: el.dataset.stage || 'learning',
+        });
+    });
+
+    // Shuffle and pick batch
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    let queue = shuffle(allWords).slice(0, BATCH);
+    let currentIdx = 0;
+    let results = []; // {word, correct, userAnswer}
+    let answered = false;
+    let currentVideoUrl = ''; // track to avoid reloading same video file
+    let sessionId = null;
+    let sessionStarted = false;
+
+    // ── Start backend session (called on first answer, not page load) ──
+    function ensureSession() {
+        if (sessionStarted) return;
+        sessionStarted = true;
+        fetch('/learning/session/start/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ session_type: 'cloze' }),
+        }).then(r => r.json()).then(d => { sessionId = d.session_id; }).catch(() => {});
+    }
+
+    const video = document.getElementById('rvVideo');
+    const cardEl = document.getElementById('rvCard');
+    const clozeEl = document.getElementById('rvCloze');
+    const hintEl = document.getElementById('rvHint');
+    const sourceEl = document.getElementById('rvSource');
+    const inputEl = document.getElementById('rvInput');
+    const checkBtn = document.getElementById('rvCheckBtn');
+    const skipBtn = document.getElementById('rvSkipBtn');
+    const feedbackEl = document.getElementById('rvFeedback');
+    const wordInfoEl = document.getElementById('rvWordInfo');
+    const nextBtn = document.getElementById('rvNextBtn');
+    const replayBtn = document.getElementById('rvReplay');
+    const dotsEl = document.getElementById('rvDots');
+    const navCounter = document.getElementById('navCounter');
+    const mainStage = document.getElementById('mainStage');
+    const summaryEl = document.getElementById('rvSummary');
+
+    if (queue.length === 0) return;
+
+    // ── Build dots ──
+    function buildDots() {
+        dotsEl.innerHTML = '';
+        queue.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'rv-dot' + (i === currentIdx ? ' active' : '');
+            dotsEl.appendChild(d);
+        });
+    }
+
+    function updateDots() {
+        const dots = dotsEl.children;
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].className = 'rv-dot';
+            if (i === currentIdx) dots[i].classList.add('active');
+            if (results[i]) {
+                dots[i].classList.add(results[i].correct ? 'correct' : 'wrong');
+            }
+        }
+    }
+
+    // ── Blank the word in the sentence ──
+    function blankWord(sentence, word) {
+        const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        const blank = '<span class="rv-blank" id="rvBlank">' + '_'.repeat(word.length) + '</span>';
+        const result = sentence.replace(regex, blank);
+        if (result === sentence) {
+            const idx = sentence.toLowerCase().indexOf(word.toLowerCase());
+            if (idx >= 0) {
+                return sentence.substring(0, idx) + blank + sentence.substring(idx + word.length);
+            }
+        }
+        return result;
+    }
+
+    // ── Render a cloze card ──
+    function renderCloze(item) {
+        answered = false;
+
+        // Fade-in transition
+        cardEl.classList.add('fade-out');
+        setTimeout(() => {
+            // Nav
+            navCounter.textContent = `\u00b7 ${currentIdx + 1}/${queue.length}`;
+
+            // Video — only reload if different file
+            if (item.videoUrl && item.videoUrl !== currentVideoUrl) {
+                video.src = item.videoUrl;
+                currentVideoUrl = item.videoUrl;
+            }
+            if (item.videoUrl) {
+                video.currentTime = item.startTime;
+                video.play().catch(() => {});
+            }
+
+            // Source label
+            sourceEl.textContent = item.sourceTitle || '';
+
+            // Cloze text
+            clozeEl.innerHTML = blankWord(item.quoteText, item.word);
+
+            // Hint: pos + letter count + first letter
+            const posLabel = POS_MAP[item.pos] || item.pos || 'word';
+            const firstLetter = item.word.charAt(0).toUpperCase();
+            hintEl.innerHTML = `<em>${posLabel}</em> \u00b7 ${item.word.length} letters \u00b7 starts with "${firstLetter}"`;
+
+            // Reset input
+            inputEl.value = '';
+            inputEl.className = 'rv-input';
+            inputEl.disabled = false;
+
+            // Reset buttons & feedback
+            checkBtn.disabled = false;
+            skipBtn.style.display = '';
+            feedbackEl.className = 'rv-feedback';
+            feedbackEl.textContent = '';
+            wordInfoEl.className = 'rv-word-info';
+            nextBtn.className = 'rv-next-btn';
+
+            // Fade in
+            cardEl.classList.remove('fade-out');
+            updateDots();
+
+            // Focus input after animation
+            setTimeout(() => inputEl.focus(), 60);
+        }, currentIdx === 0 ? 0 : 250); // no delay on first card
+    }
+
+    // ── Video timeupdate — pause at endTime ──
+    function onTimeUpdate() {
+        const item = queue[currentIdx];
+        if (!item) return;
+        if (video.currentTime >= item.endTime) {
+            video.pause();
+        }
+    }
+    video.addEventListener('timeupdate', onTimeUpdate);
+
+    // ── Check answer ──
+    function checkAnswer() {
+        if (answered) return;
+        const item = queue[currentIdx];
+        const userAnswer = inputEl.value.trim();
+        if (!userAnswer) { inputEl.focus(); return; }
+        ensureSession();
+
+        answered = true;
+        const correct = userAnswer.toLowerCase() === item.word.toLowerCase();
+
+        results[currentIdx] = { word: item.word, correct, userAnswer };
+
+        // Visual + audio feedback
+        const blank = document.getElementById('rvBlank');
+        if (correct) {
+            sfxCorrect();
+            inputEl.className = 'rv-input correct';
+            feedbackEl.className = 'rv-feedback correct';
+            feedbackEl.textContent = 'Correct!';
+            if (blank) {
+                blank.textContent = item.word;
+                blank.className = 'rv-blank revealed';
+            }
+        } else {
+            sfxWrong();
+            inputEl.className = 'rv-input wrong';
+            feedbackEl.className = 'rv-feedback wrong';
+            feedbackEl.innerHTML = `Not quite \u2014 the word is <strong>${item.word}</strong>`;
+            if (blank) {
+                blank.textContent = item.word;
+                blank.className = 'rv-blank wrong-reveal';
+            }
+        }
+
+        // Show word info
+        let infoHtml = '';
+        if (item.definition) infoHtml += `<div>${item.definition}</div>`;
+        if (item.translation) infoHtml += `<span class="word-tag">${item.word} \u2014 ${item.translation}</span>`;
+        if (infoHtml) {
+            wordInfoEl.innerHTML = infoHtml;
+            wordInfoEl.className = 'rv-word-info visible';
+        }
+
+        inputEl.disabled = true;
+        checkBtn.disabled = true;
+        skipBtn.style.display = 'none';
+        nextBtn.className = 'rv-next-btn visible';
+        nextBtn.textContent = currentIdx < queue.length - 1 ? 'Next' : 'See results';
+
+        updateDots();
+        updateConfidence(item.id, correct, item.confidence, item.stage);
+    }
+
+    // ── Skip (counts as wrong, reveals answer) ──
+    function skipWord() {
+        if (answered) return;
+        const item = queue[currentIdx];
+        answered = true;
+        ensureSession();
+        sfxWrong();
+        results[currentIdx] = { word: item.word, correct: false, userAnswer: '(skipped)' };
+
+        const blank = document.getElementById('rvBlank');
+        feedbackEl.className = 'rv-feedback wrong';
+        feedbackEl.innerHTML = `Skipped \u2014 the word is <strong>${item.word}</strong>`;
+        if (blank) {
+            blank.textContent = item.word;
+            blank.className = 'rv-blank wrong-reveal';
+        }
+
+        let infoHtml = '';
+        if (item.definition) infoHtml += `<div>${item.definition}</div>`;
+        if (item.translation) infoHtml += `<span class="word-tag">${item.word} \u2014 ${item.translation}</span>`;
+        if (infoHtml) {
+            wordInfoEl.innerHTML = infoHtml;
+            wordInfoEl.className = 'rv-word-info visible';
+        }
+
+        inputEl.disabled = true;
+        checkBtn.disabled = true;
+        skipBtn.style.display = 'none';
+        nextBtn.className = 'rv-next-btn visible';
+        nextBtn.textContent = currentIdx < queue.length - 1 ? 'Next' : 'See results';
+
+        updateDots();
+        updateConfidence(item.id, false, item.confidence, item.stage);
+    }
+
+    // ── Update confidence via PATCH ──
+    function updateConfidence(noteId, correct, currentConf, currentStage) {
+        let newConf = correct
+            ? Math.min(100, currentConf + 15)
+            : Math.max(0, currentConf - 10);
+
+        const body = { confidence: newConf };
+
+        if (newConf >= 80 && currentStage === 'learning') {
+            body.stage = 'mastered';
+        }
+
+        fetch(`/learning/words/${noteId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF,
+            },
+            body: JSON.stringify(body),
+        }).catch(() => {});
+    }
+
+    // ── Next word ──
+    function nextWord() {
+        currentIdx++;
+        if (currentIdx >= queue.length) {
+            showSummary();
+        } else {
+            renderCloze(queue[currentIdx]);
+        }
+    }
+
+    // ── Replay clip ──
+    function replayClip() {
+        const item = queue[currentIdx];
+        if (!item || !item.videoUrl) return;
+        video.currentTime = item.startTime;
+        video.play().catch(() => {});
+    }
+
+    // ── End backend session ──
+    function endSession() {
+        if (!sessionId) return;
+        const correct = results.filter(r => r.correct).length;
+        fetch('/learning/session/end/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({
+                session_id: sessionId,
+                total: results.length,
+                correct: correct,
+                score: 0,
+                best_combo: 0,
+            }),
+        }).catch(() => {});
+    }
+
+    // ── Summary ──
+    function showSummary() {
+        video.pause();
+        endSession();
+        mainStage.style.display = 'none';
+        summaryEl.className = 'stage rv-summary visible';
+
+        const total = results.length;
+        const correct = results.filter(r => r.correct).length;
+        const skipped = results.filter(r => r.userAnswer === '(skipped)').length;
+        const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+        const title = pct === 100 ? 'Perfect!' : pct >= 80 ? 'Great recall!' : pct >= 60 ? 'Nice work!' : 'Keep practicing!';
+        document.getElementById('summaryTitle').textContent = title;
+
+        let subText = `You got ${correct} out of ${total} words right`;
+        if (skipped > 0) subText += ` (${skipped} skipped)`;
+        document.getElementById('summarySub').textContent = subText;
+
+        document.getElementById('summaryStats').innerHTML = `
+            <div>
+                <span class="rv-stat-val green">${correct}/${total}</span>
+                <span class="rv-stat-label">Correct</span>
+            </div>
+            <div>
+                <span class="rv-stat-val">${pct}%</span>
+                <span class="rv-stat-label">Accuracy</span>
+            </div>
+        `;
+    }
+
+    // ── Event listeners ──
+    checkBtn.addEventListener('click', checkAnswer);
+    skipBtn.addEventListener('click', skipWord);
+    inputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            if (answered) nextWord();
+            else checkAnswer();
+        }
+    });
+    nextBtn.addEventListener('click', nextWord);
+    replayBtn.addEventListener('click', replayClip);
+
+    // Keyboard shortcut: R to replay (only when input not focused or already answered)
+    document.addEventListener('keydown', e => {
+        if (e.key === 'r' || e.key === 'R') {
+            if (answered || document.activeElement !== inputEl) {
+                e.preventDefault();
+                replayClip();
+            }
+        }
+    });
+
+    // ── Init ──
+    buildDots();
+    renderCloze(queue[0]);
+})();
+</script>
+{% endif %}
+
+</body>
+</html>

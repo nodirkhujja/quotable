@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import Episode, Quote, Source
+from .models import Episode, Quote, SceneBlock, Source, Transcript
+
+admin.site.register(Transcript)
 
 
 @admin.register(Source)
@@ -35,3 +37,11 @@ class QuoteAdmin(admin.ModelAdmin):
 
     def source_title(self, obj):
         return obj.source.title
+
+
+@admin.register(SceneBlock)
+class SceneBlockAdmin(admin.ModelAdmin):
+    list_display = ("source", "episode", "start_time", "end_time", "thumbnail")
+    list_filter = ("source", "episode")
+    search_fields = ("source__title",)
+    readonly_fields = ("thumbnail",)

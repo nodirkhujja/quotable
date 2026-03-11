@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0a0a0a;
+            --bg-2:    #111111;
+            --bg-3:    #1a1a1a;
+            --border:  #1f1f1f;
+            --border-2:#2e2e2e;
+            --text:    #ffffff;
+            --text-2:  #a3a3a3;
+            --text-3:  #525252;
+            --accent:  #ff6b35;
+            --amber:   #f59e0b;
+            --emerald: #10b981;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:56px;
+            display:flex; align-items:center; padding:0 24px; gap:16px;
+            background:rgba(10,10,10,0.92); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .back-btn {
+            display:flex; align-items:center; justify-content:center;
+            width:34px; height:34px; border-radius:8px;
+            background:var(--bg-3); border:none; cursor:pointer;
+            color:var(--text-2); transition:color .15s, background .15s;
+            text-decoration:none;
+        }
+        .back-btn:hover { color:var(--text); background:var(--border-2); }
+        .back-btn svg { width:18px; height:18px; stroke:currentColor; fill:none; }
+        .nav-title { font-size:15px; font-weight:600; }
+        .nav-sub { font-size:12px; color:var(--text-3); margin-left:auto; }
+
+        /* ── PAGE ── */
+        .page { max-width:600px; margin:0 auto; padding:40px 24px 80px; }
+        .page-header { margin-bottom:32px; }
+        .page-title { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+        .page-sub { font-size:13.5px; color:var(--text-2); }
+
+        /* ── PROGRESS BAR ── */
+        .progress-strip {
+            display:flex; align-items:center; gap:12px;
+            margin-bottom:28px;
+        }
+        .progress-bar-bg {
+            flex:1; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden;
+        }
+        .progress-bar-fill {
+            height:100%; background:var(--amber); border-radius:3px;
+            transition:width .4s ease;
+        }
+        .progress-label {
+            font-size:12px; color:var(--text-3); font-weight:600;
+            white-space:nowrap;
+        }
+
+        /* ── UNIT CARDS ── */
+        .unit-list { display:flex; flex-direction:column; gap:10px; }
+
+        .unit-card {
+            display:flex; align-items:center; gap:16px;
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:18px 20px;
+            text-decoration:none;
+            color:var(--text);
+            transition:border-color .15s, transform .1s, opacity .15s;
+            cursor:pointer;
+        }
+        .unit-card:hover {
+            border-color:var(--amber);
+            transform:translateY(-1px);
+        }
+        .unit-card.locked {
+            opacity:0.35;
+            pointer-events:none;
+        }
+        .unit-card.completed {
+            border-color:rgba(16,185,129,0.3);
+        }
+
+        .unit-num {
+            width:40px; height:40px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius:10px;
+            font-size:15px; font-weight:700;
+            flex-shrink:0;
+            background:rgba(245,158,11,0.1);
+            color:var(--amber);
+        }
+        .unit-card.completed .unit-num {
+            background:rgba(16,185,129,0.12);
+            color:var(--emerald);
+        }
+        .unit-card.locked .unit-num {
+            background:var(--bg-3);
+            color:var(--text-3);
+        }
+
+        .unit-body { flex:1; min-width:0; }
+        .unit-title { font-size:14.5px; font-weight:600; margin-bottom:2px; }
+        .unit-desc { font-size:12px; color:var(--text-2); line-height:1.4; }
+
+        .unit-status {
+            flex-shrink:0;
+            width:28px; height:28px;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .unit-status svg { width:18px; height:18px; stroke:currentColor; fill:none; }
+
+        .unit-check { color:var(--emerald); }
+        .unit-lock { color:var(--text-3); }
+        .unit-arrow { color:var(--text-3); }
+
+        @media (max-width:600px) {
+            .nav { padding:0 16px; }
+            .page { padding:28px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'learning:practice' %}" class="back-btn">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+    </a>
+    <span class="nav-title">Grammar</span>
+    <span class="nav-sub" id="navProgress"></span>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <div class="page-title">Grammar</div>
+        <p class="page-sub">8 essential rules for everyday English</p>
+    </div>
+
+    <div class="progress-strip">
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <span class="progress-label" id="progressLabel">0/8</span>
+    </div>
+
+    <div class="unit-list" id="unitList"></div>
+</div>
+
+<script>
+const UNITS = [
+    { id:1, title:"Present Simple",        desc:"Habits, routines & facts" },
+    { id:2, title:"Present Continuous",     desc:"What's happening right now" },
+    { id:3, title:"Past Simple",            desc:"Finished actions & stories" },
+    { id:4, title:"Future (will / going to)", desc:"Plans, promises & predictions" },
+    { id:5, title:"Articles (a / the / \u2205)", desc:"When to use a, the, or nothing" },
+    { id:6, title:"Prepositions (in/on/at)", desc:"Time & place words" },
+    { id:7, title:"Modal Verbs",            desc:"Can, should, must, have to" },
+    { id:8, title:"Conditionals",           desc:"If-clauses & what-if scenarios" },
+];
+
+const STORAGE_KEY = 'grammar_progress';
+
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { completed: [] };
+        return JSON.parse(raw);
+    } catch { return { completed: [] }; }
+}
+
+function isUnlocked(unitId, completed) {
+    if (unitId <= 1) return true;
+    return completed.includes(unitId - 1);
+}
+
+function render() {
+    const progress = loadProgress();
+    const completed = progress.completed || [];
+    const list = document.getElementById('unitList');
+    list.innerHTML = '';
+
+    UNITS.forEach(u => {
+        const done = completed.includes(u.id);
+        const unlocked = isUnlocked(u.id, completed);
+
+        const a = document.createElement('a');
+        a.className = 'unit-card' + (done ? ' completed' : '') + (!unlocked && !done ? ' locked' : '');
+        a.href = unlocked || done ? `/learning/grammar/${u.id}/` : '#';
+
+        let statusIcon;
+        if (done) {
+            statusIcon = `<div class="unit-status unit-check"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+        } else if (!unlocked) {
+            statusIcon = `<div class="unit-status unit-lock"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>`;
+        } else {
+            statusIcon = `<div class="unit-status unit-arrow"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+        }
+
+        a.innerHTML = `
+            <div class="unit-num">${done ? '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : u.id}</div>
+            <div class="unit-body">
+                <div class="unit-title">${u.title}</div>
+                <div class="unit-desc">${u.desc}</div>
+            </div>
+            ${statusIcon}
+        `;
+        list.appendChild(a);
+    });
+
+    // Progress bar
+    const pct = Math.round((completed.length / 8) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = completed.length + '/8';
+    document.getElementById('navProgress').textContent = completed.length + '/8 completed';
+}
+
+render();
+</script>
+
+</body>
+</html>

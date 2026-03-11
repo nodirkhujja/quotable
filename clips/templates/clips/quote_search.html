@@ -52,7 +52,7 @@
             height: 64px;
             display: flex;
             align-items: center;
-            gap: 32px;
+            gap: 16px;
         }
 
         .logo {
@@ -70,8 +70,9 @@
 
         .search-wrapper {
             flex: 1;
-            max-width: 600px;
+            max-width: 500px;
             position: relative;
+            margin: 0 auto;
         }
 
         .search-input {
@@ -128,7 +129,7 @@
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            padding: 16px 20px 20px 20px;;
+            padding: 22px 20px 20px 20px;;
         }
 
         .grid {
@@ -152,6 +153,116 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: var(--shadow-lg);
+        }
+
+                /* Subtitle toggle button */
+        .subtitle-toggle {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 5;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle-toggle:hover {
+            background: rgba(0,0,0,0.9);
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+        }
+
+        /* On-video subtitle */
+        .video-subtitle {
+            position: absolute;
+            bottom: 44px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border-radius: 6px;
+            max-width: 80%;
+            text-align: center;
+            line-height: 1.5;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Under-video subtitle bar */
+        .under-subtitle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .under-subtitle-character {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .under-subtitle-text {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .under-subtitle-text.empty {
+            color: var(--text-tertiary);
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* Word flash overlay */
+        .word-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            background: rgba(0,0,0,0.55);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .word-flash.visible {
+            opacity: 1;
+        }
+
+        .word-flash-word {
+            font-size: 42px;
+            font-weight: 700;
+            color: #ffd700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .word-flash-def {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 400;
         }
 
         .loading-overlay {
@@ -294,7 +405,7 @@
 
         .highlighted-word {
             background: var(--highlight-bg);
-            color: var(--highlight-text);
+            color: var(--text-primary);
             padding: 2px 6px;
             border-radius: 4px;
             font-weight: 600;
@@ -883,6 +994,89 @@
             >
             <span class="search-count" id="searchCount"></span>
         </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+            <a href="/learning/words/" style="
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 20px;
+                border: 1px solid var(--border-subtle);
+                color: var(--text-secondary);
+                text-decoration: none;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            " onmouseover="this.style.borderColor='var(--accent-orange)';this.style.color='var(--accent-orange)'"
+            onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'"
+            title="My Word Notebook">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+            </a>
+
+            <a href="/learning/favorites/" style="
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 20px;
+                border: 1px solid var(--border-subtle);
+                color: var(--text-secondary);
+                text-decoration: none;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            " onmouseover="this.style.borderColor='var(--accent-orange)';this.style.color='var(--accent-orange)'"
+            onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'"
+            title="My Favorites">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+            </a>
+
+            <!-- Review Queue -->
+            <a href="/learning/review/queue/" style="
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 20px;
+                border: 1px solid var(--border-subtle);
+                color: var(--text-secondary);
+                text-decoration: none;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            " onmouseover="this.style.borderColor='var(--accent-orange)';this.style.color='var(--accent-orange)'"
+            onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'"
+            title="Review Queue">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </a>
+
+            <!-- Profile -->
+            <a href="/users/profile/" style="
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 20px;
+                border: 1px solid var(--border-subtle);
+                color: var(--text-secondary);
+                text-decoration: none;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            " onmouseover="this.style.borderColor='var(--accent-orange)';this.style.color='var(--accent-orange)'"
+            onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-secondary)'"
+            title="Profile">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            </a>
+        </div>
     </nav>
 
     <!-- Main Content -->
@@ -892,20 +1086,22 @@
             <div class="video-section">
                 <!-- Video Player -->
                 <div class="player-container">
-                    {% if video_url %}
-                        <video id="videoPlayer" controls preload="metadata">
-                            <source src="{{ video_url }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% else %}
-                        <div class="no-video-placeholder" style="background:#000; height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-tertiary);">
-                            <div style="text-align: center;">
-                                <p style="font-size: 32px;">🎞️</p>
-                                <p>No video files found for this show.</p>
-                                <p style="font-size: 12px; margin-top:8px;">Please upload video to the Episode model.</p>
-                            </div>
-                        </div>
-                    {% endif %}
+                    <video id="videoPlayer" controls preload="metadata">
+                        {% if video_url %}<source src="{{ video_url }}" type="video/mp4">{% endif %}
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <!-- On-video subtitle (toggleable) -->
+                    <div class="video-subtitle" id="videoSubtitle"></div>
+
+                    <!-- Word flash overlay (shows at loop end) -->
+                    <div class="word-flash" id="wordFlash">
+                        <div class="word-flash-word" id="wordFlashWord"></div>
+                        <div class="word-flash-def" id="wordFlashDef"></div>
+                    </div>
+
+                    <!-- CC toggle button -->
+                    <button class="subtitle-toggle" id="subtitleToggle" onclick="toggleSubtitles()">CC</button>
                 </div>
 
                 <!-- Video Info -->
@@ -976,6 +1172,13 @@
                         </button>
                         <button class="btn btn-ghost" id="restartBtn" onclick="restartLoop()" style="display: none;">
                             Replay Quote
+                        </button>
+
+                        <button class="btn" id="favBtn" onclick="toggleFavorite()">
+                            <svg id="heartIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                            <span>Save to Favorites</span>
                         </button>
                     </div>
                 </div>
@@ -1063,12 +1266,105 @@
         </div>
     </div>
 
+
+
+    <div id="translationTooltip" style="display:none; position:absolute; z-index:10000; pointer-events:auto; animation: fadeIn 0.15s ease-out;">
+        <div style="
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            height: 40px;
+            white-space: nowrap;
+        ">
+            <div style="padding: 0 12px; display:flex; align-items:center; gap:8px; border-right: 1px solid var(--border-subtle); height:100%;">
+                <span id="tooltipWord" style="color:var(--text-primary); font-weight:700; font-size:13px;"></span>
+                <span id="tooltipPos" style="background:rgba(255,255,255,0.06); color:var(--text-tertiary); padding:2px 6px; border-radius:6px; font-size:10px; font-weight:600; text-transform:uppercase;"></span>
+            </div>
+            <div style="padding: 0 12px; height:100%; display:flex; align-items:center; border-right: 1px solid var(--border-subtle);">
+                <span id="translationText" style="color:var(--text-secondary); font-size:13px;">...</span>
+            </div>
+            <button id="saveNotebookBtn" onclick="saveToNotebook()" style="
+                height:100%; padding:0 14px; background:transparent; border:none;
+                color:var(--accent-orange); font-size:12px; font-weight:600;
+                cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap;
+            " onmouseover="this.style.background='var(--accent-dim)'" onmouseout="this.style.background='transparent'">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span id="saveBtnText">Notebook</span>
+            </button>
+        </div>
+        <div id="noQuoteHint" style="display:none; background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 14px; font-size:11px; color:var(--text-tertiary); box-shadow:var(--shadow-lg);">
+            Play a quote first to save
+        </div>
+    </div>
+
     <script>
         // Data
         const quotes = {{ quotes_json|safe }};
         let currentQuote = null;
         let isLooping = false;
         let loopListener = null;
+
+        let subtitlesOn = false;
+        let loopCount = 0;
+        let wordFlashTimeout = null;
+
+// Subtitle toggle
+        function toggleSubtitles() {
+            subtitlesOn = !subtitlesOn;
+            const btn = document.getElementById('subtitleToggle');
+            const sub = document.getElementById('videoSubtitle');
+            btn.style.color = subtitlesOn ? 'var(--accent-orange)' : 'white';
+            btn.style.borderColor = subtitlesOn ? 'var(--accent-orange)' : 'rgba(255,255,255,0.2)';
+            sub.style.display = subtitlesOn && currentQuote ? 'block' : 'none';
+        }
+
+        // Update under-video subtitle
+        function updateUnderSubtitle(quote) {
+            const charEl = document.getElementById('underSubtitleText');
+            const container = document.getElementById('underSubtitle');
+
+            if (!quote) {
+                charEl.className = 'under-subtitle-text empty';
+                charEl.textContent = 'Play a quote to see subtitles';
+                return;
+            }
+
+            // Build character prefix
+            let html = '';
+            if (quote.character) {
+                html += `<span class="under-subtitle-character">${quote.character} &nbsp;</span>`;
+            }
+            html += `<span class="under-subtitle-text">${quote.text}</span>`;
+            container.innerHTML = html;
+        }
+
+        // Word flash — shows at end of each loop
+        function triggerWordFlash() {
+            if (!currentQuote) return;
+
+            // Only flash if user has a WordNote for this quote
+            // Pass word + definition via data attribute set when quote loads
+            const word = document.getElementById('wordFlash').dataset.word;
+            const def  = document.getElementById('wordFlash').dataset.def;
+            if (!word) return;
+
+            const flash = document.getElementById('wordFlash');
+            document.getElementById('wordFlashWord').textContent = word;
+            document.getElementById('wordFlashDef').textContent  = def || '';
+
+            flash.classList.add('visible');
+
+            if (wordFlashTimeout) clearTimeout(wordFlashTimeout);
+            wordFlashTimeout = setTimeout(() => {
+                flash.classList.remove('visible');
+            }, 2000);
+        }
 
         // Elements
         const video = document.getElementById('videoPlayer');
@@ -1110,8 +1406,21 @@
         }
 
         // Video time updates
-        video.addEventListener('timeupdate', () => {
+       video.addEventListener('timeupdate', () => {
             currentTime.textContent = formatTime(video.currentTime);
+
+            // Real-time subtitle sync
+            if (subtitlesOn) {
+                const t = video.currentTime;
+                const active = quotes.find(q => t >= q.startTime && t <= q.endTime);
+                const sub = document.getElementById('videoSubtitle');
+                if (active) {
+                    sub.textContent = active.text;
+                    sub.style.display = 'block';
+                } else {
+                    sub.style.display = 'none';
+                }
+            }
         });
 
         video.addEventListener('loadedmetadata', () => {
@@ -1215,6 +1524,25 @@
             quoteText.innerHTML = text;
             quoteText.classList.remove('empty');
 
+            updateUnderSubtitle(quote);
+
+            const videoSub = document.getElementById('videoSubtitle');
+            videoSub.textContent = quote.text;
+            videoSub.style.display = subtitlesOn ? 'block' : 'none';
+
+            // Set word flash data (word from URL param if coming from notebook)
+            const params = new URLSearchParams(window.location.search);
+            const notebookWord = params.get('word');
+            if (notebookWord) {
+                document.getElementById('wordFlash').dataset.word = notebookWord;
+                document.getElementById('wordFlash').dataset.def  = '';
+            } else {
+                document.getElementById('wordFlash').dataset.word = '';
+            }
+
+            // Reset loop count
+            loopCount = 0;
+
             // Update active state
             document.querySelectorAll('.match-item').forEach(item => {
                 item.classList.remove('active');
@@ -1239,6 +1567,8 @@
 
             loopListener = () => {
                 if (video.currentTime >= currentQuote.endTime - 0.1) {
+                    loopCount++;
+                    if (loopCount === 1) triggerWordFlash();
                     video.pause();
                     setTimeout(() => {
                         video.currentTime = currentQuote.startTime;
@@ -1259,6 +1589,8 @@
 
             loopListener = () => {
                 if (video.currentTime >= currentQuote.endTime - 0.1) {
+                    loopCount++;
+                    if (loopCount === 1) triggerWordFlash();
                     video.pause();
                     setTimeout(() => {
                         video.currentTime = currentQuote.startTime;
@@ -1417,14 +1749,22 @@
         });
 
         // Initialize
-        window.addEventListener('load', () => {
+       window.addEventListener('load', () => {
             const urlQuery = searchInput.value;
             if (urlQuery) {
                 renderMatches(urlQuery);
             }
-
-            // Initialize season/episode filters for TV shows
             initializeEpisodeFilters();
+
+            const params = new URLSearchParams(window.location.search);
+            const quoteId = params.get('quote');
+            const word = params.get('word');
+            if (quoteId) {
+                const target = quotes.find(q => q.id == quoteId);
+                if (target) {
+                    setTimeout(() => loadQuote(target, word || '', null), 300);
+                }
+            }
         });
 
         // Initialize episode filters
@@ -1719,6 +2059,197 @@
                 console.log('View mode:', view);
             });
         });
+
+        const quoteArea = document.getElementById('quoteText');
+        const tooltip = document.getElementById('translationTooltip');
+        const transText = document.getElementById('translationText');
+
+        let lastSelectedWord = '';
+        let lastTranslation = '';
+        let lastPos = '';
+
+
+        quoteArea.addEventListener('mouseup', function(e) {
+            const selectedText = window.getSelection().toString().trim();
+
+                const wordCount = selectedText.split(' ').length;
+                const isPhrase = wordCount > 3;
+
+                if (selectedText.length > 0) {
+                const viewportHeight = window.innerHeight;
+                const tooltipHeight = 50;
+                const topPos = (e.pageY + tooltipHeight > window.scrollY + viewportHeight)
+                    ? e.pageY - tooltipHeight - 8
+                    : e.pageY + 12;
+
+                tooltip.style.left = `${e.pageX - 60}px`;
+                tooltip.style.top = `${topPos}px`;
+
+                // Reset state
+                lastSelectedWord = selectedText;
+                lastTranslation = '';
+                lastPos = '';
+
+                const wordEl = document.getElementById('tooltipWord');
+                const posEl = document.getElementById('tooltipPos');
+                const saveBtn = document.getElementById('saveNotebookBtn');
+                const noQuoteHint = document.getElementById('noQuoteHint');
+                const mainBar = tooltip.querySelector('div');
+
+                wordEl.textContent = selectedText;
+                posEl.textContent = '';
+                translationText.textContent = '...';
+
+                // Reset button
+                document.getElementById('saveBtnText').textContent = 'Notebook';
+                saveBtn.style.color = 'var(--accent-orange)';
+                saveBtn.disabled = false;
+
+                if (currentQuote) {
+                    mainBar.style.display = 'flex';
+                    noQuoteHint.style.display = 'none';
+                } else {
+                    mainBar.style.display = 'none';
+                    noQuoteHint.style.display = 'block';
+                }
+
+                tooltip.style.display = 'block';
+                translateWord(selectedText);
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (!tooltip.contains(e.target)) tooltip.style.display = 'none';
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') tooltip.style.display = 'none';
+        });
+
+        async function translateWord(word) {
+            const posEl = document.getElementById('tooltipPos');
+            const cleanWord = word.trim(); // Remove accidental extra spaces from highlighting
+
+            if (!cleanWord) return;
+
+            const wordCount = cleanWord.split(/\s+/).length;
+
+            try {
+                // 1. Translation: This will now run for any number of words
+                const transResponse = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanWord)}&langpair=en|uz`
+                );
+                const transData = await transResponse.json();
+
+                // MyMemory sometimes returns a 200 even if it fails, check the responseData
+                lastTranslation = transData?.responseData?.translatedText || '';
+                translationText.textContent = lastTranslation || 'not found';
+                translationText.style.color = '#ffffff';
+
+                // posEl.style.color = '#86efac'; i can change the color of pos here
+                if (wordCount <= 3) {
+                    const defResponse = await fetch(`/learning/dictionary/?word=${encodeURIComponent(cleanWord)}`);
+                    if (defResponse.ok) {
+                        const defData = await defResponse.json();
+                        lastPos = defData?.pos || '';
+                        const POS_LABELS = { v: 'verb', n: 'noun', adj: 'adj', phr: 'phrase', etc: 'other' };
+                        posEl.textContent = POS_LABELS[lastPos] || '';
+                    } else {
+                        posEl.textContent = ''; // Clear if dictionary fetch fails
+                    }
+                } else {
+                    // Long phrases don't need a specific Part of Speech
+                    posEl.textContent = 'phrase';
+                    lastPos = 'phr';
+                }
+
+            } catch (error) {
+                console.error("Translation Error:", error);
+                translationText.textContent = 'error';
+            }
+        }
+
+        async function saveToNotebook() {
+            if (!currentQuote || !lastSelectedWord) return;
+
+            const btn = document.getElementById('saveNotebookBtn');
+            const saveBtnText = document.getElementById('saveBtnText');
+            btn.disabled = true;
+            saveBtnText.textContent = '...';
+
+            try {
+                const response = await fetch(`/learning/words/quote/${currentQuote.id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        word: lastSelectedWord,
+                        definition: '',
+                        pos: lastPos,
+                    }),
+                });
+
+                if (response.ok) {
+                    saveBtnText.textContent = '✓ Saved';
+                    btn.style.color = '#22c55e';
+                    showToast(`"${lastSelectedWord}" saved to notebook`);
+                    setTimeout(() => { tooltip.style.display = 'none'; }, 1200);
+                } else if (response.status === 409) {
+                    saveBtnText.textContent = '✓ Already saved';
+                    btn.style.color = 'var(--text-tertiary)';
+                    setTimeout(() => { tooltip.style.display = 'none'; }, 1200);
+                } else {
+                    saveBtnText.textContent = 'Try again';
+                    btn.disabled = false;
+                }
+            } catch {
+                saveBtnText.textContent = 'Try again';
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleFavorite() {
+            if (!currentQuote) {
+                showToast('Play a quote first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/learning/favorites/toggle/${currentQuote.id}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const heartIcon = document.getElementById('heartIcon');
+                    const favBtn = document.getElementById('favBtn');
+                    if (data.status === 'added') {
+                        heartIcon.setAttribute('fill', 'var(--accent-orange)');
+                        favBtn.querySelector('span').textContent = 'Saved';
+                        showToast('Added to favorites');
+                    } else {
+                        heartIcon.setAttribute('fill', 'none');
+                        favBtn.querySelector('span').textContent = 'Save to Favorites';
+                        showToast('Removed from favorites');
+                    }
+                }
+            } catch {
+                showToast('Something went wrong');
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
     </script>
 </body>
 </html>

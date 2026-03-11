@@ -120,6 +120,37 @@ class Quote(models.Model):
         return f"/watch/{self.source.id}/?t={self.start_time}"
 
 
+class Transcript(models.Model):
+    source = models.ForeignKey(Source, null=True, blank=True, related_name="transcripts", on_delete=models.CASCADE)
+    episode = models.ForeignKey(Episode, null=True, blank=True, related_name="transcripts", on_delete=models.CASCADE)
+    text = models.TextField()
+    start_time = models.DecimalField(max_digits=10, decimal_places=3)
+    end_time = models.DecimalField(max_digits=10, decimal_places=3)
+
+
+class SceneBlock(models.Model):
+    source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name="scene_blocks")
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE, related_name="scene_blocks")
+    start_time = models.DecimalField(max_digits=10, decimal_places=3)
+    end_time = models.DecimalField(max_digits=10, decimal_places=3)
+    thumbnail = models.ImageField(upload_to="scene_thumbnails/", null=True, blank=True)
+
+    class Meta:
+        ordering = ["start_time"]
+
+    def __str__(self):
+        ep = f" {self.episode}" if self.episode else ""
+        return f"{self.source.title}{ep} [{self.start_time}–{self.end_time}]"
+
+    @property
+    def label(self):
+        def fmt(t):
+            t = int(t)
+            return f"{t // 60}:{t % 60:02d}"
+
+        return f"{fmt(self.start_time)} – {fmt(self.end_time)}"
+
+
 class Favorite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name="favorited_by")
@@ -127,3 +158,41 @@ class Favorite(models.Model):
 
     class Meta:
         unique_together = ("user", "quote")
+
+
+class WatchHistory(models.Model):
+    """Tracks the last playback position per user per video (movie or episode)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="watch_history",
+    )
+    source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name="watch_history")
+    episode = models.ForeignKey(
+        Episode,
+        on_delete=models.CASCADE,
+        related_name="watch_history",
+        null=True,
+        blank=True,
+    )
+    position_sec = models.FloatField(default=0)
+    duration_sec = models.FloatField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "source", "episode")
+
+    @property
+    def progress_pct(self):
+        if not self.duration_sec:
+            return 0
+        return min(self.position_sec / self.duration_sec, 1.0)
+
+    @property
+    def is_complete(self):
+        return self.progress_pct >= 0.9
+
+    @property
+    def remaining_sec(self):
+        return max(self.duration_sec - self.position_sec, 0)

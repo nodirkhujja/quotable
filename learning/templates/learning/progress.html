@@ -1,0 +1,404 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Progress — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0a0a0a;
+            --bg-2:    #111111;
+            --bg-3:    #1a1a1a;
+            --border:  #1f1f1f;
+            --border-2:#2e2e2e;
+            --text:    #ffffff;
+            --text-2:  #a3a3a3;
+            --text-3:  #525252;
+            --accent:  #ff6b35;
+            --green:   #10b981;
+            --blue:    #3b82f6;
+            --purple:  #8b5cf6;
+            --amber:   #f59e0b;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV (same as home) ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:60px;
+            display:flex; align-items:center; gap:0; padding:0 36px;
+            background:rgba(10,10,10,0.9); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .logo { font-family:'Courier Prime',monospace; font-size:1.25rem; font-weight:700; color:var(--accent); text-decoration:none; margin-right:32px; }
+        .nav-links { display:flex; align-items:center; gap:4px; }
+        .nav-right { display:flex; align-items:center; gap:6px; margin-left:24px; flex-shrink:0; }
+        .nav-link { font-size:13.5px; font-weight:500; color:rgba(255,255,255,0.65); text-decoration:none; padding:6px 13px; border-radius:7px; transition:color .15s,background .15s; }
+        .nav-link:hover { color:#fff; background:var(--bg-3); }
+        .nav-link.active { color:#fff; }
+        .nav-divider { width:1px; height:18px; background:#2e2e2e; margin:0 4px; }
+        .level-pill {
+            font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+            padding:4px 11px; border-radius:20px; border:1px solid;
+        }
+        .level-pill[data-level="beginner"]           { color:#10b981; background:rgba(16,185,129,.10); border-color:rgba(16,185,129,.25); }
+        .level-pill[data-level="intermediate"]       { color:#3b82f6; background:rgba(59,130,246,.10); border-color:rgba(59,130,246,.25); }
+        .level-pill[data-level="upper_intermediate"] { color:#8b5cf6; background:rgba(139,92,246,.10); border-color:rgba(139,92,246,.25); }
+        .level-pill[data-level="advanced"]           { color:#f59e0b; background:rgba(245,158,11,.10); border-color:rgba(245,158,11,.25); }
+
+        /* ── PAGE ── */
+        .page { max-width:960px; margin:0 auto; padding:48px 36px 80px; }
+
+        .page-title { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+        .page-sub   { font-size:14px; color:var(--text-2); margin-bottom:44px; }
+
+        /* ── STAT STRIP ── */
+        .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:44px; }
+        .stat {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:12px; padding:20px;
+        }
+        .stat-value { font-size:2rem; font-weight:700; letter-spacing:-.03em; line-height:1; margin-bottom:5px; }
+        .stat-label { font-size:11.5px; color:var(--text-3); font-weight:500; }
+        .stat-value.green  { color:var(--green); }
+        .stat-value.blue   { color:var(--blue); }
+        .stat-value.amber  { color:var(--amber); }
+        .stat-value.purple { color:var(--purple); }
+
+        /* ── SECTION HEADER ── */
+        .section { margin-bottom:44px; }
+        .section-title { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+
+        /* ── PIPELINE ── */
+        .pipeline { display:flex; align-items:center; gap:0; }
+        .pipe-stage {
+            flex:1; background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; padding:16px 18px;
+            text-align:center;
+        }
+        .pipe-stage + .pipe-stage { margin-left:-1px; border-radius:0; }
+        .pipe-stage:first-child { border-radius:10px 0 0 10px; }
+        .pipe-stage:last-child  { border-radius:0 10px 10px 0; }
+        .pipe-val   { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; line-height:1; margin-bottom:4px; }
+        .pipe-name  { font-size:11px; color:var(--text-3); font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
+        .pipe-arrow { font-size:18px; color:var(--text-3); padding:0 6px; flex-shrink:0; }
+        .pipe-val.inbox    { color:var(--text-2); }
+        .pipe-val.learning { color:var(--blue); }
+        .pipe-val.mastered { color:var(--green); }
+
+        /* total pipeline bar */
+        .pipe-bar-wrap { margin-top:16px; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden; display:flex; }
+        .pipe-bar-inbox    { background:var(--border-2); }
+        .pipe-bar-learning { background:var(--blue); }
+        .pipe-bar-mastered { background:var(--green); }
+
+        /* ── FORECAST ── */
+        .forecast-box {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:12px; padding:24px;
+        }
+        .forecast-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .forecast-tag { font-size:12px; color:var(--text-3); }
+        .forecast-val { font-size:1.6rem; font-weight:700; color:var(--green); letter-spacing:-.02em; }
+        .forecast-caption { font-size:13px; color:var(--text-2); }
+
+        /* simple SVG chart lives here */
+        .chart-wrap { margin-top:20px; }
+        svg.forecast-chart { width:100%; height:80px; display:block; }
+
+        /* ── HEATMAP ── */
+        .heatmap-scroll { overflow-x:auto; padding-bottom:4px; }
+        .heatmap { display:grid; grid-template-rows:repeat(7,12px); grid-auto-flow:column; gap:3px; width:max-content; }
+        .heatmap-cell {
+            width:12px; height:12px; border-radius:2px;
+            background:var(--bg-3);
+        }
+        .heatmap-cell[data-count="1"] { background:rgba(255,107,53,.25); }
+        .heatmap-cell[data-count="2"] { background:rgba(255,107,53,.50); }
+        .heatmap-cell[data-count="3"],
+        .heatmap-cell[data-count="4"],
+        .heatmap-cell[data-count="5"] { background:rgba(255,107,53,.80); }
+        .heatmap-cell[data-count="6"],
+        .heatmap-cell[data-count="7"],
+        .heatmap-cell[data-count="8"],
+        .heatmap-cell[data-count="9"] { background:var(--accent); }
+        .heatmap-legend { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:var(--text-3); }
+        .heatmap-legend-cell { width:10px; height:10px; border-radius:2px; }
+
+        /* ── SESSION STATS ── */
+        .session-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+        .ss-card {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; padding:16px; text-align:center;
+        }
+        .ss-val { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; line-height:1; margin-bottom:4px; }
+        .ss-label { font-size:11px; color:var(--text-3); font-weight:500; }
+
+        /* ── SESSION LIST ── */
+        .session-list { display:flex; flex-direction:column; gap:8px; }
+        .session-row {
+            display:flex; align-items:center; gap:16px;
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; padding:14px 18px;
+            transition: border-color 0.15s;
+        }
+        .session-row:hover { border-color: var(--border-2); }
+        .sr-icon {
+            width:36px; height:36px; border-radius:9px;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0;
+        }
+        .sr-icon.quiz { background:rgba(168,85,247,0.12); color:#a855f7; }
+        .sr-icon.cloze { background:rgba(16,185,129,0.12); color:#10b981; }
+        .sr-icon svg { width:16px; height:16px; stroke:currentColor; fill:none; }
+        .sr-body { flex:1; min-width:0; }
+        .sr-title { font-size:13.5px; font-weight:600; }
+        .sr-meta { font-size:12px; color:var(--text-3); margin-top:2px; }
+        .sr-right { text-align:right; flex-shrink:0; }
+        .sr-score { font-size:15px; font-weight:700; font-family:'Courier Prime',monospace; }
+        .sr-score.purple { color:var(--purple); }
+        .sr-score.green { color:var(--green); }
+        .sr-accuracy { font-size:11px; color:var(--text-3); margin-top:2px; }
+        .sr-time { font-size:11px; color:var(--text-3); }
+
+        /* ── EMPTY ── */
+        .empty-hint { padding:32px; text-align:center; color:var(--text-3); font-size:14px; background:var(--bg-2); border:1px solid var(--border); border-radius:12px; }
+
+        @media(max-width:768px){
+            .nav { padding:0 20px; }
+            .nav-links { display:none; }
+            .page { padding:32px 20px 60px; }
+            .stats { grid-template-columns:repeat(2,1fr); }
+            .session-stats { grid-template-columns:repeat(2,1fr); }
+            .pipeline { flex-direction:column; align-items:stretch; }
+            .pipe-stage { border-radius:10px !important; margin-left:0 !important; margin-top:-1px; }
+            .pipe-arrow { display:none; }
+            .sr-meta { font-size:11px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+
+    <div style="flex:1"></div>
+
+    <div class="nav-right">
+        <a href="{% url 'learning:practice' %}" class="nav-link">Practice</a>
+        {% if level %}
+            <div class="nav-divider"></div>
+            <span class="level-pill" data-level="{{ level }}">{{ level_display }}</span>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="page-title">Your Learning Journey</div>
+    <div class="page-sub">Every word compounds. Here's where you are.</div>
+
+    <!-- ── STAT STRIP ── -->
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value">{{ total_words }}</div>
+            <div class="stat-label">Words in vault</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value green">{{ mastered_count }}</div>
+            <div class="stat-label">Mastered forever</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value amber">{{ streak }}</div>
+            <div class="stat-label">Day streak</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value blue">{{ session_minutes }}</div>
+            <div class="stat-label">Minutes invested</div>
+        </div>
+    </div>
+
+    <!-- ── PIPELINE ── -->
+    <div class="section">
+        <div class="section-title">Word Pipeline</div>
+        {% if total_words %}
+        <div class="pipeline">
+            <div class="pipe-stage">
+                <div class="pipe-val inbox">{{ inbox_count }}</div>
+                <div class="pipe-name">Inbox</div>
+            </div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-stage">
+                <div class="pipe-val learning">{{ learning_count }}</div>
+                <div class="pipe-name">Learning</div>
+            </div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-stage">
+                <div class="pipe-val mastered">{{ mastered_count }}</div>
+                <div class="pipe-name">Mastered</div>
+            </div>
+        </div>
+        {% if total_words %}
+        <div class="pipe-bar-wrap">
+            <div class="pipe-bar-inbox"    style="flex:{{ inbox_count }}"></div>
+            <div class="pipe-bar-learning" style="flex:{{ learning_count }}"></div>
+            <div class="pipe-bar-mastered" style="flex:{% if mastered_count %}{{ mastered_count }}{% else %}0{% endif %}"></div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-hint">Save your first word while watching — it'll show up here.</div>
+        {% endif %}
+    </div>
+
+    <!-- ── FORECAST ── -->
+    <div class="section">
+        <div class="section-title">7-Day Forecast</div>
+        <div class="forecast-box">
+            <div class="forecast-row">
+                <div>
+                    <div style="font-size:13px;color:var(--text-3);margin-bottom:4px;">At your current pace</div>
+                    {% if daily_rate > 0 %}
+                    <div style="font-size:14px;color:var(--text-2);">
+                        <strong style="color:var(--text);">+{{ forecast_7 }}</strong> words this week ·
+                        <strong style="color:var(--text);">+{{ forecast_30 }}</strong> this month
+                    </div>
+                    {% else %}
+                    <div style="font-size:14px;color:var(--text-3);">Save a few words to unlock your forecast.</div>
+                    {% endif %}
+                </div>
+                {% if daily_rate > 0 %}
+                <div style="text-align:right;">
+                    <div class="forecast-val">+{{ forecast_7 }}</div>
+                    <div class="forecast-tag">next 7 days</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if daily_rate > 0 %}
+            <!-- Simple SVG line chart: today→7 days -->
+            <div class="chart-wrap">
+                <svg class="forecast-chart" viewBox="0 0 400 80" preserveAspectRatio="none">
+                    <!-- baseline -->
+                    <line x1="0" y1="70" x2="400" y2="70" stroke="#1f1f1f" stroke-width="1"/>
+                    <!-- today dot -->
+                    <circle cx="0" cy="70" r="4" fill="var(--text-3)"/>
+                    <!-- forecast line -->
+                    <line x1="0" y1="70" x2="400" y2="10" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 3"/>
+                    <!-- end dot -->
+                    <circle cx="400" cy="10" r="5" fill="var(--green)"/>
+                    <!-- labels -->
+                    <text x="4"   y="68" fill="#525252" font-size="10" font-family="Inter,sans-serif">Today · {{ total_words }}</text>
+                    <text x="280" y="8"  fill="#10b981" font-size="10" font-family="Inter,sans-serif">Day 7 · {{ total_words|add:forecast_7 }}</text>
+                </svg>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── SESSION HISTORY ── -->
+    <div class="section">
+        <div class="section-title">Practice Sessions</div>
+        {% if total_sessions %}
+        <div class="session-stats">
+            <div class="ss-card">
+                <div class="ss-val" style="color:var(--purple);">{{ high_score|default:0 }}</div>
+                <div class="ss-label">High Score</div>
+            </div>
+            <div class="ss-card">
+                <div class="ss-val" style="color:var(--amber);">x{{ best_combo_ever|default:0 }}</div>
+                <div class="ss-label">Best Combo</div>
+            </div>
+            <div class="ss-card">
+                <div class="ss-val" style="color:var(--green);">{{ rolling_accuracy }}%</div>
+                <div class="ss-label">Avg Accuracy (last 10)</div>
+            </div>
+            <div class="ss-card">
+                <div class="ss-val" style="color:var(--text-2);">{{ total_sessions }}</div>
+                <div class="ss-label">Sessions Played</div>
+            </div>
+        </div>
+
+        <div class="session-list">
+            {% for s in recent_sessions %}
+            <div class="session-row">
+                <div class="sr-icon {% if s.session_type == 'quiz' %}quiz{% else %}cloze{% endif %}">
+                    {% if s.session_type == 'quiz' %}
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <polyline points="1 20 1 14 7 14"/>
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    {% endif %}
+                </div>
+                <div class="sr-body">
+                    <div class="sr-title">
+                        {% if s.session_type == 'quiz' %}Quiz{% elif s.session_type == 'cloze' %}Review{% else %}{{ s.session_type|title }}{% endif %}
+                    </div>
+                    <div class="sr-meta">
+                        {{ s.correct_answers }}/{{ s.quotes_reviewed }} correct
+                        {% if s.best_combo > 1 %} · x{{ s.best_combo }} combo{% endif %}
+                        · {{ s.duration_minutes }}m
+                    </div>
+                </div>
+                <div class="sr-right">
+                    {% if s.session_type == 'quiz' and s.score %}
+                    <div class="sr-score purple">{{ s.score }}</div>
+                    {% endif %}
+                    <div class="sr-accuracy">{{ s.accuracy }}%</div>
+                    <div class="sr-time">{{ s.started_at|timesince }} ago</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-hint">Complete a quiz or review to see your session history here.</div>
+        {% endif %}
+    </div>
+
+    <!-- ── HEATMAP ── -->
+    <div class="section">
+        <div class="section-title">Study Activity — Last 12 Weeks</div>
+        {% if heatmap_days %}
+        <div class="heatmap-scroll">
+            <div class="heatmap" id="heatmap"></div>
+        </div>
+        <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="heatmap-legend-cell" style="background:var(--bg-3)"></div>
+            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.25)"></div>
+            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.50)"></div>
+            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.80)"></div>
+            <div class="heatmap-legend-cell" style="background:var(--accent)"></div>
+            <span>More</span>
+        </div>
+        {% else %}
+        <div class="empty-hint">Complete your first review session to see your activity heatmap.</div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+(function () {
+    const days = {{ heatmap_days|safe }};
+    const grid = document.getElementById('heatmap');
+    if (!grid) return;
+    days.forEach(function (d) {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        const c = Math.min(d.count, 9);
+        if (c > 0) cell.setAttribute('data-count', c);
+        cell.title = d.date + (d.count ? ' · ' + d.count + ' session' + (d.count > 1 ? 's' : '') : '');
+        grid.appendChild(cell);
+    });
+})();
+</script>
+
+</body>
+</html>

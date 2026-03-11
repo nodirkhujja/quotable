@@ -1,0 +1,820 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz — Quotable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0d0d0d;
+            --bg-elevated: #161616;
+            --bg-card: #1a1a1a;
+            --border-subtle: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+            --text-tertiary: #6b6b6b;
+            --purple: #a855f7;
+            --purple-dim: rgba(168,85,247,0.12);
+            --purple-glow: rgba(168,85,247,0.3);
+            --green: #10b981;
+            --green-dim: rgba(16,185,129,0.12);
+            --red: #ef4444;
+            --red-dim: rgba(239,68,68,0.12);
+            --amber: #f59e0b;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        .nav {
+            position: sticky; top: 0; z-index: 100; height: 56px;
+            display: flex; align-items: center; padding: 0 24px;
+            background: rgba(13,13,13,0.92); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-back {
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none; display: flex; align-items: center; gap: 6px;
+            transition: color 0.15s;
+        }
+        .nav-back:hover { color: var(--text-primary); }
+        .nav-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+        .nav-title {
+            flex: 1; text-align: center; font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .nav-title span { color: var(--purple); }
+        .nav-spacer { width: 80px; }
+
+        /* ── SCORE BAR ── */
+        .qz-score-bar {
+            max-width: 440px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 4px 8px;
+        }
+        .qz-score {
+            font-size: 20px; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--purple);
+            min-width: 80px;
+            transition: transform 0.2s;
+        }
+        .qz-score.bump { transform: scale(1.15); }
+        .qz-combo {
+            font-size: 14px; font-weight: 700;
+            color: var(--amber);
+            opacity: 0; transition: opacity 0.3s, transform 0.3s;
+            transform: scale(0.8);
+        }
+        .qz-combo.active { opacity: 1; transform: scale(1); }
+        .qz-combo.pulse { animation: comboPulse 0.4s ease; }
+        @keyframes comboPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+        .qz-progress-text {
+            font-size: 13px; color: var(--text-tertiary);
+            font-weight: 500; min-width: 40px; text-align: right;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .qz-progress-bar {
+            max-width: 440px; margin: 0 auto 24px;
+            height: 3px; background: var(--border-subtle); border-radius: 2px;
+            overflow: hidden;
+        }
+        .qz-progress-fill {
+            height: 100%; background: var(--purple); border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── STAGE ── */
+        .stage {
+            max-width: 440px; margin: 0 auto; padding: 0 20px 80px;
+        }
+
+        /* ── QUESTION CARD ── */
+        .qz-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .qz-card.fade-out { opacity: 0; transform: translateX(-16px); }
+
+        .qz-question {
+            padding: 32px 24px 24px; text-align: center;
+        }
+        .qz-word {
+            font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .qz-def {
+            font-size: 14px; color: var(--text-secondary); line-height: 1.5;
+        }
+        .qz-pos {
+            display: inline-block; font-size: 11px; font-weight: 600;
+            padding: 2px 8px; border-radius: 4px; margin-bottom: 10px;
+            background: var(--purple-dim); color: var(--purple);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        /* ── OPTIONS GRID ── */
+        .qz-options {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; padding: 0 24px 24px;
+        }
+        .qz-opt {
+            padding: 14px 16px; border-radius: 12px;
+            background: var(--bg-elevated); border: 1.5px solid var(--border-subtle);
+            color: var(--text-primary); font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.15s;
+            text-align: center; word-break: break-word;
+        }
+        .qz-opt:hover { border-color: var(--purple); background: rgba(168,85,247,0.06); }
+        .qz-knew-btn {
+            display: block; width: 100%; margin: 0 24px 20px; padding: 12px;
+            background: transparent; border: 1.5px dashed var(--border-subtle);
+            border-radius: 10px; color: var(--text-tertiary); font-size: 13px;
+            font-weight: 600; cursor: pointer; transition: all 0.15s;
+            width: calc(100% - 48px); margin-left: 24px;
+        }
+        .qz-knew-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+        .qz-opt.correct {
+            border-color: var(--green); background: var(--green-dim);
+            color: var(--green); animation: optionCorrect 0.4s ease;
+        }
+        .qz-opt.wrong {
+            border-color: var(--red); background: var(--red-dim);
+            color: var(--red); animation: optionShake 0.4s ease;
+        }
+        .qz-opt.reveal {
+            border-color: var(--green); background: var(--green-dim);
+            color: var(--green); opacity: 0.7;
+        }
+        .qz-opt.disabled {
+            pointer-events: none; opacity: 0.35;
+        }
+
+        @keyframes optionCorrect {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        @keyframes optionShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        /* ── POINTS POPUP ── */
+        .qz-points {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            font-size: 18px; font-weight: 800; color: var(--green);
+            pointer-events: none; opacity: 0; z-index: 200;
+            animation: pointsFly 1s ease forwards;
+        }
+        .qz-points.wrong-pts { color: var(--red); }
+        @keyframes pointsFly {
+            0% { opacity: 0; transform: translateX(-50%) translateY(0); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+        }
+
+        /* ── FEEDBACK LINE ── */
+        .qz-feedback {
+            text-align: center; padding: 0 24px 20px;
+            font-size: 13px; font-weight: 600; min-height: 20px;
+        }
+        .qz-feedback.correct { color: var(--green); }
+        .qz-feedback.wrong { color: var(--red); }
+
+        /* ── EMPTY STATE ── */
+        .qz-empty {
+            text-align: center; padding: 80px 20px;
+        }
+        .qz-empty-icon {
+            width: 64px; height: 64px; margin: 0 auto 20px;
+            background: var(--purple-dim); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .qz-empty-icon svg { width: 28px; height: 28px; stroke: var(--purple); fill: none; }
+        .qz-empty h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .qz-empty p { font-size: 14px; color: var(--text-secondary); max-width: 300px; margin: 0 auto 24px; }
+        .qz-empty a {
+            display: inline-block; padding: 10px 24px; background: var(--purple);
+            color: #fff; border-radius: 10px; text-decoration: none;
+            font-size: 14px; font-weight: 600;
+        }
+
+        /* ── RESULTS ── */
+        .qz-results {
+            text-align: center; padding: 40px 20px; display: none;
+            max-width: 440px; margin: 0 auto;
+        }
+        .qz-results.visible { display: block; }
+
+        .qz-results-score {
+            font-size: 56px; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--purple);
+            margin-bottom: 4px;
+        }
+        .qz-results-label {
+            font-size: 14px; color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+            margin-bottom: 28px;
+        }
+
+        .qz-results-stats {
+            display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;
+        }
+        .qz-stat-val {
+            font-size: 24px; font-weight: 700; display: block;
+        }
+        .qz-stat-val.green { color: var(--green); }
+        .qz-stat-val.amber { color: var(--amber); }
+        .qz-stat-label {
+            font-size: 12px; color: var(--text-tertiary); margin-top: 2px;
+        }
+
+        .qz-results-msg {
+            font-size: 16px; font-weight: 600; margin-bottom: 24px;
+        }
+
+        .qz-results-btns {
+            display: flex; gap: 10px; justify-content: center;
+        }
+        .qz-results-btn {
+            padding: 12px 24px; border-radius: 10px; font-size: 14px;
+            font-weight: 600; text-decoration: none; cursor: pointer;
+            border: 1px solid var(--border-subtle); background: var(--bg-elevated);
+            color: var(--text-primary); transition: border-color 0.15s;
+        }
+        .qz-results-btn:hover { border-color: var(--purple); }
+        .qz-results-btn.primary {
+            background: var(--purple); border-color: var(--purple); color: #fff;
+        }
+
+        @media (max-width: 480px) {
+            .stage { padding: 0 16px 60px; }
+            .qz-word { font-size: 22px; }
+            .qz-options { gap: 8px; }
+            .qz-opt { padding: 12px 12px; font-size: 13px; }
+            .qz-results-score { font-size: 44px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'learning:practice' %}" class="nav-back">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Practice
+    </a>
+    <div class="nav-title" id="navTitle">
+        Quiz <span id="navCounter"></span>
+    </div>
+    <div class="nav-spacer"></div>
+</nav>
+
+{% if not words %}
+<div class="stage" style="padding-top:32px;">
+    <div class="qz-empty">
+        <div class="qz-empty-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+        </div>
+        <h2>No words for quiz</h2>
+        <p>Save some words while watching, then come back to quiz yourself.</p>
+        <a href="{% url 'learning:word_note_list' %}">Go to My Words</a>
+    </div>
+</div>
+{% else %}
+
+<!-- Hidden data store: today's 5 words -->
+<div id="wordData" style="display:none;">
+    {% for note in words %}
+    <div class="qz-word-data"
+         data-id="{{ note.id }}"
+         data-word="{{ note.word }}"
+         data-pos="{{ note.pos }}"
+         data-definition="{{ note.definition }}"
+         data-translation="{{ note.translation }}"
+         data-confidence="{{ note.confidence|default:0 }}"
+         data-stage="{{ note.stage }}">
+    </div>
+    {% endfor %}
+</div>
+<!-- All words pool (for generating wrong options) -->
+<div id="allWordData" style="display:none;">
+    {% for note in all_words %}
+    <div class="qz-word-data"
+         data-id="{{ note.id }}"
+         data-word="{{ note.word }}"
+         data-translation="{{ note.translation }}"
+         data-definition="{{ note.definition }}">
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Score bar -->
+<div class="qz-score-bar">
+    <div class="qz-score" id="qzScore">0</div>
+    <div class="qz-combo" id="qzCombo">x2</div>
+    <div class="qz-progress-text" id="qzProgressText">1/10</div>
+</div>
+<div class="qz-progress-bar">
+    <div class="qz-progress-fill" id="qzProgressFill" style="width:0%"></div>
+</div>
+
+<div class="stage" id="mainStage">
+    <div class="qz-card" id="qzCard">
+        <div class="qz-question">
+            <div class="qz-pos" id="qzPos"></div>
+            <div class="qz-word" id="qzWord"></div>
+            <div class="qz-def" id="qzDef"></div>
+        </div>
+        <div class="qz-options" id="qzOptions"></div>
+        <button class="qz-knew-btn" id="qzKnew">I already know this word</button>
+        <div class="qz-feedback" id="qzFeedback"></div>
+    </div>
+</div>
+
+<div class="qz-results" id="qzResults">
+    <div class="qz-results-score" id="resultScore">0</div>
+    <div class="qz-results-label">points</div>
+    <div class="qz-results-msg" id="resultMsg"></div>
+    <div class="qz-results-stats" id="resultStats"></div>
+    <div class="qz-results-btns">
+        <button class="qz-results-btn" onclick="location.reload()">Play again</button>
+        <a href="{% url 'learning:practice' %}" class="qz-results-btn primary">Practice hub</a>
+    </div>
+</div>
+
+<script>
+(function() {
+    const BATCH = 15;
+    const BASE_PTS = 100;
+    const TIME_BONUS = 50;
+    const TIME_LIMIT = 3000; // ms for time bonus
+    const POS_MAP = {v:'verb', n:'noun', adj:'adjective', adv:'adverb', phr:'phrase', other:'word'};
+    const CSRF = '{{ csrf_token }}';
+
+    // ── Audio ──
+    const SFX_CORRECT = '{% static "sounds/correct3.mp3" %}';
+
+    function playSound(url) {
+        try { new Audio(url).play(); } catch(e) {}
+    }
+
+    let _wrongCtx = null;
+    function _getCtx() {
+        if (!_wrongCtx) _wrongCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return _wrongCtx;
+    }
+
+    function sfxCorrect() { playSound(SFX_CORRECT); }
+    function sfxCombo() { playSound(SFX_CORRECT); }
+
+    // Wrong: soft low double-boop synth
+    function sfxWrong() {
+        try {
+            const ctx = _getCtx();
+            const t = ctx.currentTime;
+            // First boop
+            const o1 = ctx.createOscillator();
+            const g1 = ctx.createGain();
+            o1.type = 'triangle';
+            o1.frequency.setValueAtTime(180, t);
+            o1.frequency.linearRampToValueAtTime(120, t + 0.15);
+            g1.gain.setValueAtTime(0.12, t);
+            g1.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            o1.connect(g1); g1.connect(ctx.destination);
+            o1.start(t); o1.stop(t + 0.2);
+            // Second boop (lower)
+            const o2 = ctx.createOscillator();
+            const g2 = ctx.createGain();
+            o2.type = 'triangle';
+            o2.frequency.setValueAtTime(140, t + 0.15);
+            o2.frequency.linearRampToValueAtTime(100, t + 0.35);
+            g2.gain.setValueAtTime(0.1, t + 0.15);
+            g2.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(t + 0.15); o2.stop(t + 0.35);
+        } catch(e) {}
+    }
+
+    function sfxResults() { playSound(SFX_CORRECT); }
+
+    // ── Collect today's quiz words ──
+    const els = document.querySelectorAll('#wordData .qz-word-data');
+    let quizWords = [];
+    els.forEach(el => {
+        const w = el.dataset.word || '';
+        const tr = el.dataset.translation || '';
+        const def = el.dataset.definition || '';
+        const answer = tr || def;
+        if (!w || !answer) return;
+        quizWords.push({
+            id: parseInt(el.dataset.id),
+            word: w,
+            pos: el.dataset.pos || '',
+            definition: def,
+            translation: answer,
+            confidence: parseInt(el.dataset.confidence) || 0,
+            stage: el.dataset.stage || 'inbox',
+        });
+    });
+
+    // Full pool for generating wrong options
+    const poolEls = document.querySelectorAll('#allWordData .qz-word-data');
+    let allWords = [];
+    poolEls.forEach(el => {
+        const tr = el.dataset.translation || '';
+        const def = el.dataset.definition || '';
+        const answer = tr || def;
+        if (answer) allWords.push({ id: parseInt(el.dataset.id), translation: answer });
+    });
+    // Also include quiz words in pool
+    quizWords.forEach(w => {
+        if (!allWords.find(a => a.id === w.id)) allWords.push({ id: w.id, translation: w.translation });
+    });
+
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    // Need at least 4 words in pool for multiple choice
+    if (quizWords.length < 1 || allWords.length < 4) {
+        document.getElementById('mainStage').innerHTML = `
+            <div class="qz-empty" style="padding-top:40px;">
+                <h2>Need more words</h2>
+                <p>Quiz requires at least 4 words with translations. Save more words while watching.</p>
+                <a href="{% url 'learning:word_note_list' %}" style="background:var(--purple);">Go to My Words</a>
+            </div>`;
+        document.querySelector('.qz-score-bar').style.display = 'none';
+        document.querySelector('.qz-progress-bar').style.display = 'none';
+        return;
+    }
+
+    let queue = quizWords;
+    let currentIdx = 0;
+    let score = 0;
+    let combo = 0;
+    let bestCombo = 0;
+    let correctCount = 0;
+    let answered = false;
+    let questionStartTime = 0;
+    let sessionId = null;
+    let sessionStarted = false;
+
+    // ── Start backend session (called on first answer, not page load) ──
+    function ensureSession() {
+        if (sessionStarted) return;
+        sessionStarted = true;
+        fetch('/learning/session/start/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ session_type: 'quiz' }),
+        }).then(r => r.json()).then(d => { sessionId = d.session_id; }).catch(() => {});
+    }
+
+    const cardEl = document.getElementById('qzCard');
+    const wordEl = document.getElementById('qzWord');
+    const defEl = document.getElementById('qzDef');
+    const posEl = document.getElementById('qzPos');
+    const optionsEl = document.getElementById('qzOptions');
+    const feedbackEl = document.getElementById('qzFeedback');
+    const scoreEl = document.getElementById('qzScore');
+    const comboEl = document.getElementById('qzCombo');
+    const progressText = document.getElementById('qzProgressText');
+    const progressFill = document.getElementById('qzProgressFill');
+    const navCounter = document.getElementById('navCounter');
+    const mainStage = document.getElementById('mainStage');
+    const resultsEl = document.getElementById('qzResults');
+
+    // ── Generate options for a question ──
+    function generateOptions(idx) {
+        const correct = queue[idx].translation;
+        // Pick 3 unique wrong translations from the full pool
+        const wrongPool = allWords
+            .filter(w => w.translation !== correct && w.id !== queue[idx].id && w.translation)
+            .map(w => w.translation);
+        const uniqueWrong = [...new Set(wrongPool)].filter(Boolean);
+        const wrongs = shuffle(uniqueWrong).slice(0, 3);
+
+        const options = shuffle([correct, ...wrongs]);
+        return { correctAnswer: correct, options };
+    }
+
+    // ── Render question ──
+    function renderQuestion() {
+        answered = false;
+        questionStartTime = Date.now();
+
+        const item = queue[currentIdx];
+        const { correctAnswer, options } = generateOptions(currentIdx);
+
+        // Fade in
+        cardEl.classList.add('fade-out');
+        setTimeout(() => {
+            // Nav
+            navCounter.textContent = `\u00b7 ${currentIdx + 1}/${queue.length}`;
+            progressText.textContent = `${currentIdx + 1}/${queue.length}`;
+            progressFill.style.width = `${((currentIdx) / queue.length) * 100}%`;
+
+            // Question
+            posEl.textContent = POS_MAP[item.pos] || item.pos || 'word';
+            wordEl.textContent = item.word;
+            defEl.textContent = item.definition || '';
+
+            // Options
+            optionsEl.innerHTML = '';
+            options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'qz-opt';
+                btn.textContent = opt;
+                btn.addEventListener('click', () => selectOption(btn, opt, correctAnswer, item));
+                optionsEl.appendChild(btn);
+            });
+
+            // Reset feedback & "I knew it" button
+            feedbackEl.className = 'qz-feedback';
+            feedbackEl.textContent = '';
+            document.getElementById('qzKnew').style.display = 'block';
+
+            cardEl.classList.remove('fade-out');
+        }, currentIdx === 0 ? 0 : 200);
+    }
+
+    // ── Select option ──
+    function selectOption(btn, selected, correctAnswer, item) {
+        if (answered) return;
+        answered = true;
+        ensureSession();
+        document.getElementById('qzKnew').style.display = 'none';
+
+        const elapsed = Date.now() - questionStartTime;
+        const correct = selected === correctAnswer;
+        const allBtns = optionsEl.querySelectorAll('.qz-opt');
+
+        if (correct) {
+            btn.className = 'qz-opt correct';
+            combo++;
+            if (combo > bestCombo) bestCombo = combo;
+            correctCount++;
+
+            // Sound: combo arpeggio for streaks, simple chime otherwise
+            combo >= 3 ? sfxCombo() : sfxCorrect();
+
+            // Calculate points
+            let pts = BASE_PTS * combo;
+            if (elapsed < TIME_LIMIT) pts += TIME_BONUS;
+
+            score += pts;
+            animateScore(pts);
+
+            // Combo display
+            if (combo >= 2) {
+                comboEl.textContent = `x${combo}`;
+                comboEl.classList.add('active');
+                comboEl.classList.remove('pulse');
+                void comboEl.offsetWidth; // force reflow
+                comboEl.classList.add('pulse');
+            }
+
+            // Feedback
+            const bonusText = elapsed < TIME_LIMIT ? ' +speed bonus!' : '';
+            feedbackEl.className = 'qz-feedback correct';
+            feedbackEl.textContent = `+${pts} pts${bonusText}`;
+
+            // Disable other options
+            allBtns.forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+
+            // Auto-advance after 1s
+            setTimeout(advance, 1000);
+        } else {
+            btn.className = 'qz-opt wrong';
+            sfxWrong();
+            combo = 0;
+            comboEl.classList.remove('active');
+
+            // Highlight correct answer
+            allBtns.forEach(b => {
+                if (b.textContent === correctAnswer) b.classList.add('reveal');
+                else if (b !== btn) b.classList.add('disabled');
+            });
+
+            feedbackEl.className = 'qz-feedback wrong';
+            feedbackEl.textContent = `Correct: ${correctAnswer}`;
+
+            showPointsPopup(0, true);
+
+            // Auto-advance after 2s (more time to read correct answer)
+            setTimeout(advance, 2000);
+        }
+
+        // Update confidence
+        patchConfidence(item.id, correct, item.confidence, item.stage);
+    }
+
+    // ── Animate score ──
+    function animateScore(pts) {
+        showPointsPopup(pts, false);
+        const target = score;
+        const start = target - pts;
+        const duration = 400;
+        const startTime = Date.now();
+
+        function tick() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            const current = Math.round(start + (target - start) * eased);
+            scoreEl.textContent = current.toLocaleString();
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        tick();
+
+        // Bump effect
+        scoreEl.classList.add('bump');
+        setTimeout(() => scoreEl.classList.remove('bump'), 200);
+    }
+
+    // ── Points popup ──
+    function showPointsPopup(pts, isWrong) {
+        const popup = document.createElement('div');
+        popup.className = 'qz-points' + (isWrong ? ' wrong-pts' : '');
+        popup.textContent = isWrong ? 'x0' : `+${pts}`;
+        document.body.appendChild(popup);
+        setTimeout(() => popup.remove(), 1000);
+    }
+
+    // ── Advance to next ──
+    function advance() {
+        currentIdx++;
+        if (currentIdx >= queue.length) {
+            showResults();
+        } else {
+            renderQuestion();
+        }
+    }
+
+    // ── Patch confidence ──
+    function patchConfidence(noteId, correct, currentConf, currentStage) {
+        const newConf = correct
+            ? Math.min(100, currentConf + 10)
+            : Math.max(0, currentConf - 5);
+        const body = { confidence: newConf };
+        if (currentStage === 'inbox') body.stage = 'learning';
+        else if (newConf >= 80 && currentStage === 'learning') body.stage = 'mastered';
+
+        fetch(`/learning/words/${noteId}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(body),
+        }).catch(() => {});
+    }
+
+    // ── "I knew it" — mark word mastered, won't appear again ──
+    function markKnown(item) {
+        if (answered) return;
+        answered = true;
+        ensureSession();
+
+        sfxCorrect();
+        combo++;
+        if (combo > bestCombo) bestCombo = combo;
+        correctCount++;
+        score += BASE_PTS * combo;
+        animateScore(BASE_PTS * combo);
+
+        feedbackEl.className = 'qz-feedback correct';
+        feedbackEl.textContent = 'Mastered! Won\'t appear again.';
+
+        // Mark as mastered on backend
+        fetch(`/learning/words/${item.id}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ confidence: 100, stage: 'mastered' }),
+        }).catch(() => {});
+
+        setTimeout(advance, 1000);
+    }
+
+    document.getElementById('qzKnew').addEventListener('click', () => {
+        if (!answered && currentIdx < queue.length) markKnown(queue[currentIdx]);
+    });
+
+    // ── End backend session ──
+    function endSession() {
+        if (!sessionId) return;
+        fetch('/learning/session/end/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({
+                session_id: sessionId,
+                total: queue.length,
+                correct: correctCount,
+                score: score,
+                best_combo: bestCombo,
+            }),
+        }).catch(() => {});
+    }
+
+    // ── Results ──
+    function showResults() {
+        sfxResults();
+        endSession();
+        mainStage.style.display = 'none';
+        document.querySelector('.qz-score-bar').style.display = 'none';
+        document.querySelector('.qz-progress-bar').style.display = 'none';
+        resultsEl.className = 'qz-results visible';
+
+        progressFill.style.width = '100%';
+
+        const total = queue.length;
+        const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+        // Animated score count-up
+        const scoreTarget = score;
+        const duration = 1200;
+        const startTime = Date.now();
+        const resultScoreEl = document.getElementById('resultScore');
+
+        function countUp() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            resultScoreEl.textContent = Math.round(scoreTarget * eased).toLocaleString();
+            if (progress < 1) requestAnimationFrame(countUp);
+        }
+        countUp();
+
+        // Message
+        let msg = '';
+        if (pct === 100) msg = 'Flawless!';
+        else if (pct >= 80) msg = 'Impressive!';
+        else if (pct >= 60) msg = 'Good effort!';
+        else msg = 'Keep at it!';
+        document.getElementById('resultMsg').textContent = msg;
+
+        // Stats
+        document.getElementById('resultStats').innerHTML = `
+            <div>
+                <span class="qz-stat-val green">${correctCount}/${total}</span>
+                <span class="qz-stat-label">Correct</span>
+            </div>
+            <div>
+                <span class="qz-stat-val">${pct}%</span>
+                <span class="qz-stat-label">Accuracy</span>
+            </div>
+            <div>
+                <span class="qz-stat-val amber">x${bestCombo}</span>
+                <span class="qz-stat-label">Best combo</span>
+            </div>
+        `;
+    }
+
+    // ── Keyboard: 1-4 to pick option ──
+    document.addEventListener('keydown', e => {
+        if (answered) return;
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 4) {
+            const btns = optionsEl.querySelectorAll('.qz-opt');
+            if (btns[num - 1]) btns[num - 1].click();
+        }
+    });
+
+    // ── Init ──
+    renderQuestion();
+})();
+</script>
+{% endif %}
+
+</body>
+</html>

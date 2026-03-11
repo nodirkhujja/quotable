@@ -1,0 +1,484 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadowing — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0a0a0a;
+            --bg-2:    #111111;
+            --bg-3:    #1a1a1a;
+            --border:  #1f1f1f;
+            --border-2:#2e2e2e;
+            --text:    #ffffff;
+            --text-2:  #a3a3a3;
+            --text-3:  #525252;
+            --accent:  #8b5cf6;
+            --accent-dim: rgba(139,92,246,0.12);
+            --orange:  #ff6b35;
+            --emerald: #10b981;
+            --red:     #ef4444;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:60px;
+            display:flex; align-items:center; padding:0 36px;
+            background:rgba(10,10,10,0.9); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .logo { font-family:'Courier Prime',monospace; font-size:1.25rem; font-weight:700; color:var(--orange); text-decoration:none; margin-right:32px; }
+        .nav-right { display:flex; align-items:center; gap:6px; margin-left:auto; }
+        .nav-link { font-size:13.5px; font-weight:500; color:rgba(255,255,255,0.65); text-decoration:none; padding:6px 13px; border-radius:7px; transition:color .15s,background .15s; }
+        .nav-link:hover { color:#fff; background:var(--bg-3); }
+
+        /* ── PAGE ── */
+        .page { max-width:520px; margin:0 auto; padding:40px 24px 80px; }
+
+        /* ── PROGRESS BAR ── */
+        .progress-row {
+            display:flex; align-items:center; gap:12px; margin-bottom:32px;
+        }
+        .progress-label {
+            font-size:13px; font-weight:600; color:var(--text-2); white-space:nowrap;
+        }
+        .progress-track {
+            flex:1; height:4px; background:var(--bg-3); border-radius:2px; overflow:hidden;
+        }
+        .progress-fill {
+            height:100%; background:var(--accent); border-radius:2px;
+            transition:width 0.3s ease;
+        }
+        .progress-count {
+            font-size:13px; font-weight:600; color:var(--accent);
+            font-variant-numeric:tabular-nums;
+        }
+
+        /* ── VIDEO CARD ── */
+        .clip-card {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:16px; overflow:hidden; margin-bottom:20px;
+        }
+        .video-wrap {
+            position:relative; width:100%; aspect-ratio:16/9; background:#000;
+        }
+        .video-wrap video {
+            width:100%; height:100%; object-fit:contain;
+        }
+
+        /* ── TRANSCRIPT ── */
+        .transcript-area {
+            padding:20px 24px;
+            min-height:80px;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .transcript-text {
+            font-size:17px; font-weight:500; line-height:1.6;
+            text-align:center; color:var(--text);
+            opacity:0; transform:translateY(8px);
+            transition:opacity 0.3s, transform 0.3s;
+        }
+        .transcript-text.visible {
+            opacity:1; transform:translateY(0);
+        }
+        .transcript-hint {
+            font-size:13px; color:var(--text-3); text-align:center;
+        }
+
+        /* ── WORD TAG ── */
+        .word-tag {
+            display:inline-block; margin-top:10px;
+            font-size:12px; font-weight:600;
+            padding:4px 12px; border-radius:20px;
+            background:var(--accent-dim); color:var(--accent);
+        }
+
+        /* ── CONTROLS ── */
+        .controls {
+            display:flex; justify-content:center; gap:10px; margin-bottom:24px;
+        }
+        .ctrl-btn {
+            display:flex; align-items:center; gap:6px;
+            background:var(--bg-2); border:1px solid var(--border);
+            color:var(--text-2); font-size:13px; font-weight:500;
+            padding:9px 18px; border-radius:10px; cursor:pointer;
+            transition:border-color .15s, color .15s;
+        }
+        .ctrl-btn:hover { border-color:var(--border-2); color:var(--text); }
+        .ctrl-btn.active { border-color:var(--accent); color:var(--accent); }
+        .ctrl-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; }
+
+        /* ── RATING ── */
+        .rating-row {
+            display:flex; gap:12px;
+        }
+        .rate-btn {
+            flex:1; padding:14px; border-radius:12px;
+            font-size:15px; font-weight:600; cursor:pointer;
+            border:none; transition:opacity .15s, transform .1s;
+        }
+        .rate-btn:hover { opacity:0.85; }
+        .rate-btn:active { transform:scale(0.97); }
+        .rate-btn.again {
+            background:var(--bg-3); color:var(--text-2);
+            border:1px solid var(--border-2);
+        }
+        .rate-btn.got-it {
+            background:var(--accent); color:#fff;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align:center; padding:80px 24px;
+        }
+        .empty-icon { font-size:48px; margin-bottom:16px; display:block; }
+        .empty-title { font-size:18px; font-weight:600; margin-bottom:6px; }
+        .empty-sub { font-size:14px; color:var(--text-2); margin-bottom:24px; }
+        .empty-link {
+            display:inline-block; padding:10px 24px; border-radius:10px;
+            background:var(--accent); color:#fff; text-decoration:none;
+            font-size:14px; font-weight:600;
+        }
+
+        /* ── SUMMARY ── */
+        .summary {
+            text-align:center; padding:60px 24px;
+            display:none;
+        }
+        .summary.visible { display:block; }
+        .summary-icon { font-size:56px; margin-bottom:16px; display:block; }
+        .summary-title { font-size:22px; font-weight:700; margin-bottom:8px; }
+        .summary-stat { font-size:15px; color:var(--text-2); margin-bottom:32px; }
+        .summary-stat strong { color:var(--accent); }
+        .summary-actions { display:flex; gap:12px; justify-content:center; }
+        .summary-btn {
+            padding:12px 28px; border-radius:10px; font-size:14px; font-weight:600;
+            text-decoration:none; cursor:pointer; border:none;
+        }
+        .summary-btn.primary { background:var(--accent); color:#fff; }
+        .summary-btn.secondary { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border-2); }
+
+        @media (max-width:600px) {
+            .nav { padding:0 20px; }
+            .page { padding:28px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+    <div class="nav-right">
+        <a href="{% url 'learning:practice' %}" class="nav-link">Practice</a>
+    </div>
+</nav>
+
+<div class="page">
+
+    {% if clips_json == "[]" %}
+    <!-- EMPTY STATE -->
+    <div class="empty-state">
+        <span class="empty-icon">🎧</span>
+        <div class="empty-title">No clips available</div>
+        <div class="empty-sub">Save some words while watching videos to unlock shadowing practice.</div>
+        <a href="{% url 'clips:home' %}" class="empty-link">Browse Videos</a>
+    </div>
+
+    {% else %}
+    <!-- SESSION UI -->
+    <div id="sessionUI">
+        <div class="progress-row">
+            <span class="progress-label">Shadowing</span>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span class="progress-count" id="progressCount"></span>
+        </div>
+
+        <div class="clip-card">
+            <div class="video-wrap">
+                <video id="clipVideo" playsinline preload="auto"></video>
+            </div>
+            <div class="transcript-area">
+                <div>
+                    <div class="transcript-text" id="transcriptText"></div>
+                    <div class="transcript-hint" id="transcriptHint">Listen carefully...</div>
+                    <div style="text-align:center;">
+                        <span class="word-tag" id="wordTag"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="ctrl-btn" id="replayBtn">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"/>
+                    <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                </svg>
+                Replay
+            </button>
+            <button class="ctrl-btn" id="slowBtn">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Slow
+            </button>
+        </div>
+
+        <div class="rating-row">
+            <button class="rate-btn again" id="againBtn">Again</button>
+            <button class="rate-btn got-it" id="gotItBtn">Got it</button>
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary" id="summaryUI">
+        <span class="summary-icon">🎉</span>
+        <div class="summary-title">Session Complete!</div>
+        <div class="summary-stat" id="summaryStat"></div>
+        <div class="summary-actions">
+            <a href="{% url 'learning:shadowing' %}" class="summary-btn primary">New Session</a>
+            <a href="{% url 'learning:practice' %}" class="summary-btn secondary">Back to Practice</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if clips_json != "[]" %}
+<script>
+(function() {
+    const allClips = {{ clips_json|safe }};
+    const FC_STORAGE_KEY = 'fc_daily';
+    const FC_BATCH = 5;
+
+    function getTodayStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    // Read shared daily session — same words as My Words flashcards
+    function getSessionClips() {
+        let saved = null;
+        try {
+            const raw = localStorage.getItem(FC_STORAGE_KEY);
+            if (raw) saved = JSON.parse(raw);
+        } catch {}
+
+        if (saved && saved.date === getTodayStr() && saved.wordIds && saved.wordIds.length > 0) {
+            // Today's words already picked (by flashcards or a previous shadowing visit)
+            const clips = saved.wordIds.map(id => allClips.find(c => c.id === id)).filter(Boolean);
+            if (clips.length > 0) return clips;
+        }
+
+        // No session yet today — pick 5 and save so flashcards will use the same
+        const prevGotIds = new Set(saved ? (saved.gotIds || []) : []);
+        const prevAgainIds = saved ? (saved.againIds || []) : [];
+
+        const againClips = prevAgainIds.map(id => allClips.find(c => c.id === id)).filter(Boolean);
+        const againIdSet = new Set(againClips.map(c => c.id));
+
+        const freshPool = allClips.filter(c => !prevGotIds.has(c.id) && !againIdSet.has(c.id));
+        const freshNeeded = FC_BATCH - againClips.length;
+        const pickFrom = freshPool.length >= freshNeeded ? freshPool : allClips.filter(c => !againIdSet.has(c.id));
+        const fresh = shuffle([...pickFrom]).slice(0, Math.max(0, freshNeeded));
+
+        let picks = [...againClips, ...fresh];
+        if (picks.length === 0) picks = shuffle([...allClips]).slice(0, FC_BATCH);
+
+        // Save shared session so flashcards stay in sync
+        try {
+            localStorage.setItem(FC_STORAGE_KEY, JSON.stringify({
+                date: getTodayStr(),
+                wordIds: picks.map(c => c.id),
+                gotIds: [],
+                againIds: [],
+                sh_gotIds: [],
+            }));
+        } catch {}
+
+        return picks;
+    }
+
+    const sessionClips = getSessionClips();
+
+    // Restore shadowing progress if already started today
+    let shGotSet = new Set();
+    try {
+        const raw = localStorage.getItem(FC_STORAGE_KEY);
+        if (raw) {
+            const s = JSON.parse(raw);
+            if (s.date === getTodayStr() && s.sh_gotIds) {
+                shGotSet = new Set(s.sh_gotIds);
+            }
+        }
+    } catch {}
+
+    // Build queue: only clips not yet completed in shadowing today
+    let queue = sessionClips.filter(c => !shGotSet.has(c.id));
+    const totalClips = sessionClips.length;
+    let gotCount = shGotSet.size;
+    let againTotal = 0;
+    let currentClip = null;
+    let isSlow = false;
+    let clipEnded = false;
+
+    function saveShadowingProgress() {
+        try {
+            const raw = localStorage.getItem(FC_STORAGE_KEY);
+            if (!raw) return;
+            const s = JSON.parse(raw);
+            s.sh_gotIds = Array.from(shGotSet);
+            localStorage.setItem(FC_STORAGE_KEY, JSON.stringify(s));
+        } catch {}
+    }
+
+    const video       = document.getElementById('clipVideo');
+    const txtEl       = document.getElementById('transcriptText');
+    const hintEl      = document.getElementById('transcriptHint');
+    const wordTag     = document.getElementById('wordTag');
+    const progressFill= document.getElementById('progressFill');
+    const progressCnt = document.getElementById('progressCount');
+    const replayBtn   = document.getElementById('replayBtn');
+    const slowBtn     = document.getElementById('slowBtn');
+    const againBtn    = document.getElementById('againBtn');
+    const gotItBtn    = document.getElementById('gotItBtn');
+    const sessionUI   = document.getElementById('sessionUI');
+    const summaryUI   = document.getElementById('summaryUI');
+
+    function updateProgress() {
+        const pct = totalClips > 0 ? (gotCount / totalClips) * 100 : 0;
+        progressFill.style.width = pct + '%';
+        progressCnt.textContent = gotCount + ' / ' + totalClips;
+    }
+
+    function playClip(clip) {
+        currentClip = clip;
+        clipEnded = false;
+        isSlow = false;
+        slowBtn.classList.remove('active');
+
+        // Reset transcript
+        txtEl.classList.remove('visible');
+        txtEl.textContent = '';
+        hintEl.style.display = '';
+        hintEl.textContent = 'Listen carefully...';
+        wordTag.textContent = clip.word + (clip.translation ? ' · ' + clip.translation : '');
+        wordTag.style.display = 'none';
+
+        // Set video
+        video.playbackRate = 1.0;
+        if (!video.src || !video.src.includes(clip.video_url)) {
+            video.src = clip.video_url;
+        }
+        video.currentTime = clip.video_start;
+        video.play().catch(function(){});
+
+        updateProgress();
+    }
+
+    // Pause at clip end & reveal transcript
+    video.addEventListener('timeupdate', function() {
+        if (!currentClip || clipEnded) return;
+        if (video.currentTime >= currentClip.video_end) {
+            video.pause();
+            clipEnded = true;
+            revealTranscript();
+        }
+    });
+
+    function revealTranscript() {
+        hintEl.textContent = 'Now repeat out loud!';
+        txtEl.textContent = currentClip.context_text;
+        txtEl.classList.add('visible');
+        wordTag.style.display = '';
+    }
+
+    // Replay
+    replayBtn.addEventListener('click', function() {
+        if (!currentClip) return;
+        clipEnded = false;
+        txtEl.classList.remove('visible');
+        hintEl.textContent = 'Listen carefully...';
+        wordTag.style.display = 'none';
+        video.currentTime = currentClip.video_start;
+        video.playbackRate = isSlow ? 0.6 : 1.0;
+        video.play().catch(function(){});
+    });
+
+    // Slow toggle
+    slowBtn.addEventListener('click', function() {
+        isSlow = !isSlow;
+        slowBtn.classList.toggle('active', isSlow);
+        video.playbackRate = isSlow ? 0.6 : 1.0;
+        // If clip already ended, replay slow
+        if (clipEnded && currentClip) {
+            clipEnded = false;
+            txtEl.classList.remove('visible');
+            hintEl.textContent = 'Listen carefully...';
+            wordTag.style.display = 'none';
+            video.currentTime = currentClip.video_start;
+            video.play().catch(function(){});
+        }
+    });
+
+    // Got it
+    gotItBtn.addEventListener('click', function() {
+        if (!currentClip) return;
+        gotCount++;
+        shGotSet.add(currentClip.id);
+        saveShadowingProgress();
+        queue.shift();
+        nextOrEnd();
+    });
+
+    // Again
+    againBtn.addEventListener('click', function() {
+        if (!currentClip) return;
+        againTotal++;
+        const clip = queue.shift();
+        queue.push(clip);
+        nextOrEnd();
+    });
+
+    function nextOrEnd() {
+        if (queue.length === 0) {
+            showSummary();
+        } else {
+            playClip(queue[0]);
+        }
+    }
+
+    function showSummary() {
+        sessionUI.style.display = 'none';
+        summaryUI.classList.add('visible');
+        const stat = document.getElementById('summaryStat');
+        stat.innerHTML = '<strong>' + gotCount + '/' + totalClips + '</strong> clips completed' +
+            (againTotal > 0 ? ' &middot; ' + againTotal + ' replays' : ' &middot; Perfect run!');
+    }
+
+    // Start — if all already done today, show summary immediately
+    updateProgress();
+    if (queue.length === 0 && gotCount > 0) {
+        showSummary();
+    } else if (queue.length > 0) {
+        playClip(queue[0]);
+    }
+})();
+</script>
+{% endif %}
+
+</body>
+</html>

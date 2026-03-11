@@ -1,0 +1,1209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocab Check — Quotable</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0b0b10;
+      --surface:  #13131c;
+      --surface2: #1c1c28;
+      --border:   #252535;
+      --text:     #eaeaf4;
+      --muted:    #6868a0;
+      --radius:   20px;
+
+      /* Tier palette */
+      --t1: #10b981;
+      --t2: #3b82f6;
+      --t3: #8b5cf6;
+      --t4: #f59e0b;
+      --t5: #f43f5e;
+
+      /* Active tier (overridden by JS) */
+      --tier: #10b981;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Ambient background glow — follows tier color */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -160px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, color-mix(in srgb, var(--tier) 10%, transparent) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      transition: background 0.5s ease;
+    }
+
+    /* ── Screens ──────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      padding: 28px 20px;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      justify-content: center;
+    }
+    .screen.active { display: flex; }
+
+    /* ══════════════════════════════════════════════════════════
+       SCREEN 1 — Welcome
+    ══════════════════════════════════════════════════════════ */
+    .welcome-orb {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin-bottom: 28px;
+    }
+    .welcome-orb-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--t1), var(--t2), var(--t3), var(--t4), var(--t5), var(--t1));
+      animation: spin 6s linear infinite;
+    }
+    .welcome-orb-inner {
+      position: absolute;
+      inset: 4px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .welcome-title {
+      font-size: 30px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    .welcome-title em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--t1), var(--t2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .welcome-sub {
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 36px;
+      max-width: 300px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 10px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .btn-start {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      padding: 17px;
+      border: none;
+      border-radius: 100px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--t1) 0%, var(--t2) 100%);
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.35);
+      transition: transform 0.15s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+    .btn-start::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+    }
+    .btn-start:hover  { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(16,185,129,0.45); }
+    .btn-start:active { transform: scale(0.97); }
+
+    /* ══════════════════════════════════════════════════════════
+       SCREEN 2 — Assessment
+    ══════════════════════════════════════════════════════════ */
+    #screen-assessment {
+      justify-content: flex-start;
+      padding-top: 48px;
+      gap: 0;
+    }
+
+    /* Progress */
+    .progress-wrap { width: 100%; margin-bottom: 24px; }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .progress-meta #progress-tier-label {
+      font-weight: 600;
+      color: var(--tier);
+      transition: color 0.4s ease;
+      font-size: 12px;
+    }
+    .progress-track {
+      background: var(--surface2);
+      border-radius: 100px;
+      height: 5px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      width: 0%;
+      background: var(--tier);
+      transition: width 0.35s ease, background 0.4s ease;
+    }
+
+    /* Card stack (depth illusion) */
+    .card-stack {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 6px;
+      /* extra bottom padding so ghost cards peek below */
+      padding-bottom: 20px;
+    }
+    .card-ghost {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .card-ghost-1 {
+      bottom: 10px;
+      width: calc(100% - 20px);
+      height: 56px;
+      opacity: 0.55;
+    }
+    .card-ghost-2 {
+      bottom: 0;
+      width: calc(100% - 40px);
+      height: 48px;
+      opacity: 0.28;
+    }
+
+    /* Main swipe card */
+    .swipe-card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      border-radius: var(--radius);
+      padding: 24px 22px 20px;
+      cursor: grab;
+      user-select: none;
+      will-change: transform;
+      /* Tier-colored gradient border */
+      background:
+        linear-gradient(var(--surface), var(--surface)) padding-box,
+        linear-gradient(135deg, var(--tier) 0%, transparent 60%) border-box;
+      border: 1.5px solid transparent;
+      transition: box-shadow 0.15s;
+    }
+    .swipe-card:active { cursor: grabbing; }
+    .swipe-card.animate-out {
+      transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.34s ease;
+    }
+    .swipe-card.go-right {
+      transform: translateX(130%) rotate(18deg) !important;
+      opacity: 0;
+    }
+    .swipe-card.go-left {
+      transform: translateX(-130%) rotate(-18deg) !important;
+      opacity: 0;
+    }
+
+    /* Stamp overlays (inside card) */
+    .swipe-stamp {
+      position: absolute;
+      top: 18px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      opacity: 0;
+      pointer-events: none;
+      border: 2.5px solid;
+      text-transform: uppercase;
+      transition: opacity 0.1s;
+    }
+    #know-hint {
+      right: 18px;
+      color: var(--t1);
+      border-color: var(--t1);
+      transform: rotate(12deg);
+    }
+    #dontknow-hint {
+      left: 18px;
+      color: var(--t5);
+      border-color: var(--t5);
+      transform: rotate(-12deg);
+    }
+
+    /* Card header */
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tier-dot { display: none; }
+    .card-tier-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 9px;
+      letter-spacing: 0.3px;
+    }
+    .card-pos-pill {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 3px 10px;
+      font-style: italic;
+    }
+
+    /* The word */
+    .card-word-wrap {
+      position: relative;
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px 0 16px;
+    }
+    .word-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 80px;
+      background: var(--tier);
+      opacity: 0.07;
+      border-radius: 50%;
+      filter: blur(36px);
+      pointer-events: none;
+      transition: background 0.4s;
+    }
+    .card-word {
+      position: relative;
+      font-size: 50px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--text);
+      filter: drop-shadow(0 0 18px color-mix(in srgb, var(--tier) 40%, transparent));
+      transition: filter 0.4s;
+    }
+
+    .card-pos { display: none; } /* moved to pill in header */
+
+    /* GIF */
+    .card-gif {
+      width: 100%;
+      max-height: 110px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    /* Meaning toggle */
+    .toggle-meaning {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      text-align: left;
+    }
+    .toggle-meaning:hover {
+      border-color: var(--tier);
+      color: var(--text);
+    }
+    .card-meaning { margin-top: 12px; }
+    .card-meaning.hidden { display: none; }
+    .card-translation {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--tier);
+      margin-bottom: 6px;
+      transition: color 0.4s;
+    }
+    .card-example {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* Action buttons */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 360px;
+      margin-top: 20px;
+    }
+    .btn-action {
+      flex: 1;
+      height: 56px;
+      border-radius: 16px;
+      border: 1.5px solid;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: transform 0.12s, background 0.15s;
+      background: transparent;
+    }
+    .btn-action:active { transform: scale(0.93); }
+    .btn-dontknow {
+      border-color: color-mix(in srgb, var(--t5) 50%, transparent);
+      color: var(--t5);
+    }
+    .btn-dontknow:hover { background: color-mix(in srgb, var(--t5) 12%, transparent); }
+    .btn-know {
+      border-color: color-mix(in srgb, var(--t1) 50%, transparent);
+      color: var(--t1);
+    }
+    .btn-know:hover { background: color-mix(in srgb, var(--t1) 12%, transparent); }
+    .btn-icon { font-size: 16px; line-height: 1; }
+
+    .swipe-tip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: color-mix(in srgb, var(--muted) 60%, transparent);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    /* Fast-swipe modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      display: none;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      max-width: 300px;
+      text-align: center;
+      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .modal-icon  { font-size: 40px; margin-bottom: 14px; }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .modal-body  { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 22px; }
+    .btn-modal-ok {
+      background: var(--t1);
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: 12px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-modal-ok:hover { opacity: 0.85; }
+
+    /* ══════════════════════════════════════════════════════════
+       SCREEN 3 — Results
+    ══════════════════════════════════════════════════════════ */
+    #screen-results { justify-content: flex-start; padding-top: 52px; gap: 20px; }
+
+    .results-top { text-align: center; width: 100%; }
+
+    .results-confetti { font-size: 44px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+    .results-label { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+
+    #result-count {
+      font-size: 72px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -3px;
+      background: linear-gradient(135deg, var(--t1) 0%, var(--t2) 55%, var(--t3) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .result-unit {
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 500;
+      -webkit-text-fill-color: var(--muted);
+    }
+
+    .level-badge {
+      display: inline-block;
+      padding: 7px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.4px;
+      margin-top: 10px;
+    }
+    @keyframes badgePop {
+      0%   { transform: scale(0.4) translateY(6px); opacity: 0; }
+      65%  { transform: scale(1.08); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    .badge-pop {
+      animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    /* Tier breakdown card */
+    .breakdown-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+    }
+    .breakdown-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .tier-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .tier-row.visible { opacity: 1; transform: translateY(0); }
+    .tier-label {
+      font-size: 12px;
+      font-weight: 600;
+      width: 20px;
+      flex-shrink: 0;
+    }
+    .tier-name {
+      font-size: 11px;
+      color: var(--muted);
+      width: 58px;
+      flex-shrink: 0;
+    }
+    .tier-bar-wrap {
+      flex: 1;
+      background: var(--surface2);
+      border-radius: 100px;
+      height: 7px;
+      overflow: hidden;
+    }
+    .tier-bar {
+      height: 100%;
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tier-pct {
+      font-size: 12px;
+      color: var(--muted);
+      width: 30px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Insight chips */
+    .insights-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .insight-chip {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+    .insight-chip-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 5px;
+    }
+    .insight-chip-value { font-size: 15px; font-weight: 700; }
+    .chip-strong .insight-chip-value { color: var(--t1); }
+    .chip-focus  .insight-chip-value { color: var(--t4); }
+
+    /* Spinner / finishing overlay */
+    .spinner {
+      width: 38px; height: 38px;
+      border: 3px solid var(--surface2);
+      border-top-color: var(--t1);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    #finishing-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 50;
+    }
+    #finishing-overlay.visible { display: flex; }
+    .finishing-text { font-size: 15px; color: var(--muted); }
+  </style>
+</head>
+<body>
+{% csrf_token %}
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — Welcome
+══════════════════════════════════════════ -->
+<div id="screen-welcome" class="screen active">
+  <div class="welcome-orb">
+    <div class="welcome-orb-ring"></div>
+    <div class="welcome-orb-inner">🧠</div>
+  </div>
+
+  <h1 class="welcome-title">Find Your<br><em>English Level</em></h1>
+  <p class="welcome-sub">
+    Swipe through 30 words. Mark which ones you know.
+    We'll tailor your content to match your vocabulary.
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num">30</div>
+      <div class="stat-lbl">words</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">~2</div>
+      <div class="stat-lbl">minutes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">5</div>
+      <div class="stat-lbl">tiers</div>
+    </div>
+  </div>
+
+  <button class="btn-start" id="start-btn">Let's go →</button>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — Assessment
+══════════════════════════════════════════ -->
+<div id="screen-assessment" class="screen">
+
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="progress-text">0 / 30</span>
+      <span id="progress-tier-label"></span>
+    </div>
+    <div class="progress-track">
+      <div id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="card-stack">
+    <div class="card-ghost card-ghost-2"></div>
+    <div class="card-ghost card-ghost-1"></div>
+
+    <div class="swipe-card" id="swipe-card">
+      <!-- Stamp overlays -->
+      <div class="swipe-stamp" id="know-hint">KNOW IT ✓</div>
+      <div class="swipe-stamp" id="dontknow-hint">✕ NOPE</div>
+
+      <!-- Header row: tier dot + badge + pos pill -->
+      <div class="card-header">
+        <span class="tier-dot" id="tier-dot"></span>
+        <span class="card-tier-badge" id="card-tier-badge">Tier 1</span>
+        <span class="card-pos-pill" id="card-pos"></span>
+      </div>
+
+      <!-- The word (hero element) -->
+      <div class="card-word-wrap">
+        <div class="word-glow" id="word-glow"></div>
+        <div class="card-word" id="card-word">…</div>
+      </div>
+
+      <img class="card-gif" id="card-gif" alt="" />
+
+      <button class="toggle-meaning" id="toggle-meaning-btn">
+        <span>🇺🇿</span> Ko'rsatish
+      </button>
+      <div class="card-meaning hidden" id="card-meaning">
+        <div class="card-translation" id="card-translation"></div>
+        <div class="card-example"     id="card-example"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-action btn-dontknow" id="btn-dontknow">
+      <span class="btn-icon">✕</span> Don't know
+    </button>
+    <button class="btn-action btn-know" id="btn-know">
+      Know it <span class="btn-icon">✓</span>
+    </button>
+  </div>
+  <p class="swipe-tip">← swipe the card or tap a button →</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — Results
+══════════════════════════════════════════ -->
+<div id="screen-results" class="screen">
+
+  <div class="results-top">
+    <div class="results-confetti">🎉</div>
+    <div class="results-label">You know approximately</div>
+    <div id="result-count">0</div>
+    <span class="result-unit">words out of 1,000</span>
+    <br>
+    <span class="level-badge" id="result-badge">—</span>
+  </div>
+
+  <div class="breakdown-card">
+    <div class="breakdown-title">Tier Breakdown</div>
+    <div id="tier-bars"></div>
+  </div>
+
+  <div class="insights-row">
+    <div class="insight-chip chip-strong" id="strong-section">
+      <div class="insight-chip-label">Strong</div>
+      <div class="insight-chip-value" id="strong-tiers">—</div>
+    </div>
+    <div class="insight-chip chip-focus" id="focus-section">
+      <div class="insight-chip-label">Focus on</div>
+      <div class="insight-chip-value" id="weak-tiers">—</div>
+    </div>
+  </div>
+
+  <button class="btn-start" id="goto-words-btn">Start Learning →</button>
+</div>
+
+
+<!-- Fast-swipe modal -->
+<div class="modal-overlay" id="fast-swipe-modal">
+  <div class="modal-box">
+    <div class="modal-icon">⚡</div>
+    <div class="modal-title">Slow down a bit</div>
+    <div class="modal-body">
+      You're swiping really fast! Take a moment to actually read each word — the results will be much more useful.
+    </div>
+    <button class="btn-modal-ok" id="modal-ok-btn">Got it</button>
+  </div>
+</div>
+
+<!-- Finishing overlay -->
+<div id="finishing-overlay">
+  <div class="spinner"></div>
+  <div class="finishing-text">Calculating your level…</div>
+</div>
+
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Constants ────────────────────────────────────────────────
+  const TOTAL_CARDS  = 30;
+  const INITIAL_DIST = { 1: 8, 2: 8, 3: 6, 4: 5, 5: 3 };
+  const SESSION_ID   = {{ session_id }};
+  const DATA_URL     = "{% url 'learning:onboarding-data' %}";
+  const PROGRESS_URL = "{% url 'learning:onboarding-progress' %}";
+  const COMPLETE_URL = "{% url 'learning:onboarding-complete' %}";
+  const WORDS_URL    = "{% url 'clips:home' %}";
+  const CSRF         = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  const TIER_COLORS  = { 1: '#10b981', 2: '#3b82f6', 3: '#8b5cf6', 4: '#f59e0b', 5: '#f43f5e' };
+  const TIER_NAMES   = { 1: 'Core', 2: 'Common', 3: 'Familiar', 4: 'Advanced', 5: 'Expert' };
+
+  // ── State ────────────────────────────────────────────────────
+  let wordPool       = {};
+  let queue          = [];
+  let currentIdx     = 0;
+  let results        = [];
+  let tierCounts     = {};
+  let cardStartMs    = 0;
+  let swipeTimes     = [];
+  let isDragging     = false;
+  let dragStartX     = 0;
+  let currentDragX   = 0;
+  let fastSwipeShown = false;
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $('screen-' + name).classList.add('active');
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function posLabel(pos) {
+    return { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb', phr: 'phrase', etc: 'other' }[pos] || pos;
+  }
+
+  async function postJSON(url, body) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  }
+
+  function setTierColor(tier) {
+    const color = TIER_COLORS[tier] || TIER_COLORS[1];
+    document.documentElement.style.setProperty('--tier', color);
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  async function init() {
+    const data = await fetch(DATA_URL).then(r => r.json());
+    if (!data.words || !data.words.length) {
+      alert('No vocabulary words found. Run: python manage.py seed_vocab');
+      return;
+    }
+
+    for (const w of data.words) {
+      if (!wordPool[w.tier]) wordPool[w.tier] = [];
+      wordPool[w.tier].push(w);
+    }
+    for (const t in wordPool) wordPool[t] = shuffle(wordPool[t]);
+
+    const initial = [];
+    for (const [tier, count] of Object.entries(INITIAL_DIST)) {
+      initial.push(...(wordPool[tier] || []).splice(0, count));
+    }
+    queue = shuffle(initial);
+
+    for (let t = 1; t <= 5; t++) {
+      tierCounts[t] = { shown: 0, known: 0, checked_at: 0 };
+    }
+
+    showScreen('assessment');
+    renderCard();
+  }
+
+  // ── Card rendering ────────────────────────────────────────────
+  function renderCard() {
+    if (currentIdx >= TOTAL_CARDS || currentIdx >= queue.length) {
+      finishAssessment();
+      return;
+    }
+
+    const word  = queue[currentIdx];
+    const card  = $('swipe-card');
+    const color = TIER_COLORS[word.tier] || TIER_COLORS[1];
+
+    card.dataset.wordId = word.id;
+    card.dataset.tier   = word.tier;
+
+    // Apply tier color to CSS custom property
+    setTierColor(word.tier);
+
+    $('card-tier-badge').textContent  = 'Tier ' + word.tier;
+    $('card-word').textContent        = word.word;
+    $('card-pos').textContent         = posLabel(word.pos);
+    $('card-translation').textContent = word.uzbek_translation;
+    $('card-example').textContent     = word.example_sentence || '';
+
+    const gif = $('card-gif');
+    if (word.gif_url) { gif.src = word.gif_url; gif.style.display = 'block'; }
+    else              { gif.src = '';           gif.style.display = 'none';  }
+
+    // Reset meaning
+    $('card-meaning').classList.add('hidden');
+    $('toggle-meaning-btn').innerHTML = '<span>🇺🇿</span> Ko\'rsatish';
+
+    // Reset card position
+    card.style.transform = '';
+    card.style.boxShadow = '';
+    card.style.opacity   = '1';
+    card.classList.remove('animate-out', 'go-right', 'go-left');
+
+    $('know-hint').style.opacity     = '0';
+    $('dontknow-hint').style.opacity = '0';
+
+    updateProgress(currentIdx, TOTAL_CARDS);
+    $('progress-tier-label').textContent = TIER_NAMES[word.tier] || ('Tier ' + word.tier);
+
+    cardStartMs = Date.now();
+  }
+
+  function updateProgress(done, total) {
+    $('progress-text').textContent = done + ' / ' + total;
+    $('progress-fill').style.width = Math.round((done / total) * 100) + '%';
+  }
+
+  // ── Swipe & answer ────────────────────────────────────────────
+  function recordAnswer(known) {
+    const card    = $('swipe-card');
+    const wordId  = parseInt(card.dataset.wordId);
+    const tier    = parseInt(card.dataset.tier);
+    const elapsed = Date.now() - cardStartMs;
+
+    swipeTimes.push(elapsed);
+    if (swipeTimes.length > 5) swipeTimes.shift();
+    if (!fastSwipeShown && swipeTimes.length === 5 && swipeTimes.every(t => t < 1000)) {
+      fastSwipeShown = true;
+      $('fast-swipe-modal').classList.add('visible');
+    }
+
+    results.push({ word_id: wordId, known, response_time_ms: elapsed });
+
+    if (!tierCounts[tier]) tierCounts[tier] = { shown: 0, known: 0, checked_at: 0 };
+    tierCounts[tier].shown++;
+    if (known) tierCounts[tier].known++;
+
+    adaptiveAdjust(tier);
+
+    postJSON(PROGRESS_URL, { session_id: SESSION_ID, word_id: wordId, known, response_time_ms: elapsed })
+      .catch(() => {});
+
+    card.classList.add('animate-out', known ? 'go-right' : 'go-left');
+    setTimeout(() => { currentIdx++; renderCard(); }, 340);
+  }
+
+  // ── Adaptive algorithm ────────────────────────────────────────
+  function adaptiveAdjust(tier) {
+    const tc = tierCounts[tier];
+    if (tc.shown > 0 && tc.shown % 4 === 0 && tc.shown !== tc.checked_at) {
+      tc.checked_at = tc.shown;
+      const accuracy  = tc.known / tc.shown;
+      const remaining = TOTAL_CARDS - currentIdx - 1;
+      if (remaining <= 0) return;
+      if (accuracy >= 0.75 && tier < 5) swapInQueue(tier, tier + 1, 2);
+      else if (accuracy < 0.50 && tier > 1) swapInQueue(tier, tier - 1, 2);
+    }
+  }
+
+  function swapInQueue(fromTier, toTier, count) {
+    let swapped = 0;
+    for (let i = currentIdx + 1; i < queue.length && swapped < count; i++) {
+      if (queue[i] && queue[i].tier === fromTier) {
+        const replacement = wordPool[toTier] && wordPool[toTier].shift();
+        if (replacement) {
+          if (!wordPool[fromTier]) wordPool[fromTier] = [];
+          wordPool[fromTier].push(queue[i]);
+          queue[i] = replacement;
+          swapped++;
+        }
+      }
+    }
+  }
+
+  // ── Finish ────────────────────────────────────────────────────
+  async function finishAssessment() {
+    $('finishing-overlay').classList.add('visible');
+    try {
+      const data = await postJSON(COMPLETE_URL, { session_id: SESSION_ID, results });
+      if (data.ok) showResults(data);
+      else alert('Something went wrong. Please try again.');
+    } catch (e) {
+      alert('Network error. Please try again.');
+    } finally {
+      $('finishing-overlay').classList.remove('visible');
+    }
+  }
+
+  // ── Results ───────────────────────────────────────────────────
+  function animateCounter(el, target, ms) {
+    const start = performance.now();
+    (function tick(now) {
+      const p    = Math.min((now - start) / ms, 1);
+      const ease = 1 - Math.pow(1 - p, 4); // easeOutQuart
+      el.textContent = Math.round(ease * target);
+      if (p < 1) requestAnimationFrame(tick);
+    })(start);
+  }
+
+  function showResults(data) {
+    // Animated counter
+    animateCounter($('result-count'), data.projected_total, 1400);
+
+    // Level badge with pop animation
+    const badge = $('result-badge');
+    const levelColors = {
+      beginner:           '#6b7280',
+      intermediate:       '#3b82f6',
+      upper_intermediate: '#10b981',
+      advanced:           '#f59e0b',
+    };
+    badge.textContent       = data.level_display;
+    badge.style.background  = levelColors[data.level] || '#6b7280';
+    badge.classList.remove('badge-pop');
+    void badge.offsetWidth; // force reflow to restart animation
+    badge.classList.add('badge-pop');
+
+    // Tier bars with individual colors + stagger
+    const barsEl = $('tier-bars');
+    barsEl.innerHTML = '';
+    for (let t = 1; t <= 5; t++) {
+      const counts = data.tier_breakdown[t] || data.tier_breakdown[String(t)] || { shown: 0, known: 0 };
+      const pct    = counts.shown ? Math.round((counts.known / counts.shown) * 100) : 0;
+      const color  = TIER_COLORS[t];
+      const row    = document.createElement('div');
+      row.className = 'tier-row';
+      row.innerHTML = `
+        <span class="tier-label" style="color:${color}">T${t}</span>
+        <span class="tier-name">${TIER_NAMES[t]}</span>
+        <div class="tier-bar-wrap">
+          <div class="tier-bar" style="background:${color}" data-target="${pct}"></div>
+        </div>
+        <span class="tier-pct">${pct}%</span>
+      `;
+      row.style.transitionDelay = `${(t - 1) * 0.1}s`;
+      barsEl.appendChild(row);
+    }
+
+    // Strong / weak chips
+    if (data.strong_tiers && data.strong_tiers.length) {
+      $('strong-tiers').textContent = data.strong_tiers.map(t => 'T' + t).join(', ');
+    } else {
+      $('strong-section').style.display = 'none';
+    }
+    if (data.weak_tiers && data.weak_tiers.length) {
+      $('weak-tiers').textContent = data.weak_tiers.map(t => 'T' + t).join(', ');
+    } else {
+      $('focus-section').style.display = 'none';
+    }
+
+    showScreen('results');
+
+    // Trigger staggered bar + row animations
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelectorAll('.tier-row').forEach(row => row.classList.add('visible'));
+      document.querySelectorAll('.tier-bar[data-target]').forEach(bar => {
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }));
+  }
+
+  // ── Drag / swipe gestures ─────────────────────────────────────
+  function updateCardDrag(x) {
+    const card    = $('swipe-card');
+    const rot     = x * 0.07;
+    card.style.transform = `translateX(${x}px) rotate(${rot}deg)`;
+
+    const t       = Math.min(Math.abs(x) / 80, 1);
+    const emerald = `rgba(16,185,129,${t * 0.55})`;
+    const rose    = `rgba(244,63,94,${t * 0.55})`;
+
+    if (x > 20) {
+      card.style.boxShadow             = `0 0 36px ${emerald}`;
+      $('know-hint').style.opacity     = t;
+      $('dontknow-hint').style.opacity = '0';
+    } else if (x < -20) {
+      card.style.boxShadow             = `0 0 36px ${rose}`;
+      $('dontknow-hint').style.opacity = t;
+      $('know-hint').style.opacity     = '0';
+    } else {
+      card.style.boxShadow             = '';
+      $('know-hint').style.opacity     = '0';
+      $('dontknow-hint').style.opacity = '0';
+    }
+  }
+
+  function snapBack() {
+    const card = $('swipe-card');
+    card.style.transition = 'transform 0.28s ease, box-shadow 0.28s ease';
+    card.style.transform  = '';
+    card.style.boxShadow  = '';
+    $('know-hint').style.opacity     = '0';
+    $('dontknow-hint').style.opacity = '0';
+    setTimeout(() => { card.style.transition = ''; }, 300);
+  }
+
+  function commitDrag() {
+    if      (currentDragX >  80) recordAnswer(true);
+    else if (currentDragX < -80) recordAnswer(false);
+    else snapBack();
+    currentDragX = 0;
+  }
+
+  function initGestures() {
+    const card = $('swipe-card');
+
+    card.addEventListener('touchstart', e => {
+      if ($('fast-swipe-modal').classList.contains('visible')) return;
+      dragStartX = e.touches[0].clientX;
+      isDragging = true;
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      currentDragX = e.touches[0].clientX - dragStartX;
+      updateCardDrag(currentDragX);
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      commitDrag();
+    });
+
+    card.addEventListener('mousedown', e => {
+      if ($('fast-swipe-modal').classList.contains('visible')) return;
+      dragStartX = e.clientX;
+      isDragging = true;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup',   onMouseUp);
+    });
+  }
+
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    currentDragX = e.clientX - dragStartX;
+    updateCardDrag(currentDragX);
+  }
+
+  function onMouseUp() {
+    if (!isDragging) return;
+    isDragging = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup',   onMouseUp);
+    commitDrag();
+  }
+
+  // ── Event listeners ───────────────────────────────────────────
+  $('start-btn').addEventListener('click', () => {
+    $('card-word').textContent = '…';
+    init();
+  });
+
+  $('btn-know').addEventListener('click',     () => recordAnswer(true));
+  $('btn-dontknow').addEventListener('click', () => recordAnswer(false));
+
+  $('toggle-meaning-btn').addEventListener('click', () => {
+    const meaning = $('card-meaning');
+    const show    = meaning.classList.contains('hidden');
+    meaning.classList.toggle('hidden', !show);
+    $('toggle-meaning-btn').innerHTML = show
+      ? '<span>🙈</span> Yashirish'
+      : '<span>🇺🇿</span> Ko\'rsatish';
+  });
+
+  $('modal-ok-btn').addEventListener('click', () => {
+    $('fast-swipe-modal').classList.remove('visible');
+    swipeTimes = [];
+  });
+
+  $('goto-words-btn').addEventListener('click', () => {
+    window.location.href = WORDS_URL;
+  });
+
+  initGestures();
+})();
+</script>
+</body>
+</html>

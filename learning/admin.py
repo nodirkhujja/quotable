@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from .models import ClozeResult, FavoriteQuote, LearningProgress, QuoteMastery, ReviewSession, SourceProgress, WordNote
+from .models import (
+    ClozeResult, CoreWord, FavoriteQuote, LearningProgress, OnboardingResult, OnboardingSession, QuoteMastery,
+    ReviewSession, SourceProgress, VocabWord, WordCache, WordNote,
+)
+
+
+@admin.register(WordCache)
+class WordCacheAdmin(admin.ModelAdmin):
+    list_display = ("word", "get_pos_display", "definition", "created_at")
+    list_filter = ("pos", "created_at")
+    search_fields = ("word", "definition")
+    ordering = ("-created_at",)
 
 
 class ClozeResultInline(admin.TabularInline):
@@ -45,3 +56,32 @@ class SourceProgressAdmin(admin.ModelAdmin):
 class FavoriteQuoteAdmin(admin.ModelAdmin):
     list_display = ("user", "quote", "emotion_tag", "created_at")
     list_filter = ("emotion_tag",)
+
+
+@admin.register(VocabWord)
+class VocabWordAdmin(admin.ModelAdmin):
+    list_display = ("word", "frequency_rank", "tier", "pos", "uzbek_translation")
+    list_filter = ("tier", "pos")
+    search_fields = ("word", "uzbek_translation")
+    ordering = ("frequency_rank",)
+
+
+class OnboardingResultInline(admin.TabularInline):
+    model = OnboardingResult
+    extra = 0
+    readonly_fields = ("answered_at",)
+    raw_id_fields = ("word",)
+
+
+@admin.register(OnboardingSession)
+class OnboardingSessionAdmin(admin.ModelAdmin):
+    list_display = ("user", "level", "projected_total", "words_shown", "words_known", "completed_at")
+    list_filter = ("level",)
+    readonly_fields = ("started_at", "completed_at")
+    inlines = [OnboardingResultInline]
+
+
+@admin.register(CoreWord)
+class CoreWordAdmin(admin.ModelAdmin):
+    list_display = ("word",)
+    search_fields = ("word",)

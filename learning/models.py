@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from clips.models import Quote, Source
+from clips.models import Quote, Source, Transcript
 
 
 class FavoriteQuote(models.Model):
@@ -59,13 +59,56 @@ class QuoteMastery(models.Model):
 
 
 class WordNote(models.Model):
+
+    class PostType(models.TextChoices):
+        VERB = "v", "Verb"
+        NOUN = "n", "Noun"
+        ADJECTIVE = "adj", "Adjective"
+        PHRASE = "phr", "Phrase"
+        OTHER = "etc", "Other"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="word_notes")
-    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name="word_notes")
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name="word_notes", null=True, blank=True)
+    transcript = models.ForeignKey(
+        Transcript, on_delete=models.CASCADE, related_name="word_notes", null=True, blank=True
+    )
 
     word = models.CharField(max_length=100)
+    pos = models.CharField(max_length=5, choices=PostType.choices, default=PostType.OTHER)
     definition = models.TextField(blank=True)
+    translation = models.CharField(max_length=500, blank=True, default="")
+    stage = models.CharField(
+        max_length=20,
+        choices=[("inbox", "Inbox"), ("learning", "Learning"), ("mastered", "Mastered")],
+        default="inbox",
+    )
+    confidence = models.IntegerField(default=0)
+    mood = models.CharField(
+        max_length=20,
+        choices=[
+            ("sarcastic", "Sarcastic"),
+            ("angry", "Angry"),
+            ("funny", "Funny"),
+            ("romantic", "Romantic"),
+        ],
+        blank=True,
+    )
+    emotion_vibe = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("nostalgic", "Nostalgic"),
+            ("thrilling", "Thrilling"),
+            ("inspiring", "Inspiring"),
+            ("humorous", "Humorous"),
+            ("tense", "Tense"),
+            ("heartwarming", "Heartwarming"),
+        ],
+    )
     personal_note = models.TextField(blank=True)
     example_usage = models.TextField(blank=True)
+    usage_examples = models.JSONField(default=list, blank=True, help_text='[{"en":"...","uz":"..."},...]')
+    grammar_note = models.CharField(max_length=300, blank=True, default="")
 
     # Context of the word in the quote
     context_type = models.CharField(
@@ -85,8 +128,14 @@ class WordNote(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def usage_examples_json(self):
+        import json
+
+        return json.dumps(self.usage_examples or [])
+
     class Meta:
-        unique_together = ("user", "quote", "word")
+        unique_together = ("user", "transcript", "word")
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -105,10 +154,13 @@ class ReviewSession(models.Model):
             ("cloze", "Fill in the Blank"),
             ("shadow", "Shadow Mode"),
             ("review", "Quote Review"),
+            ("quiz", "Multiple Choice Quiz"),
             ("mixed", "Mixed"),
         ],
         default="mixed",
     )
+    score = models.PositiveIntegerField(default=0)
+    best_combo = models.PositiveIntegerField(default=0)
 
     @property
     def accuracy(self):
@@ -184,6 +236,85 @@ class SourceProgress(models.Model):
         return f"{self.user.username} — {self.source.title}"
 
 
+class VocabWord(models.Model):
+    """A vocabulary word used in the onboarding assessment."""
+
+    class Tier(models.IntegerChoices):
+        ONE = 1, "Tier 1 — Core"
+        TWO = 2, "Tier 2 — Common"
+        THREE = 3, "Tier 3 — Familiar"
+        FOUR = 4, "Tier 4 — Advanced"
+        FIVE = 5, "Tier 5 — Expert"
+
+    word = models.CharField(max_length=100, unique=True)
+    frequency_rank = models.PositiveIntegerField(unique=True)
+    tier = models.IntegerField(choices=Tier.choices)
+    pos = models.CharField(
+        max_length=5,
+        choices=[
+            ("n", "Noun"),
+            ("v", "Verb"),
+            ("adj", "Adjective"),
+            ("adv", "Adverb"),
+            ("phr", "Phrase"),
+            ("etc", "Other"),
+        ],
+        default="etc",
+    )
+    uzbek_translation = models.CharField(max_length=200)
+    uzbek_synonyms = models.CharField(max_length=500, blank=True)
+    example_sentence = models.TextField(blank=True)
+    gif_url = models.URLField(blank=True)
+
+    class Meta:
+        ordering = ["frequency_rank"]
+
+    def __str__(self):
+        return f"[T{self.tier}] {self.word} — {self.uzbek_translation}"
+
+
+class OnboardingSession(models.Model):
+    """Tracks a user's vocabulary assessment session."""
+
+    LEVEL_CHOICES = [
+        ("beginner", "Beginner"),
+        ("intermediate", "Intermediate"),
+        ("upper_intermediate", "Upper-Intermediate"),
+        ("advanced", "Advanced"),
+    ]
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="onboarding")
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    words_shown = models.PositiveIntegerField(default=0)
+    words_known = models.PositiveIntegerField(default=0)
+    projected_total = models.PositiveIntegerField(default=0)
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, blank=True)
+    tier_breakdown = models.JSONField(default=dict)
+    weak_tiers = models.JSONField(default=list)
+    strong_tiers = models.JSONField(default=list)
+
+    def __str__(self):
+        return f"{self.user.username} — Onboarding ({self.level or 'incomplete'})"
+
+
+class OnboardingResult(models.Model):
+    """Stores the user's response (know/don't know) for each word in the assessment."""
+
+    session = models.ForeignKey(OnboardingSession, on_delete=models.CASCADE, related_name="results")
+    word = models.ForeignKey(VocabWord, on_delete=models.CASCADE)
+    known = models.BooleanField()
+    response_time_ms = models.PositiveIntegerField(default=0)
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("session", "word")
+
+    def __str__(self):
+        mark = "\u2713" if self.known else "\u2717"
+        return f"{self.session.user.username} — '{self.word.word}' {mark}"
+
+
 class WordCache(models.Model):
     class PostType(models.TextChoices):
         VERB = "v", "Verb"
@@ -199,3 +330,56 @@ class WordCache(models.Model):
 
     def __str__(self):
         return f"{self.word} [{self.get_pos_display()}]"
+
+
+class CoreWord(models.Model):
+    """High-value vocabulary words that learners should prioritize."""
+
+    word = models.CharField(max_length=100, unique=True, db_index=True)
+
+    class Meta:
+        ordering = ["word"]
+
+    def __str__(self):
+        return self.word
+
+
+class SuggestedWord(models.Model):
+    """Curated vocabulary extracted from subtitles for learners."""
+
+    LEVEL_BEGINNER = "beginner"
+    LEVEL_INTERMEDIATE = "intermediate"
+    LEVEL_ADVANCED = "advanced"
+    LEVEL_CHOICES = [
+        (LEVEL_BEGINNER, "Beginner"),
+        (LEVEL_INTERMEDIATE, "Intermediate"),
+        (LEVEL_ADVANCED, "Advanced"),
+    ]
+
+    word = models.CharField(max_length=100, db_index=True)
+    translation = models.CharField(max_length=200, blank=True, default="")
+    level = models.CharField(max_length=15, choices=LEVEL_CHOICES, default=LEVEL_BEGINNER)
+    usage_examples = models.JSONField(
+        default=list, blank=True, help_text='[{"en":"That\'s awful","uz":"Bu dahshatli"},...]'
+    )
+    grammar_note = models.CharField(
+        max_length=300, blank=True, default="", help_text='e.g. "awful (adj) → awfully (adv)"'
+    )
+    sentence = models.TextField(help_text="The full subtitle line where the word appears")
+    source = models.ForeignKey("clips.Source", on_delete=models.CASCADE, related_name="suggested_words")
+    episode = models.ForeignKey(
+        "clips.Episode", on_delete=models.CASCADE, related_name="suggested_words", null=True, blank=True
+    )
+    transcript = models.ForeignKey("clips.Transcript", on_delete=models.CASCADE, related_name="suggested_words")
+    start_time = models.DecimalField(max_digits=10, decimal_places=3)
+    end_time = models.DecimalField(max_digits=10, decimal_places=3)
+    season = models.PositiveIntegerField(null=True, blank=True)
+    episode_number = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["source", "season", "episode_number", "start_time"]
+        unique_together = ("transcript", "word")
+
+    def __str__(self):
+        loc = f"S{self.season:02d}E{self.episode_number:02d}" if self.season else "Movie"
+        return f"{self.word} — {loc} [{self.start_time}s]"

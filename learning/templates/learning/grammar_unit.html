@@ -1,0 +1,850 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0a0a0a;
+            --bg-2:    #111111;
+            --bg-3:    #1a1a1a;
+            --border:  #1f1f1f;
+            --border-2:#2e2e2e;
+            --text:    #ffffff;
+            --text-2:  #a3a3a3;
+            --text-3:  #525252;
+            --accent:  #ff6b35;
+            --amber:   #f59e0b;
+            --emerald: #10b981;
+            --red:     #ef4444;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:56px;
+            display:flex; align-items:center; padding:0 24px; gap:16px;
+            background:rgba(10,10,10,0.92); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .back-btn {
+            display:flex; align-items:center; justify-content:center;
+            width:34px; height:34px; border-radius:8px;
+            background:var(--bg-3); border:none; cursor:pointer;
+            color:var(--text-2); transition:color .15s, background .15s;
+            text-decoration:none;
+        }
+        .back-btn:hover { color:var(--text); background:var(--border-2); }
+        .back-btn svg { width:18px; height:18px; stroke:currentColor; fill:none; }
+        .nav-title { font-size:15px; font-weight:600; }
+        .nav-sub { font-size:12px; color:var(--text-3); margin-left:auto; }
+
+        /* ── PAGE ── */
+        .page { max-width:600px; margin:0 auto; padding:32px 24px 80px; }
+
+        /* ── LESSON SECTION ── */
+        .lesson { margin-bottom:36px; }
+
+        .unit-title {
+            font-size:1.35rem; font-weight:700; color:var(--amber);
+            margin-bottom:20px; letter-spacing:-.01em;
+        }
+
+        .section-label {
+            font-size:11px; font-weight:700; text-transform:uppercase;
+            letter-spacing:.08em; color:var(--text-3);
+            margin-bottom:10px;
+        }
+
+        .rule-box {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:18px 20px;
+            margin-bottom:24px;
+            font-size:14px; line-height:1.7; color:var(--text-2);
+        }
+        .rule-box strong { color:var(--text); font-weight:600; }
+        .rule-box .formula {
+            display:inline-block;
+            background:rgba(245,158,11,0.08);
+            color:var(--amber);
+            font-weight:600; font-size:13px;
+            padding:2px 10px; border-radius:6px;
+            margin:4px 2px;
+        }
+
+        .examples { margin-bottom:28px; }
+        .example-item {
+            display:flex; align-items:flex-start; gap:10px;
+            padding:10px 0;
+            border-bottom:1px solid var(--border);
+            font-size:14px;
+        }
+        .example-item:last-child { border-bottom:none; }
+        .example-mark {
+            color:var(--emerald); font-size:13px; margin-top:2px;
+            flex-shrink:0;
+        }
+        .example-text { color:var(--text); line-height:1.5; }
+        .example-text em { color:var(--amber); font-style:normal; font-weight:600; }
+        .example-uz { font-size:12px; color:#8b8b8b; margin-top:2px; font-style:italic; }
+
+        .memory-tip {
+            background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.15);
+            border-radius:10px; padding:14px 18px; margin-bottom:20px;
+            font-size:13px; line-height:1.6; color:var(--text-2);
+        }
+        .memory-tip strong { color:#818cf8; }
+        .memory-tip .tip-label {
+            font-size:10px; font-weight:700; text-transform:uppercase;
+            letter-spacing:.08em; color:#818cf8; margin-bottom:6px;
+            display:block;
+        }
+
+        .psych-tip {
+            background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.15);
+            border-radius:10px; padding:14px 18px; margin-bottom:28px;
+            font-size:13px; line-height:1.6; color:var(--text-2);
+        }
+        .psych-tip strong { color:var(--emerald); }
+        .psych-tip .tip-label {
+            font-size:10px; font-weight:700; text-transform:uppercase;
+            letter-spacing:.08em; color:var(--emerald); margin-bottom:6px;
+            display:block;
+        }
+
+        .form-row { margin-bottom:10px; }
+        .form-label {
+            font-size:11px; font-weight:700; color:var(--amber);
+            text-transform:uppercase; letter-spacing:.05em;
+            margin-bottom:4px;
+        }
+        .form-uz { font-size:12px; color:#8b8b8b; margin-top:4px; font-style:italic; }
+
+        /* ── PRACTICE SECTION ── */
+        .practice-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:16px;
+        }
+        .practice-progress {
+            font-size:13px; color:var(--text-3); font-weight:600;
+            font-variant-numeric:tabular-nums;
+        }
+
+        .progress-dots {
+            display:flex; gap:6px; margin-bottom:20px;
+        }
+        .pdot {
+            width:100%; height:4px; border-radius:2px;
+            background:var(--bg-3);
+            transition:background .3s;
+        }
+        .pdot.correct { background:var(--emerald); }
+        .pdot.wrong { background:var(--red); }
+        .pdot.active { background:var(--amber); }
+
+        /* ── SENTENCE BUILDER ── */
+        .builder { display:none; }
+        .builder.active { display:block; }
+
+        .answer-zone {
+            min-height:56px;
+            display:flex; flex-wrap:wrap; gap:8px;
+            padding:14px 16px;
+            background:var(--bg-2);
+            border:2px dashed var(--border-2);
+            border-radius:12px;
+            margin-bottom:20px;
+            transition:border-color .3s, background .3s;
+        }
+        .answer-zone.correct-flash {
+            border-color:var(--emerald);
+            background:rgba(16,185,129,0.05);
+        }
+        .answer-zone.wrong-flash {
+            border-color:var(--red);
+            background:rgba(239,68,68,0.05);
+        }
+        .answer-zone.has-words {
+            border-style:solid;
+            border-color:var(--border-2);
+        }
+        .answer-placeholder {
+            font-size:13px; color:var(--text-3);
+            display:flex; align-items:center;
+            width:100%;
+        }
+
+        .word-bank {
+            display:flex; flex-wrap:wrap; gap:8px;
+            margin-bottom:20px;
+            min-height:44px;
+        }
+
+        .word-tile {
+            padding:8px 16px;
+            background:var(--bg-3);
+            border:1px solid var(--border-2);
+            border-radius:8px;
+            font-size:14px; font-weight:500;
+            color:var(--text);
+            cursor:pointer;
+            transition:transform .12s, opacity .12s, background .15s;
+            user-select:none;
+        }
+        .word-tile:hover { background:var(--border-2); }
+        .word-tile:active { transform:scale(0.95); }
+        .word-tile.placed { opacity:0; pointer-events:none; height:0; padding:0; margin:0; border:none; overflow:hidden; }
+
+        .answer-tile {
+            padding:8px 16px;
+            background:rgba(245,158,11,0.1);
+            border:1px solid rgba(245,158,11,0.25);
+            border-radius:8px;
+            font-size:14px; font-weight:500;
+            color:var(--amber);
+            cursor:pointer;
+            transition:transform .12s;
+            user-select:none;
+        }
+        .answer-tile:hover { background:rgba(245,158,11,0.15); }
+        .answer-tile:active { transform:scale(0.95); }
+
+        .check-btn {
+            width:100%; padding:12px;
+            background:var(--amber); color:#000;
+            font-size:14px; font-weight:700;
+            border:none; border-radius:10px;
+            cursor:pointer;
+            transition:opacity .15s;
+            display:none;
+        }
+        .check-btn:hover { opacity:0.85; }
+        .check-btn.visible { display:block; }
+        .check-btn:disabled { opacity:0.4; cursor:default; }
+
+        /* ── FEEDBACK ── */
+        .feedback {
+            display:none;
+            padding:14px 16px;
+            border-radius:10px;
+            margin-top:14px;
+            font-size:14px; line-height:1.5;
+        }
+        .feedback.show { display:block; }
+        .feedback.correct {
+            background:rgba(16,185,129,0.08);
+            border:1px solid rgba(16,185,129,0.2);
+            color:var(--emerald);
+        }
+        .feedback.wrong {
+            background:rgba(239,68,68,0.08);
+            border:1px solid rgba(239,68,68,0.2);
+            color:var(--text-2);
+        }
+        .feedback .correct-sentence {
+            color:var(--text); font-weight:600;
+            margin-top:4px;
+        }
+
+        /* ── START BUTTON ── */
+        .start-btn {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:12px 28px;
+            background:var(--amber); color:#000;
+            font-size:14px; font-weight:700;
+            border:none; border-radius:10px;
+            cursor:pointer;
+            transition:opacity .15s;
+        }
+        .start-btn:hover { opacity:0.85; }
+        .start-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; }
+
+        /* ── COMPLETE SCREEN ── */
+        .complete-screen {
+            display:none;
+            text-align:center;
+            padding:48px 24px;
+        }
+        .complete-screen.show { display:block; }
+        .complete-icon {
+            width:64px; height:64px; margin:0 auto 20px;
+            display:flex; align-items:center; justify-content:center;
+            background:rgba(16,185,129,0.1); border-radius:50%;
+            color:var(--emerald);
+        }
+        .complete-icon svg { width:32px; height:32px; stroke:currentColor; fill:none; }
+        .complete-title {
+            font-size:20px; font-weight:700; margin-bottom:6px;
+        }
+        .complete-sub {
+            font-size:14px; color:var(--text-2); margin-bottom:28px;
+        }
+        .complete-score {
+            font-size:14px; color:var(--text-2); margin-bottom:28px;
+        }
+        .complete-score strong { color:var(--text); }
+        .complete-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+        .btn-primary {
+            padding:10px 24px;
+            background:var(--amber); color:#000;
+            font-size:14px; font-weight:700;
+            border:none; border-radius:10px;
+            cursor:pointer; text-decoration:none;
+            transition:opacity .15s;
+        }
+        .btn-primary:hover { opacity:0.85; }
+        .btn-secondary {
+            padding:10px 24px;
+            background:var(--bg-3); color:var(--text);
+            font-size:14px; font-weight:600;
+            border:1px solid var(--border-2); border-radius:10px;
+            cursor:pointer; text-decoration:none;
+            transition:background .15s;
+        }
+        .btn-secondary:hover { background:var(--border-2); }
+
+        @media (max-width:600px) {
+            .nav { padding:0 16px; }
+            .page { padding:24px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'learning:grammar' %}" class="back-btn">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+    </a>
+    <span class="nav-title">Grammar</span>
+    <span class="nav-sub" id="navSub">Unit {{ unit_id }} of 8</span>
+</nav>
+
+<div class="page">
+
+    <!-- ═══ LESSON ═══ -->
+    <div class="lesson" id="lessonSection">
+        <div class="unit-title" id="unitTitle"></div>
+
+        <div class="section-label">Rule</div>
+        <div class="rule-box" id="ruleBox"></div>
+
+        <div class="section-label">Form</div>
+        <div class="rule-box" id="formBox"></div>
+
+        <div class="section-label">Examples</div>
+        <div class="examples" id="examplesBox"></div>
+
+        <div class="memory-tip" id="memoryTip"></div>
+        <div class="psych-tip" id="psychTip"></div>
+
+        <div style="text-align:center;">
+            <button class="start-btn" id="startBtn" onclick="startPractice()">
+                Start Practice
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══ PRACTICE ═══ -->
+    <div class="builder" id="practiceSection">
+        <div class="practice-header">
+            <div class="section-label" style="margin:0;">Practice</div>
+            <div class="practice-progress" id="practiceProgress">0/5</div>
+        </div>
+
+        <div class="progress-dots" id="progressDots"></div>
+
+        <div class="answer-zone" id="answerZone">
+            <span class="answer-placeholder" id="answerPlaceholder">Tap words to build the sentence</span>
+        </div>
+
+        <div class="word-bank" id="wordBank"></div>
+
+        <button class="check-btn" id="checkBtn" onclick="checkAnswer()">Check</button>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <!-- ═══ COMPLETE ═══ -->
+    <div class="complete-screen" id="completeScreen">
+        <div class="complete-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
+        <div class="complete-title">Unit Complete!</div>
+        <div class="complete-sub" id="completeSub"></div>
+        <div class="complete-score" id="completeScore"></div>
+        <div class="complete-btns">
+            <a href="#" class="btn-primary" id="nextUnitBtn">Next Unit</a>
+            <a href="{% url 'learning:grammar' %}" class="btn-secondary">All Units</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const UNIT_ID = {{ unit_id }};
+
+const UNITS = {
+    1: {
+        title: "Present Simple",
+        rule: `Use this tense for <strong>habits, routines, and facts</strong> — things that are always or usually true.<br><span class="form-uz">Uzbek: odatlar va kundalik ishlar uchun.</span>`,
+        form: `<div class="form-row"><div class="form-label">Positive</div>I / You / We / They + <span class="formula">base verb</span><br>He / She / It + <span class="formula">verb + s</span><br><span class="form-uz">Tip: uchinchi shaxs (he/she/it) ga <strong>-s</strong> qo'shiladi</span></div>
+<div class="form-row"><div class="form-label">Negative</div>subject + <span class="formula">don't / doesn't</span> + base verb<br><span class="form-uz">Uzbek: inkor uchun don't / doesn't</span></div>
+<div class="form-row"><div class="form-label">Question</div><span class="formula">Do / Does</span> + subject + base verb?<br><span class="form-uz">Uzbek: savol boshida Do / Does</span></div>`,
+        examples: [
+            ["I <em>drink</em> coffee every morning.", "positive — daily habit", "har kuni ertalab kofe ichaman"],
+            ["She <em>doesn't eat</em> meat.", "negative — doesn't + base", "go'sht yemaydi"],
+            ["<em>Do</em> you <em>speak</em> English?", "question — Do + base", "inglizcha gapirasizmi?"],
+        ],
+        memory: `Daily routines = <strong>Present Simple</strong><br>Signal words: <span class="formula">always</span> <span class="formula">usually</span> <span class="formula">often</span> <span class="formula">never</span> <span class="formula">every day</span>`,
+        psych: `Don't memorize the rule first.<br>Look at examples → notice the pattern → <strong>copy the pattern.</strong>`,
+        practice: [
+            "I drink coffee every morning.",
+            "She doesn't eat meat.",
+            "Do you speak English?",
+            "He works every day.",
+            "They don't live here.",
+        ]
+    },
+    2: {
+        title: "Present Continuous",
+        rule: `Use this tense for things happening <strong>right now</strong> or <strong>temporary</strong> situations.<br><span class="form-uz">Uzbek: hozir bo'layotgan ish uchun.</span>`,
+        form: `<div class="form-row"><div class="form-label">Positive</div>subject + <span class="formula">am / is / are</span> + <span class="formula">verb-ing</span><br><span class="form-uz">Tip: I → am, he/she/it → is, you/we/they → are</span></div>
+<div class="form-row"><div class="form-label">Negative</div>subject + <span class="formula">am not / isn't / aren't</span> + verb-ing</div>
+<div class="form-row"><div class="form-label">Question</div><span class="formula">Am / Is / Are</span> + subject + verb-ing?</div>`,
+        examples: [
+            ["I<em>'m waiting</em> for the bus.", "positive — right now", "avtobus kutyapman"],
+            ["He <em>is not working</em> today.", "negative — is not + verb-ing", "bugun ishlamayapti"],
+            ["<em>Are</em> you <em>coming</em> with us?", "question — Are + verb-ing", "biz bilan kelyapsanmi?"],
+        ],
+        memory: `Right now, at this moment = <strong>Present Continuous</strong><br>Signal words: <span class="formula">now</span> <span class="formula">right now</span> <span class="formula">at the moment</span> <span class="formula">currently</span>`,
+        psych: `Present Simple = <strong>always</strong> happens.<br>Present Continuous = happening <strong>now</strong>.<br>That's the only difference you need.`,
+        practice: [
+            "I'm waiting for the bus.",
+            "He is not working today.",
+            "Are you coming with us?",
+            "She is cooking dinner now.",
+            "Why are you laughing?",
+        ]
+    },
+    3: {
+        title: "Past Simple",
+        rule: `Use this tense for actions that <strong>started and finished</strong> in the past.<br><span class="form-uz">Uzbek: o'tgan zamonda tugagan ishlar uchun.</span>`,
+        form: `<div class="form-row"><div class="form-label">Positive</div>Regular: base + <span class="formula">-ed</span> (walked, wanted)<br>Irregular: <span class="formula">changes form</span> (go→went, see→saw)</div>
+<div class="form-row"><div class="form-label">Negative</div>subject + <span class="formula">didn't</span> + base verb<br><span class="form-uz">Uzbek: inkor uchun didn't + oddiy fe'l</span></div>
+<div class="form-row"><div class="form-label">Question</div><span class="formula">Did</span> + subject + base verb?<br><span class="form-uz">Uzbek: savol boshida Did</span></div>`,
+        examples: [
+            ["I <em>called</em> you yesterday.", "positive — regular", "kecha senga qo'ng'iroq qildim"],
+            ["She <em>didn't come</em> to the party.", "negative — didn't + base", "ziyofatga kelmadi"],
+            ["<em>Did</em> you <em>see</em> that movie?", "question — Did + base", "o'sha filmni ko'rdingmi?"],
+        ],
+        memory: `Finished action in the past = <strong>Past Simple</strong><br>Signal words: <span class="formula">yesterday</span> <span class="formula">last week</span> <span class="formula">ago</span> <span class="formula">in 2020</span>`,
+        psych: `Don't try to memorize all irregular verbs at once.<br>Learn the <strong>20 most common</strong> ones first — they cover 80% of conversations.`,
+        practice: [
+            "I called you yesterday.",
+            "She didn't come to the party.",
+            "Did you see that movie?",
+            "He went home early.",
+            "We didn't know the answer.",
+        ]
+    },
+    4: {
+        title: "Future (will / going to)",
+        rule: `<strong>Will</strong> = instant decisions, promises, predictions you feel.<br><strong>Going to</strong> = plans you already decided.<br><span class="form-uz">Uzbek: will = o'sha zahoti qaror, going to = oldindan rejalashtirilgan.</span>`,
+        form: `<div class="form-row"><div class="form-label">Will</div>subject + <span class="formula">will</span> + base verb<br>Short: I'll, she'll, we'll</div>
+<div class="form-row"><div class="form-label">Going to</div>subject + <span class="formula">am/is/are + going to</span> + base verb</div>
+<div class="form-row"><div class="form-label">Negative</div><span class="formula">won't</span> (will not) / <span class="formula">not going to</span></div>`,
+        examples: [
+            ["I<em>'ll call</em> you later.", "will — instant decision", "keyinroq qo'ng'iroq qilaman"],
+            ["I<em>'m going to</em> study tonight.", "going to — planned", "bugun kechqurun o'qiyman"],
+            ["It <em>won't</em> take long.", "negative — won't", "ko'p vaqt olmaydi"],
+        ],
+        memory: `Just decided now? → <strong>will</strong><br>Already planned? → <strong>going to</strong><br>"I'll have coffee" (just decided) vs "I'm going to study tonight" (planned)`,
+        psych: `In real conversations, people use <strong>will</strong> and <strong>going to</strong> almost the same way.<br>Don't stress about picking the "wrong" one — both are understood.`,
+        practice: [
+            "I'll call you later.",
+            "I'm going to study tonight.",
+            "It won't take long.",
+            "She will help you.",
+            "We are going to be late.",
+        ]
+    },
+    5: {
+        title: "Articles (a / the / \u2205)",
+        rule: `<strong>a/an</strong> = any one, first time you mention it.<br><strong>the</strong> = specific one, both people know which.<br><strong>no article</strong> = general idea, plural or uncountable.<br><span class="form-uz">Uzbek: o'zbek tilida article yo'q — shuning uchun eng qiyin mavzu.</span>`,
+        form: `<div class="form-row"><div class="form-label">A / An</div><span class="formula">a</span> + consonant sound (a car, a house)<br><span class="formula">an</span> + vowel sound (an apple, an hour)</div>
+<div class="form-row"><div class="form-label">The</div><span class="formula">the</span> = "you know which one I mean"<br>Second mention, unique things (the sun, the president)</div>
+<div class="form-row"><div class="form-label">No article</div>General plural: <strong>Dogs</strong> are loyal.<br>Uncountable: <strong>Water</strong> is important.</div>`,
+        examples: [
+            ["I need <em>a</em> taxi.", "a — any taxi, first mention", "taksi kerak"],
+            ["Close <em>the</em> window please.", "the — we both see it", "derazani yoping"],
+            ["<em>Water</em> is free here.", "no article — general", "bu yerda suv bepul"],
+        ],
+        memory: `First time? → <strong>a/an</strong><br>We both know which? → <strong>the</strong><br>General idea? → <strong>nothing</strong>`,
+        psych: `Articles are the <strong>hardest part</strong> for Uzbek speakers because Uzbek has no articles.<br>Don't worry about mistakes — even advanced learners mix them up. Focus on <strong>"the" = specific</strong>.`,
+        practice: [
+            "I need a taxi.",
+            "Close the window please.",
+            "Water is free here.",
+            "She is a doctor.",
+            "Give me the keys.",
+        ]
+    },
+    6: {
+        title: "Prepositions (in / on / at)",
+        rule: `<strong>at</strong> = exact point (time or place).<br><strong>on</strong> = surface or specific day.<br><strong>in</strong> = inside something, or longer time period.<br><span class="form-uz">Uzbek: at = aniq nuqta, on = ustida/kuni, in = ichida/davri.</span>`,
+        form: `<div class="form-row"><div class="form-label">At</div><span class="formula">at</span> 5pm, <span class="formula">at</span> home, <span class="formula">at</span> the station<br><span class="form-uz">Aniq joy yoki vaqt — nuqta</span></div>
+<div class="form-row"><div class="form-label">On</div><span class="formula">on</span> Monday, <span class="formula">on</span> the table, <span class="formula">on</span> my birthday<br><span class="form-uz">Kun yoki sirt — ustida</span></div>
+<div class="form-row"><div class="form-label">In</div><span class="formula">in</span> July, <span class="formula">in</span> 2024, <span class="formula">in</span> the room<br><span class="form-uz">Oy, yil yoki ichida — davr</span></div>`,
+        examples: [
+            ["I'll meet you <em>at</em> the cafe.", "at — exact place", "kafeda ko'rishamiz"],
+            ["Your phone is <em>on</em> the table.", "on — surface", "telefoningiz stol ustida"],
+            ["She lives <em>in</em> London.", "in — inside a city", "Londonda yashaydi"],
+        ],
+        memory: `<span class="formula">at</span> = point &nbsp; <span class="formula">on</span> = surface/day &nbsp; <span class="formula">in</span> = inside/period<br>Think: at the door → on the door → in the room`,
+        psych: `Learn prepositions in <strong>phrases, not rules</strong>.<br>"at home", "on Monday", "in the morning" — memorize the whole phrase.`,
+        practice: [
+            "I'll meet you at the cafe.",
+            "Your phone is on the table.",
+            "She lives in London.",
+            "The class starts at nine.",
+            "I was born in March.",
+        ]
+    },
+    7: {
+        title: "Modal Verbs",
+        rule: `Modal verbs add <strong>extra meaning</strong> to the main verb. They never change form — no -s, no -ed, no -ing.<br><span class="form-uz">Uzbek: modal fe'llar asosiy fe'lga ma'no qo'shadi.</span>`,
+        form: `<div class="form-row"><div class="form-label">Ability</div><span class="formula">can</span> = I can swim / <span class="formula">can't</span> = I can't swim</div>
+<div class="form-row"><div class="form-label">Advice</div><span class="formula">should</span> = You should rest / <span class="formula">shouldn't</span> = You shouldn't worry</div>
+<div class="form-row"><div class="form-label">Obligation</div><span class="formula">must</span> = strong (my rule) / <span class="formula">have to</span> = external (someone else's rule)</div>
+<div class="form-row"><div class="form-label">Possibility</div><span class="formula">could</span> = She could be right / <span class="formula">might</span> = It might rain</div>`,
+        examples: [
+            ["I <em>can</em> swim.", "ability — can", "suzishni bilaman"],
+            ["You <em>should</em> see a doctor.", "advice — should", "shifokorga ko'rinishing kerak"],
+            ["You <em>must</em> wear a seatbelt.", "obligation — must", "kamar taqishing shart"],
+        ],
+        memory: `<span class="formula">can</span> = able to &nbsp; <span class="formula">should</span> = better to &nbsp; <span class="formula">must</span> = have to<br>All modals: modal + <strong>base verb</strong> (never "to" after can/should/must)`,
+        psych: `Start with just <strong>3 modals</strong>: can, should, must.<br>These cover 90% of daily situations. Add others later.`,
+        practice: [
+            "I can swim.",
+            "You should see a doctor.",
+            "You must wear a seatbelt.",
+            "She can't come today.",
+            "I have to go now.",
+        ]
+    },
+    8: {
+        title: "Conditionals",
+        rule: `<strong>If</strong> sentences describe what happens under certain conditions — real or imaginary.<br><span class="form-uz">Uzbek: "agar" jumlalari — haqiqiy yoki tasavvurdagi holatlar.</span>`,
+        form: `<div class="form-row"><div class="form-label">Zero (facts)</div>If + <span class="formula">present</span>, <span class="formula">present</span><br>If you heat water, it boils. (har doim shunday)</div>
+<div class="form-row"><div class="form-label">First (likely)</div>If + <span class="formula">present</span>, <span class="formula">will</span> + base<br>If it rains, I will stay home. (bo'lishi mumkin)</div>
+<div class="form-row"><div class="form-label">Second (imaginary)</div>If + <span class="formula">past</span>, <span class="formula">would</span> + base<br>If I were you, I would run. (haqiqatda emas)</div>
+<div class="form-row"><div class="form-label">Third (past regret)</div>If + <span class="formula">had + V3</span>, <span class="formula">would have</span> + V3<br>If I had known, I would have stayed. (o'tganda)</div>`,
+        examples: [
+            ["If it <em>rains</em>, I <em>will</em> stay home.", "first — real possibility", "yomg'ir yog'sa, uyda qolaman"],
+            ["If I <em>had</em> more money, I <em>would</em> travel.", "second — imaginary now", "ko'proq pulim bo'lsa, sayohat qilardim"],
+            ["If I <em>had studied</em>, I <em>would have passed</em>.", "third — past regret", "o'qiganimda o'tardim"],
+        ],
+        memory: `Real future? → <strong>First</strong> (If + present, will)<br>Imaginary now? → <strong>Second</strong> (If + past, would)<br>Past regret? → <strong>Third</strong> (If + had, would have)`,
+        psych: `Start with the <strong>First Conditional</strong> only — it's the most useful.<br>Second and Third are for movies and books. You'll pick them up naturally.`,
+        practice: [
+            "If it rains I will stay home.",
+            "If I had money I would travel.",
+            "If I had studied I would have passed.",
+            "If you call I will answer.",
+            "If I were you I would go.",
+        ]
+    },
+};
+
+/* ─── STATE ─── */
+const unit = UNITS[UNIT_ID];
+let practiceIdx = 0;
+let correctCount = 0;
+let placedWords = [];     // words placed in answer zone (ordered)
+let bankWords = [];        // all words for current sentence (shuffled)
+let originalWords = [];    // correct order
+
+const STORAGE_KEY = 'grammar_progress';
+
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { completed: [] };
+        return JSON.parse(raw);
+    } catch { return { completed: [] }; }
+}
+function saveProgress(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+/* ─── RENDER LESSON ─── */
+function renderLesson() {
+    document.getElementById('unitTitle').textContent = unit.title;
+    document.getElementById('ruleBox').innerHTML = unit.rule;
+    document.getElementById('formBox').innerHTML = unit.form;
+
+    const box = document.getElementById('examplesBox');
+    box.innerHTML = '';
+    unit.examples.forEach(([text, note, uz]) => {
+        box.innerHTML += `
+            <div class="example-item">
+                <span class="example-mark">\u2713</span>
+                <div>
+                    <div class="example-text">"${text}"</div>
+                    ${note ? `<div style="font-size:12px;color:#7a7a7a;margin-top:3px;">${note}</div>` : ''}
+                    ${uz ? `<div class="example-uz">${uz}</div>` : ''}
+                </div>
+            </div>`;
+    });
+
+    document.getElementById('memoryTip').innerHTML =
+        `<span class="tip-label">Quick Memory Trick</span>${unit.memory}`;
+    document.getElementById('psychTip').innerHTML =
+        `<span class="tip-label">Learning Tip</span>${unit.psych}`;
+}
+
+/* ─── START PRACTICE ─── */
+function startPractice() {
+    document.getElementById('lessonSection').style.display = 'none';
+    document.getElementById('practiceSection').classList.add('active');
+
+    // Build progress dots
+    const dots = document.getElementById('progressDots');
+    dots.innerHTML = '';
+    for (let i = 0; i < unit.practice.length; i++) {
+        const d = document.createElement('div');
+        d.className = 'pdot' + (i === 0 ? ' active' : '');
+        d.id = 'pdot' + i;
+        dots.appendChild(d);
+    }
+
+    loadSentence(0);
+}
+
+/* ─── LOAD SENTENCE ─── */
+function loadSentence(idx) {
+    practiceIdx = idx;
+    const sentence = unit.practice[idx];
+    originalWords = tokenize(sentence);
+    bankWords = shuffle([...originalWords]);
+    placedWords = [];
+
+    document.getElementById('practiceProgress').textContent = `${idx}/${unit.practice.length}`;
+
+    // Update dots
+    for (let i = 0; i < unit.practice.length; i++) {
+        const dot = document.getElementById('pdot' + i);
+        if (i === idx) dot.classList.add('active');
+        else dot.classList.remove('active');
+    }
+
+    renderBank();
+    renderAnswer();
+
+    document.getElementById('checkBtn').classList.remove('visible');
+    document.getElementById('checkBtn').disabled = false;
+    const fb = document.getElementById('feedback');
+    fb.classList.remove('show', 'correct', 'wrong');
+}
+
+function tokenize(sentence) {
+    // Split but keep contractions together (I'm, don't, she's, won't, etc.)
+    return sentence.match(/[\w']+[.,!?]?/g) || sentence.split(/\s+/);
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    // Make sure it's actually shuffled (not same as original)
+    if (arr.length > 2 && arr.join(' ') === originalWords.join(' ')) {
+        return shuffle(arr);
+    }
+    return arr;
+}
+
+/* ─── RENDER ─── */
+function renderBank() {
+    const bank = document.getElementById('wordBank');
+    bank.innerHTML = '';
+    bankWords.forEach((word, i) => {
+        const placed = placedWords.includes(i);
+        const tile = document.createElement('div');
+        tile.className = 'word-tile' + (placed ? ' placed' : '');
+        tile.textContent = word;
+        tile.dataset.idx = i;
+        if (!placed) {
+            tile.onclick = () => placeWord(i);
+        }
+        bank.appendChild(tile);
+    });
+}
+
+function renderAnswer() {
+    const zone = document.getElementById('answerZone');
+    const placeholder = document.getElementById('answerPlaceholder');
+
+    // Clear answer tiles
+    zone.querySelectorAll('.answer-tile').forEach(t => t.remove());
+
+    if (placedWords.length === 0) {
+        placeholder.style.display = 'flex';
+        zone.classList.remove('has-words');
+    } else {
+        placeholder.style.display = 'none';
+        zone.classList.add('has-words');
+        placedWords.forEach((bankIdx, ansIdx) => {
+            const tile = document.createElement('div');
+            tile.className = 'answer-tile';
+            tile.textContent = bankWords[bankIdx];
+            tile.onclick = () => removeWord(ansIdx);
+            zone.appendChild(tile);
+        });
+    }
+
+    // Show check button when all words placed
+    const checkBtn = document.getElementById('checkBtn');
+    if (placedWords.length === bankWords.length) {
+        checkBtn.classList.add('visible');
+    } else {
+        checkBtn.classList.remove('visible');
+    }
+}
+
+function placeWord(bankIdx) {
+    placedWords.push(bankIdx);
+    renderBank();
+    renderAnswer();
+}
+
+function removeWord(ansIdx) {
+    placedWords.splice(ansIdx, 1);
+    renderBank();
+    renderAnswer();
+}
+
+/* ─── CHECK ─── */
+function checkAnswer() {
+    const btn = document.getElementById('checkBtn');
+    btn.disabled = true;
+
+    const userSentence = placedWords.map(i => bankWords[i]);
+    const isCorrect = userSentence.every((w, i) => clean(w) === clean(originalWords[i]));
+
+    const zone = document.getElementById('answerZone');
+    const fb = document.getElementById('feedback');
+
+    // Update dot
+    const dot = document.getElementById('pdot' + practiceIdx);
+    dot.classList.remove('active');
+
+    if (isCorrect) {
+        correctCount++;
+        zone.classList.add('correct-flash');
+        dot.classList.add('correct');
+        fb.className = 'feedback show correct';
+        fb.innerHTML = 'Correct!';
+        playSound('correct');
+    } else {
+        zone.classList.add('wrong-flash');
+        dot.classList.add('wrong');
+        fb.className = 'feedback show wrong';
+        fb.innerHTML = `Not quite.<div class="correct-sentence">"${unit.practice[practiceIdx]}"</div>`;
+        playSound('wrong');
+    }
+
+    // Auto-advance
+    const delay = isCorrect ? 1200 : 2500;
+    setTimeout(() => {
+        zone.classList.remove('correct-flash', 'wrong-flash');
+        fb.classList.remove('show');
+
+        if (practiceIdx + 1 < unit.practice.length) {
+            loadSentence(practiceIdx + 1);
+        } else {
+            showComplete();
+        }
+    }, delay);
+}
+
+function clean(word) {
+    return word.toLowerCase().replace(/[.,!?]/g, '');
+}
+
+/* ─── COMPLETE ─── */
+function showComplete() {
+    document.getElementById('practiceSection').classList.remove('active');
+    document.getElementById('completeScreen').classList.add('show');
+
+    const total = unit.practice.length;
+    document.getElementById('completeSub').textContent =
+        `You got ${correctCount} out of ${total} sentences right.`;
+    document.getElementById('completeScore').innerHTML =
+        `<strong>${Math.round((correctCount / total) * 100)}%</strong> accuracy`;
+
+    // Save progress
+    const progress = loadProgress();
+    if (!progress.completed.includes(UNIT_ID)) {
+        progress.completed.push(UNIT_ID);
+    }
+    saveProgress(progress);
+
+    // Next unit button
+    const nextBtn = document.getElementById('nextUnitBtn');
+    if (UNIT_ID < 8) {
+        nextBtn.href = `/learning/grammar/${UNIT_ID + 1}/`;
+        nextBtn.textContent = 'Next Unit';
+    } else {
+        nextBtn.href = '{% url "learning:grammar" %}';
+        nextBtn.textContent = 'All Units';
+    }
+
+    document.getElementById('practiceProgress').textContent = `${total}/${total}`;
+}
+
+/* ─── SOUND ─── */
+function playSound(type) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0.12;
+
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523, ctx.currentTime);
+            osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        } else {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(330, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(220, ctx.currentTime + 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        }
+    } catch(e) {}
+}
+
+/* ─── INIT ─── */
+renderLesson();
+</script>
+
+</body>
+</html>

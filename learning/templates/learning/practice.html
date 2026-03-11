@@ -1,0 +1,384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0a0a0a;
+            --bg-2:    #111111;
+            --bg-3:    #1a1a1a;
+            --border:  #1f1f1f;
+            --border-2:#2e2e2e;
+            --text:    #ffffff;
+            --text-2:  #a3a3a3;
+            --text-3:  #525252;
+            --accent:  #ff6b35;
+            --indigo:  #6366f1;
+            --emerald: #10b981;
+            --purple:  #a855f7;
+            --amber:   #f59e0b;
+            --red:     #ef4444;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:60px;
+            display:flex; align-items:center; padding:0 36px;
+            background:rgba(10,10,10,0.9); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .logo { font-family:'Courier Prime',monospace; font-size:1.25rem; font-weight:700; color:var(--accent); text-decoration:none; margin-right:32px; }
+        .nav-right { display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; }
+        .nav-link { font-size:13.5px; font-weight:500; color:rgba(255,255,255,0.65); text-decoration:none; padding:6px 13px; border-radius:7px; transition:color .15s,background .15s; }
+        .nav-link:hover { color:#fff; background:var(--bg-3); }
+        .nav-link.active { color:#fff; }
+
+        /* ── PAGE ── */
+        .page { max-width:760px; margin:0 auto; padding:56px 36px 80px; }
+        .page-header { margin-bottom:40px; }
+        .page-title { font-size:1.75rem; font-weight:700; letter-spacing:-.02em; margin-bottom:6px; }
+        .page-sub { font-size:14px; color:var(--text-2); }
+
+        /* ── TODAY STRIP ── */
+        .today-strip {
+            display:flex; align-items:center; gap:20px;
+            padding:14px 20px;
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:12px;
+            margin-bottom:24px;
+        }
+        .today-stat {
+            display:flex; align-items:center; gap:8px;
+            font-size:13px; color:var(--text-2);
+        }
+        .today-stat .val {
+            font-weight:700; color:var(--text);
+            font-variant-numeric:tabular-nums;
+        }
+        .today-stat .dot {
+            width:4px; height:4px; border-radius:50%;
+            background:var(--text-3);
+        }
+
+        /* ═══════════════════════════════════════════
+           HUB CARD GRID
+           ═══════════════════════════════════════════ */
+        .hub-grid {
+            display:grid;
+            grid-template-columns:repeat(2, 1fr);
+            gap:14px;
+        }
+
+        .hub-card {
+            --card-accent: var(--accent);
+            display:flex;
+            align-items:center;
+            gap:16px;
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:22px 24px;
+            text-decoration:none;
+            color:var(--text);
+            transition:border-color .15s, transform .1s, box-shadow .15s;
+            cursor:pointer;
+        }
+        .hub-card:hover {
+            border-color:var(--card-accent);
+            transform:translateY(-2px);
+            box-shadow:0 8px 24px rgba(0,0,0,0.3);
+        }
+        .hub-card.disabled {
+            opacity:0.35;
+            pointer-events:none;
+        }
+
+        .card-icon {
+            width:48px; height:48px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius:12px;
+            flex-shrink:0;
+            transition:background .15s;
+        }
+        .card-icon svg { width:22px; height:22px; stroke:currentColor; fill:none; }
+
+        .card-body { flex:1; min-width:0; }
+        .card-title { font-size:15px; font-weight:600; margin-bottom:2px; }
+        .card-sub { font-size:12.5px; color:var(--text-2); line-height:1.4; }
+
+        .card-badge {
+            font-size:12px; font-weight:600;
+            padding:3px 10px; border-radius:20px;
+            flex-shrink:0;
+            white-space:nowrap;
+        }
+
+        /* ── Per-card accent theming ── */
+        .hub-card[data-accent="indigo"]  { --card-accent: var(--indigo); }
+        .hub-card[data-accent="emerald"] { --card-accent: var(--emerald); }
+        .hub-card[data-accent="purple"]  { --card-accent: var(--purple); }
+        .hub-card[data-accent="amber"]   { --card-accent: var(--amber); }
+        .hub-card[data-accent="orange"]  { --card-accent: var(--accent); }
+
+        .hub-card[data-accent="indigo"]  .card-icon { background:rgba(99,102,241,0.1); }
+        .hub-card[data-accent="emerald"] .card-icon { background:rgba(16,185,129,0.1); }
+        .hub-card[data-accent="purple"]  .card-icon { background:rgba(168,85,247,0.1); }
+        .hub-card[data-accent="orange"]  .card-icon { background:rgba(255,107,53,0.1); }
+        .hub-card[data-accent="amber"]   .card-icon { background:rgba(245,158,11,0.1); }
+
+        .hub-card[data-accent="indigo"]  .card-badge { background:rgba(99,102,241,0.12);  color:var(--indigo); }
+        .hub-card[data-accent="emerald"] .card-badge { background:rgba(16,185,129,0.12);  color:var(--emerald); }
+        .hub-card[data-accent="purple"]  .card-badge { background:rgba(168,85,247,0.12);  color:var(--purple); }
+        .hub-card[data-accent="amber"]   .card-badge { background:rgba(245,158,11,0.12);  color:var(--amber); }
+        .hub-card[data-accent="orange"]  .card-badge { background:rgba(255,107,53,0.12);  color:var(--accent); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align:center; padding:64px 24px;
+        }
+        .empty-icon {
+            width:64px; height:64px; margin:0 auto 20px;
+            display:flex; align-items:center; justify-content:center;
+            background:var(--bg-3); border-radius:16px;
+        }
+        .empty-icon svg { width:28px; height:28px; stroke:var(--text-3); fill:none; }
+        .empty-title { font-size:18px; font-weight:600; margin-bottom:8px; }
+        .empty-sub { font-size:14px; color:var(--text-2); margin-bottom:24px; line-height:1.5; }
+        .empty-btn {
+            display:inline-flex; align-items:center; gap:8px;
+            background:var(--accent); color:#fff;
+            font-size:14px; font-weight:600;
+            padding:10px 24px; border-radius:10px;
+            text-decoration:none;
+            transition:opacity .15s;
+        }
+        .empty-btn:hover { opacity:0.85; }
+
+        @media (max-width:600px) {
+            .nav { padding:0 20px; }
+            .page { padding:36px 20px 60px; }
+            .hub-grid { grid-template-columns:1fr; }
+            .today-strip { flex-wrap:wrap; gap:12px; }
+        }
+
+        /* ── Resume watching bar ── */
+        .resume-bar {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+            background: rgba(17,17,17,0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-2);
+            padding: 10px 24px;
+            align-items: center; gap: 12px;
+        }
+        .resume-bar.visible { display: flex; }
+        .resume-bar-text {
+            font-size: 13px; color: var(--text-2); flex: 1;
+        }
+        .resume-bar-text strong {
+            color: var(--text); font-weight: 600;
+        }
+        .resume-bar-btn {
+            background: var(--accent); color: #fff;
+            font-size: 12px; font-weight: 700;
+            padding: 7px 18px; border-radius: 8px;
+            border: none; cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .resume-bar-btn:hover { opacity: 0.85; }
+        .resume-bar-close {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-3); font-size: 18px; padding: 4px;
+            line-height: 1;
+        }
+        .resume-bar-close:hover { color: var(--text-2); }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+    <div class="nav-right">
+        <a href="{% url 'learning:practice' %}" class="nav-link active">Practice</a>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <div class="page-title">Practice</div>
+        <p class="page-sub">Pick a mode and start learning</p>
+    </div>
+
+    {% if total_words == 0 %}
+    <!-- ════════ EMPTY STATE ════════ -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+        </div>
+        <div class="empty-title">No words saved yet</div>
+        <div class="empty-sub">Watch a video and tap on words to save them.<br>They'll appear here for practice.</div>
+        <a href="{% url 'clips:home' %}" class="empty-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Browse Videos
+        </a>
+    </div>
+
+    {% else %}
+    <!-- ════════ TODAY STRIP ════════ -->
+    {% if today_count or streak %}
+    <div class="today-strip">
+        {% if total_words %}
+        <div class="today-stat">
+            <span class="val">{{ total_words }}</span> words saved
+        </div>
+        {% endif %}
+        {% if mastered %}
+        <div class="today-stat">
+            <span class="dot"></span>
+            <span class="val">{{ mastered }}</span> mastered
+        </div>
+        {% endif %}
+        {% if today_count %}
+        <div class="today-stat">
+            <span class="dot"></span>
+            <span class="val">{{ today_count }}</span> session{{ today_count|pluralize }} today
+        </div>
+        {% endif %}
+        {% if today_best %}
+        <div class="today-stat">
+            <span class="dot"></span>
+            Best <span class="val">{{ today_best }}</span> pts
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ════════ HUB CARDS ════════ -->
+    <div class="hub-grid">
+
+        <!-- My Words (Flashcards + Shadowing) -->
+        <a href="{% url 'learning:word_note_list' %}" class="hub-card" data-accent="indigo">
+            <div class="card-icon" style="color:var(--indigo);">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="M12 4v16"/>
+                </svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title">My Words</div>
+                <div class="card-sub">Flashcards + shadowing drill</div>
+            </div>
+            {% if total_words %}<span class="card-badge">{{ total_words }} words</span>{% endif %}
+        </a>
+
+        <!-- Review (Cloze) -->
+        <a href="{% url 'learning:review' %}" class="hub-card" data-accent="emerald" {% if not words_with_video %}style="opacity:0.4;pointer-events:none;"{% endif %}>
+            <div class="card-icon" style="color:var(--emerald);">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title">Review</div>
+                <div class="card-sub">Fill in the blank &mdash; type the missing word</div>
+            </div>
+            {% if words_with_video %}<span class="card-badge">{{ words_with_video }} words</span>{% endif %}
+        </a>
+
+        <!-- Quiz (Multiple Choice) -->
+        <a href="{% url 'learning:quiz' %}" class="hub-card" data-accent="purple" {% if not words_with_video %}style="opacity:0.4;pointer-events:none;"{% endif %}>
+            <div class="card-icon" style="color:var(--purple);">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title">Quiz</div>
+                <div class="card-sub">Multiple choice &mdash; test your recall</div>
+            </div>
+            {% if words_with_video %}<span class="card-badge">{{ words_with_video }} words</span>{% endif %}
+        </a>
+
+        <!-- Grammar -->
+        <a href="{% url 'learning:grammar' %}" class="hub-card" data-accent="amber">
+            <div class="card-icon" style="color:var(--amber);">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>
+                </svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title">Grammar</div>
+                <div class="card-sub">8 essential rules with practice</div>
+            </div>
+        </a>
+
+        <!-- Progress -->
+        <a href="{% url 'learning:progress' %}" class="hub-card" data-accent="orange">
+            <div class="card-icon" style="color:var(--accent);">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+            </div>
+            <div class="card-body">
+                <div class="card-title">My Progress</div>
+                <div class="card-sub">Stats, streaks & heatmap</div>
+            </div>
+            {% if streak %}<span class="card-badge">{{ streak }} day streak</span>{% endif %}
+        </a>
+
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- ── Resume Watching Bar ── -->
+<div class="resume-bar" id="resumeBar">
+    <span class="resume-bar-text">
+        Continue watching <strong id="resumeTitle"></strong>
+    </span>
+    <a href="#" class="resume-bar-btn" id="resumeBtn">Resume</a>
+    <button class="resume-bar-close" id="resumeClose">&times;</button>
+</div>
+
+<script>
+(function() {
+    const KEY = 'quotable_last_watch';
+    try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data.url || !data.title) return;
+
+        // Don't show if dismissed in last 30 min
+        const dismissKey = 'quotable_resume_dismissed';
+        const dismissed = localStorage.getItem(dismissKey);
+        if (dismissed && Date.now() - parseInt(dismissed) < 30 * 60 * 1000) return;
+
+        document.getElementById('resumeTitle').textContent = data.title;
+        document.getElementById('resumeBtn').href = data.url;
+        document.getElementById('resumeBar').classList.add('visible');
+
+        document.getElementById('resumeClose').addEventListener('click', function() {
+            document.getElementById('resumeBar').classList.remove('visible');
+            localStorage.setItem(dismissKey, Date.now().toString());
+        });
+    } catch(e) {}
+})();
+</script>
+
+</body>
+</html>
