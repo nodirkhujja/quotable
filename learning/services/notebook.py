@@ -49,9 +49,9 @@ def humanize_interval(days: int) -> str:
 
 
 def google_translate(text: str, source: str = "en", target: str = "uz") -> str:
-    from deep_translator import GoogleTranslator
+    from integrations.translation.service import translate
 
-    return GoogleTranslator(source=source, target=target).translate(text)
+    return translate(text, source=source, target=target)
 
 
 # ─── Data-pull helpers ────────────────────────────────────────────────────────
