@@ -1,15 +1,14 @@
-import os
 import subprocess
-import tempfile
-import threading
-from decimal import Decimal
 
+import structlog
 from django.conf import settings
 from django.core.files import File
 from django.core.validators import MinValueValidator
 from django.db import models
 
 from clips.utils.video_duration import get_video_duration
+
+log = structlog.get_logger(__name__)
 
 
 class SourceType(models.TextChoices):
@@ -69,14 +68,16 @@ class Episode(models.Model):
 
         if is_new_video and self.video_file:
             self.update_video_duration()
-            threading.Thread(target=generate_scene_blocks, args=(self,), daemon=True).start()
+            from clips.tasks import generate_scene_blocks_task
+
+            generate_scene_blocks_task.delay(self.pk)
 
     def update_video_duration(self):
         try:
             duration = get_video_duration(self.video_file.path)
             Episode.objects.filter(pk=self.pk).update(duration=duration)
-        except Exception as e:
-            print(f"Error getting duration: {e}")
+        except Exception as exc:
+            log.warning("update_video_duration failed", episode_id=self.pk, error=str(exc))
 
 
 def generate_thumbnail(video_path, timestamp, output_path):
@@ -84,55 +85,6 @@ def generate_thumbnail(video_path, timestamp, output_path):
     command = ["ffmpeg", "-ss", str(timestamp), "-i", video_path, "-vframes", "1", "-q:v", "2", "-y", output_path]
     subprocess.run(command, check=True)
     return output_path
-
-
-def generate_scene_blocks(episode, interval=30):
-    """Bucket transcript into 30-second windows, extract a thumbnail per block.
-
-    Called in a background thread from Episode.save() when a new video is
-    uploaded — keeps the admin request fast while thumbnails generate quietly.
-    """
-    if not episode.video_file:
-        return
-
-    # Avoid circular import (SceneBlock is defined later in this file, but
-    # Transcript lives here too, so just import it at call-time).
-    video_path = episode.video_file.path
-
-    lines = list(Transcript.objects.filter(episode=episode).order_by("start_time").values("start_time"))
-    if not lines:
-        return
-
-    # Delete stale blocks for this episode before rebuilding.
-    SceneBlock.objects.filter(episode=episode).delete()
-
-    populated = set()
-    for line in lines:
-        populated.add(int(line["start_time"]) // interval)
-
-    for bucket in sorted(populated):
-        b_start = Decimal(str(bucket * interval))
-        b_end = Decimal(str((bucket + 1) * interval))
-        mid = float(b_start + b_end) / 2.0
-
-        block = SceneBlock.objects.create(
-            source=episode.source,
-            episode=episode,
-            start_time=b_start,
-            end_time=b_end,
-        )
-
-        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-        tmp.close()
-        try:
-            generate_thumbnail(video_path, mid, tmp.name)
-            with open(tmp.name, "rb") as f:
-                block.thumbnail.save(f"scene_{block.id}.jpg", File(f), save=True)
-        except Exception as e:
-            print(f"[scene_blocks] thumbnail failed for block {block.id}: {e}")
-        finally:
-            if os.path.exists(tmp.name):
-                os.unlink(tmp.name)
 
 
 class Quote(models.Model):
