@@ -30,6 +30,9 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 MIDDLEWARE = [
+    # Stamp every request with a unique ID and bind it into structlog context.
+    # Must be first so all downstream middleware and views see request.request_id.
+    "core.project.middleware.RequestIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
     # Strip Safari-hostile headers from media responses (video fix).
     # Must come right after SecurityMiddleware so it can override.
@@ -164,3 +167,39 @@ MEDIA_ROOT = _BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+# Django's stdlib logging: suppress INFO noise, only surface errors.
+# App code should use structlog.get_logger(__name__) instead.
+import logging  # noqa: E402
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.security": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
+
+import structlog  # noqa: E402
+
+# Production default: JSON lines to stdout (structured, machine-parseable).
+# Dev settings override this with ConsoleRenderer.
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.ExceptionRenderer(),
+        structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=True,
+)

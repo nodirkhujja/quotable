@@ -12,9 +12,35 @@ MediaAwareSecurityMiddleware
     This middleware strips `X-Content-Type-Options` and `X-Frame-Options`
     from any response served under `MEDIA_URL`, so Safari's media engine
     can sniff types and play normally.
+
+RequestIDMiddleware
+    Stamps every request with a short unique ID, binds it into structlog's
+    context-var store so every log line emitted during that request carries
+    `request_id` automatically, and echoes it back on the response as
+    `X-Request-ID` for client-side correlation.
 """
 
+import uuid
+
+import structlog
 from django.conf import settings
+
+log = structlog.get_logger(__name__)
+
+
+class RequestIDMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        rid = uuid.uuid4().hex[:12]
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=rid)
+        request.request_id = rid
+
+        response = self.get_response(request)
+        response["X-Request-ID"] = rid
+        return response
 
 
 class MediaAwareSecurityMiddleware:
