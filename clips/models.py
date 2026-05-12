@@ -1,12 +1,10 @@
-import subprocess
-
 import structlog
 from django.conf import settings
 from django.core.files import File
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from clips.utils.video_duration import get_video_duration
+from integrations.ffmpeg import service as ffmpeg
 
 log = structlog.get_logger(__name__)
 
@@ -74,17 +72,10 @@ class Episode(models.Model):
 
     def update_video_duration(self):
         try:
-            duration = get_video_duration(self.video_file.path)
+            duration = ffmpeg.duration(self.video_file.path)
             Episode.objects.filter(pk=self.pk).update(duration=duration)
         except Exception as exc:
             log.warning("update_video_duration failed", episode_id=self.pk, error=str(exc))
-
-
-def generate_thumbnail(video_path, timestamp, output_path):
-    """Generate thumbnail from video at specific timestamp"""
-    command = ["ffmpeg", "-ss", str(timestamp), "-i", video_path, "-vframes", "1", "-q:v", "2", "-y", output_path]
-    subprocess.run(command, check=True)
-    return output_path
 
 
 class Quote(models.Model):
@@ -113,7 +104,7 @@ class Quote(models.Model):
             else:
                 return
             thumb_path = f"/tmp/thumb_{self.id}.jpg"
-            generate_thumbnail(video_path, self.start_time, thumb_path)
+            ffmpeg.thumbnail(video_path, self.start_time, thumb_path)
             with open(thumb_path, "rb") as f:
                 self.thumbnail.save(f"quote_{self.id}.jpg", File(f), save=False)
         super().save(*args, **kwargs)

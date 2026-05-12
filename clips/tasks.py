@@ -6,12 +6,14 @@ import structlog
 from celery import shared_task
 from django.core.files import File
 
+from integrations.ffmpeg import service as ffmpeg
+
 log = structlog.get_logger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, name="clips.generate_scene_blocks")
 def generate_scene_blocks_task(self, episode_id: int, interval: int = 30) -> None:
-    from clips.models import Episode, SceneBlock, Transcript, generate_thumbnail
+    from clips.models import Episode, SceneBlock, Transcript
 
     try:
         episode = Episode.objects.select_related("source").get(pk=episode_id)
@@ -49,7 +51,7 @@ def generate_scene_blocks_task(self, episode_id: int, interval: int = 30) -> Non
         tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         tmp.close()
         try:
-            generate_thumbnail(video_path, mid, tmp.name)
+            ffmpeg.thumbnail(video_path, mid, tmp.name)
             with open(tmp.name, "rb") as f:
                 block.thumbnail.save(f"scene_{block.id}.jpg", File(f), save=True)
         except Exception as exc:

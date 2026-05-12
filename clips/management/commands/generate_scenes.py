@@ -5,7 +5,8 @@ from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from clips.models import SceneBlock, Source, Transcript, generate_thumbnail
+from clips.models import SceneBlock, Source, Transcript
+from integrations.ffmpeg import service as ffmpeg
 
 
 class Command(BaseCommand):
@@ -101,7 +102,7 @@ class Command(BaseCommand):
 
                     thumb_path = f"/tmp/scene_{block.id}.jpg"
                     try:
-                        generate_thumbnail(video_path, mid, thumb_path)
+                        ffmpeg.thumbnail(video_path, mid, thumb_path)
                         with open(thumb_path, "rb") as f:
                             block.thumbnail.save(f"scene_{block.id}.jpg", File(f), save=True)
                         self.stdout.write(f"    Block {float(block_start):.0f}s-{float(block_end):.0f}s: OK")
