@@ -1,0 +1,378 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach — Quotable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:      #0D0E14;
+            --bg-2:    #12131A;
+            --bg-3:    #17181F;
+            --bg-4:    #20222C;
+            --border:  rgba(255,255,255,0.08);
+            --border-2:rgba(255,255,255,0.14);
+            --text:    #ECECF1;
+            --text-2:  #B4B5C0;
+            --text-3:  #8E8F9B;
+            --accent:  #ff6b35;
+            --indigo:  #6366f1;
+            --emerald: #4ADE80;
+            --amber:   #f59e0b;
+            --red:     #ef4444;
+            --sky:     #38bdf8;
+            --violet:  #8b5cf6;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+        /* ── NAV ── */
+        .nav {
+            position:sticky; top:0; z-index:100; height:56px;
+            display:flex; align-items:center; padding:0 28px;
+            background:rgba(10,10,10,0.92); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .logo { font-family:monospace; font-size:1.15rem; font-weight:700; color:var(--accent); text-decoration:none; margin-right:28px; letter-spacing:-.02em; }
+        .nav-right { display:flex; align-items:center; gap:4px; margin-left:auto; }
+        .nav-link { font-size:13px; font-weight:500; color:rgba(255,255,255,0.55); text-decoration:none; padding:6px 12px; border-radius:7px; transition:color .15s,background .15s; }
+        .nav-link:hover { color:#fff; background:var(--bg-3); }
+        .nav-link.active { color:#fff; }
+
+        /* ── LAYOUT ── */
+        .page { max-width:640px; margin:0 auto; padding:32px 20px 80px; }
+
+        /* ── HEADER ── */
+        .coach-top { margin-bottom:24px; }
+        .coach-greeting { font-size:1.35rem; font-weight:700; letter-spacing:-.025em; line-height:1.3; margin-bottom:8px; }
+        .coach-insight { font-size:14px; color:var(--text-2); line-height:1.6; }
+        .coach-badges { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .badge {
+            display:inline-flex; align-items:center; gap:5px;
+            font-size:11.5px; font-weight:600; padding:4px 11px;
+            border-radius:20px; background:var(--bg-3); color:var(--text-2);
+        }
+        .badge.streak { background:rgba(255,107,53,0.1); color:var(--accent); }
+        .badge.mastered { background:rgba(74,222,128,0.1); color:var(--emerald); }
+
+        /* ── MOTIVATION ── */
+        .motivation {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:12px; padding:14px 16px; margin-bottom:20px;
+            display:flex; align-items:center; gap:12px;
+        }
+        .mot-icon {
+            width:34px; height:34px; border-radius:9px;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; font-size:16px;
+        }
+        .mot-icon.complete { background:rgba(74,222,128,0.1); }
+        .mot-icon.progress { background:rgba(99,102,241,0.1); }
+        .mot-icon.streak  { background:rgba(255,107,53,0.1); }
+        .mot-icon.milestone { background:rgba(139,92,246,0.1); }
+        .mot-icon.start   { background:var(--bg-3); }
+        .mot-text { font-size:13px; font-weight:600; margin-bottom:1px; }
+        .mot-detail { font-size:12px; color:var(--text-2); }
+
+        /* ── PRIMARY ACTION ── */
+        .action-card {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:14px; padding:20px 18px; margin-bottom:10px;
+            position:relative; overflow:hidden;
+        }
+        .action-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:2px;
+        }
+        .action-card.high::before { background:var(--accent); }
+        .action-card.medium::before { background:var(--amber); }
+        .action-card.low::before { background:var(--emerald); }
+        .action-row { display:flex; align-items:flex-start; gap:12px; }
+        .action-icon {
+            width:38px; height:38px; border-radius:10px;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; background:var(--bg-3);
+        }
+        .action-icon svg { width:17px; height:17px; stroke:var(--accent); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+        .action-body { flex:1; min-width:0; }
+        .action-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+        .action-sub { font-size:12.5px; color:var(--text-2); line-height:1.5; margin-bottom:12px; }
+        .action-btn {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--accent); color:#fff;
+            font-size:12.5px; font-weight:600; border:none; cursor:pointer;
+            padding:8px 18px; border-radius:8px;
+            text-decoration:none; transition:opacity .15s;
+        }
+        .action-btn:hover { opacity:0.85; }
+        .action-btn svg { width:13px; height:13px; }
+
+        /* ── QUICK PICKS (2 smaller cards) ── */
+        .quick-picks { display:flex; gap:10px; margin-bottom:22px; }
+        .quick-card {
+            flex:1; background:var(--bg-2); border:1px solid var(--border);
+            border-radius:11px; padding:14px 14px; text-decoration:none; color:var(--text);
+            transition:border-color .15s;
+        }
+        .quick-card:hover { border-color:var(--border-2); }
+        .qc-title { font-size:13px; font-weight:600; margin-bottom:3px; }
+        .qc-sub { font-size:11px; color:var(--text-3); line-height:1.4; }
+
+        /* ── TODAY ── */
+        .today-grid {
+            display:grid; grid-template-columns:repeat(5, 1fr); gap:6px;
+            margin-bottom:20px;
+        }
+        .today-item {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; padding:12px 8px; text-align:center;
+        }
+        .ti-val { font-size:1.1rem; font-weight:700; font-variant-numeric:tabular-nums; margin-bottom:1px; }
+        .ti-label { font-size:9.5px; color:var(--text-3); letter-spacing:.02em; }
+        .ti-val.green { color:var(--emerald); }
+        .ti-val.done { color:var(--emerald); }
+
+        /* ── RESUME WATCHING ── */
+        .resume {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:12px; padding:14px 16px; margin-bottom:14px;
+        }
+        .resume a { display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text); }
+        .resume-icon { width:36px; height:36px; border-radius:9px; background:rgba(255,107,53,0.1); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .resume-icon svg { width:15px; height:15px; stroke:var(--accent); fill:none; }
+        .resume-body { flex:1; min-width:0; }
+        .resume-title { font-size:13px; font-weight:600; margin-bottom:1px; }
+        .resume-meta { font-size:11px; color:var(--text-2); }
+        .resume-bar { width:100%; height:3px; border-radius:2px; background:var(--bg-4); margin-top:4px; overflow:hidden; }
+        .resume-fill { height:100%; background:var(--accent); border-radius:2px; }
+
+        /* ── WEEK ── */
+        .week-section {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:12px; padding:16px 14px; margin-bottom:14px;
+        }
+        .week-head { font-size:12.5px; font-weight:600; color:var(--text-2); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+        .week-head span { font-weight:400; color:var(--text-3); }
+        .week-chart { display:flex; align-items:flex-end; gap:5px; height:44px; }
+        .wb-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+        .wb { width:100%; min-height:3px; border-radius:3px; background:var(--bg-4); }
+        .wb.active { background:var(--accent); }
+        .wb.today { background:var(--accent); box-shadow:0 0 6px rgba(255,107,53,0.3); }
+        .wl { font-size:9px; color:var(--text-3); font-weight:500; }
+        .wl.today { color:var(--accent); font-weight:700; }
+
+        /* ── STATS LINK ── */
+        .stats-link {
+            display:flex; align-items:center; justify-content:center; gap:8px;
+            padding:12px; margin-top:6px;
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; text-decoration:none;
+            color:var(--text-3); font-size:12.5px; font-weight:500;
+            transition:border-color .15s, color .15s;
+        }
+        .stats-link:hover { border-color:var(--border-2); color:var(--text-2); }
+
+        /* ── EMPTY ── */
+        .empty-state { text-align:center; padding:48px 20px; }
+        .empty-icon { width:52px; height:52px; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; background:var(--bg-3); border-radius:14px; }
+        .empty-icon svg { width:22px; height:22px; stroke:var(--text-3); fill:none; }
+        .empty-title { font-size:16px; font-weight:600; margin-bottom:5px; }
+        .empty-sub { font-size:13px; color:var(--text-2); margin-bottom:18px; line-height:1.5; }
+        .empty-btn { display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:#fff; font-size:13px; font-weight:600; padding:9px 22px; border-radius:9px; text-decoration:none; }
+
+        @media (max-width:600px) {
+            .nav { padding:0 14px; }
+            .page { padding:24px 14px 60px; }
+            .today-grid { grid-template-columns:repeat(3, 1fr); }
+            .quick-picks { flex-direction:column; }
+            .coach-greeting { font-size:1.15rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
+    <div class="nav-right">
+        <a href="{% url 'learning:practice' %}" class="nav-link">Practice</a>
+        <a href="{% url 'learning:coach' %}" class="nav-link active">Coach</a>
+    </div>
+</nav>
+
+<div class="page">
+
+    {% if total_words == 0 %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+        </div>
+        <div class="empty-title">Start your journey</div>
+        <div class="empty-sub">Watch a show, tap words you don't know,<br>and your coach will guide you from there.</div>
+        <a href="{% url 'clips:home' %}" class="empty-btn">Browse shows</a>
+    </div>
+
+    {% else %}
+
+    <!-- ── GREETING ── -->
+    <div class="coach-top">
+        <div class="coach-greeting">{{ greeting }}</div>
+        <div class="coach-insight">{{ insight }}</div>
+        <div class="coach-badges">
+            {% if streak %}
+            <span class="badge streak">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="var(--accent)" stroke="none"><path d="M12 2C6.5 8 2 12 2 16a6 6 0 0012 0c0-2-2-4-4-4-1 2-2 2-3 1 1-3 5-7 5-11z"/></svg>
+                {{ streak }} day{{ streak|pluralize }}
+            </span>
+            {% endif %}
+            {% if wn_mastered >= 1 %}
+            <span class="badge mastered">{{ wn_mastered }} mastered</span>
+            {% endif %}
+            <span class="badge">{{ total_words }} words</span>
+        </div>
+    </div>
+
+    <!-- ── MOTIVATION ── -->
+    {% if motivation %}
+    <div class="motivation">
+        <div class="mot-icon {{ motivation.type }}">
+            {% if motivation.type == "complete" %}&#10003;{% elif motivation.type == "streak" %}&#9889;{% elif motivation.type == "milestone" %}&#9733;{% else %}&#9654;{% endif %}
+        </div>
+        <div>
+            <div class="mot-text">{{ motivation.text }}</div>
+            <div class="mot-detail">{{ motivation.detail }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── WHAT TO DO NEXT ── -->
+    {% if primary_action %}
+    <div class="action-card {{ primary_action.urgency }}">
+        <div class="action-row">
+            <div class="action-icon">
+                {% if primary_action.icon == "mic" %}
+                <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                {% elif primary_action.icon == "brain" %}
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                {% elif primary_action.icon == "cards" %}
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 4v16"/></svg>
+                {% elif primary_action.icon == "build" %}
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                {% elif primary_action.icon == "book" %}
+                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                {% elif primary_action.icon == "play" %}
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {% elif primary_action.icon == "pause" %}
+                <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                {% elif primary_action.icon == "refresh" %}
+                <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                {% endif %}
+            </div>
+            <div class="action-body">
+                <div class="action-title">{{ primary_action.title }}</div>
+                <div class="action-sub">{{ primary_action.subtitle }}</div>
+                <a href="{{ primary_action.btn_url }}" class="action-btn">
+                    {{ primary_action.btn_text }}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── ALSO TRY (2 smaller picks) ── -->
+    {% if next_actions %}
+    <div class="quick-picks">
+        {% for na in next_actions %}
+        <a href="{{ na.btn_url }}" class="quick-card">
+            <div class="qc-title">{{ na.title }}</div>
+            <div class="qc-sub">{{ na.btn_text }}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── TODAY ── -->
+    <div class="today-grid">
+        <div class="today-item">
+            <div class="ti-val{% if today.quiz_attempts > 0 %} done{% endif %}">{{ today.quiz_attempts }}</div>
+            <div class="ti-label">Quiz</div>
+        </div>
+        <div class="today-item">
+            <div class="ti-val{% if today.shadow_sessions > 0 %} done{% endif %}">{{ today.shadow_sessions }}</div>
+            <div class="ti-label">Shadow</div>
+        </div>
+        <div class="today-item">
+            <div class="ti-val{% if today.build_attempts > 0 %} done{% endif %}">{{ today.build_attempts }}</div>
+            <div class="ti-label">Build</div>
+        </div>
+        <div class="today-item">
+            <div class="ti-val{% if today.grammar_attempts > 0 %} done{% endif %}">{{ today.grammar_attempts }}</div>
+            <div class="ti-label">Grammar</div>
+        </div>
+        <div class="today-item">
+            <div class="ti-val">{{ today.words_saved }}</div>
+            <div class="ti-label">Saved</div>
+        </div>
+    </div>
+
+    <!-- ── CONTINUE WATCHING ── -->
+    {% if resume_info %}
+    <div class="resume">
+        <a href="{{ resume_info.url }}">
+            <div class="resume-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <div class="resume-body">
+                <div class="resume-title">{{ resume_info.source_title }}</div>
+                <div class="resume-meta">{% if resume_info.ep_label %}{{ resume_info.ep_label }} · {% endif %}{{ resume_info.time_label }} · {{ resume_info.progress_pct }}%</div>
+                <div class="resume-bar"><div class="resume-fill" style="width:{{ resume_info.progress_pct }}%"></div></div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ── THIS WEEK ── -->
+    <div class="week-section">
+        <div class="week-head">This week <span>{{ active_days }}/7 days</span></div>
+        <div class="week-chart" id="weekChart"></div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <a href="{% url 'learning:stats' %}" class="stats-link">
+        View detailed stats
+    </a>
+
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    const weekData = {{ week_data_json|safe }};
+    const maxWeek = {{ max_week }};
+    const chart = document.getElementById('weekChart');
+    if (chart) {
+        weekData.forEach(d => {
+            const wrap = document.createElement('div');
+            wrap.className = 'wb-wrap';
+            const bar = document.createElement('div');
+            bar.className = 'wb' + (d.count > 0 ? ' active' : '') + (d.is_today ? ' today' : '');
+            bar.style.height = (d.count > 0 ? Math.max(6, (d.count / maxWeek) * 38) : 3) + 'px';
+            wrap.appendChild(bar);
+            const label = document.createElement('div');
+            label.className = 'wl' + (d.is_today ? ' today' : '');
+            label.textContent = d.label;
+            wrap.appendChild(label);
+            chart.appendChild(wrap);
+        });
+    }
+})();
+</script>
+
+{% include "learning/_page_tracker.html" with page_name="coach" %}
+</body>
+</html>

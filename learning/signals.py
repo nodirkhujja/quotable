@@ -1,10 +1,7 @@
-from datetime import timedelta
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.signals import user_logged_in
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 
 from .models import FavoriteQuote, LearningProgress, SourceProgress
 
@@ -19,26 +16,13 @@ def create_user_learning_progress(sender, instance, created, **kwargs):
 
 
 # 2. UPDATE STREAK ON LOGIN
+# Logging in counts as a sign-of-life — bump the streak through the
+# shared helper so streak logic lives in exactly one place.
 @receiver(user_logged_in)
 def update_user_streak(sender, request, user, **kwargs):
-    today = timezone.now().date()
-    yesterday = today - timedelta(days=1)
+    from learning.utils.activity import bump_streak_for_today
 
-    # If the user hasn't been active today yet
-    if user.last_active_date != today:
-        if user.last_active_date == yesterday:
-            # Maintained the streak!
-            user.streak_days += 1
-        else:
-            # Missed a day (or new user), reset streak to 1
-            user.streak_days = 1
-
-        # Update longest streak record
-        if user.streak_days > user.longest_streak:
-            user.longest_streak = user.streak_days
-
-        user.last_active_date = today
-        user.save(update_fields=["streak_days", "longest_streak", "last_active_date"])
+    bump_streak_for_today(user)
 
 
 # 3. UPDATE SOURCE PROGRESS WHEN QUOTE IS FAVORITED

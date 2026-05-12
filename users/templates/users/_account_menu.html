@@ -1,0 +1,141 @@
+{% comment %}
+  Shared account menu — drop anywhere inside a page's nav.
+  Self-contained: ships its own CSS + JS so each including page just needs:
+
+      {% include "users/_account_menu.html" %}
+
+  The <style> block is scoped under `.acct-wrap` so duplicates across pages
+  don't cascade-fight. CSS variables expected from the page's design tokens:
+  --accent, --accent-hot, --accent-ring, --accent-dim, --bg-3, --bg-4,
+  --border, --border-2, --text, --text-2, --text-3, --font-display, --font-sans.
+{% endcomment %}
+
+<style>
+.acct-wrap { position: relative; display: inline-flex; align-items: center; }
+.acct-btn {
+    appearance: none;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent, #FF6B35), var(--accent-hot, #FF8558));
+    color: #fff;
+    font-family: var(--font-display, 'Space Grotesk', Inter, sans-serif);
+    font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+    box-shadow: 0 0 0 0 var(--accent-ring, rgba(255,107,53,0.35));
+    transition: box-shadow .2s, transform .15s;
+    padding: 0;
+}
+.acct-btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 4px var(--accent-dim, rgba(255,107,53,0.14)); }
+.acct-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-ring, rgba(255,107,53,0.35)); }
+
+.acct-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 220px;
+    background: var(--bg-3, #17181F);
+    border: 1px solid var(--border-2, rgba(255,255,255,0.14));
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 16px 40px -10px rgba(0,0,0,0.6), 0 8px 20px -10px rgba(0,0,0,0.4);
+    opacity: 0; transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity .14s, transform .14s;
+    z-index: 200;
+}
+.acct-wrap.open .acct-menu { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.acct-name {
+    padding: 10px 12px 6px;
+    font-size: 13.5px; font-weight: 600;
+    font-family: var(--font-display, 'Space Grotesk', Inter, sans-serif);
+    color: var(--text, #ECECF1);
+    letter-spacing: -0.005em;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+    margin-bottom: 4px;
+}
+.acct-name small {
+    display: block;
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    font-size: 11px; font-weight: 500;
+    color: var(--text-3, #8E8F9B);
+    letter-spacing: 0.02em;
+    margin-top: 2px;
+    text-transform: none;
+}
+.acct-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 500;
+    color: var(--text-2, #B4B5C0);
+    text-decoration: none;
+    cursor: pointer;
+    background: none; border: none; width: 100%; text-align: left;
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    transition: background .12s, color .12s;
+}
+.acct-item:hover { background: var(--bg-4, #20222C); color: var(--text, #ECECF1); }
+.acct-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; flex-shrink: 0; opacity: 0.7; }
+.acct-divider { height: 1px; background: var(--border, rgba(255,255,255,0.08)); margin: 4px 0; }
+.acct-item.danger { color: #FCA5A5; }
+.acct-item.danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+</style>
+
+<div class="acct-wrap" data-acct-wrap>
+    <button type="button" class="acct-btn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu" data-acct-btn>
+        {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+    </button>
+    <div class="acct-menu" role="menu" aria-label="Account">
+        <div class="acct-name">
+            {{ request.user.first_name|default:request.user.username }}
+            <small>{{ request.user.email }}</small>
+        </div>
+        <a href="{% url 'learning:interests' %}" class="acct-item" role="menuitem">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Edit my interests
+        </a>
+        <div class="acct-divider"></div>
+        <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="acct-item danger" role="menuitem">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign out
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Attach to the most-recently-rendered account menu (handles multiple includes per page).
+    const wraps = document.querySelectorAll('[data-acct-wrap]:not([data-acct-bound])');
+    wraps.forEach((wrap) => {
+        wrap.setAttribute('data-acct-bound', 'true');
+        const btn = wrap.querySelector('[data-acct-btn]');
+        if (!btn) return;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = wrap.classList.toggle('open');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target)) {
+                wrap.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && wrap.classList.contains('open')) {
+                wrap.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.focus();
+            }
+        });
+    });
+})();
+</script>

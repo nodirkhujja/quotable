@@ -13,22 +13,73 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # required by allauth
+    # project apps FIRST so their templates override allauth defaults
     "clips",
     "users",
     "learning",
+    "quiz",
+    "vocab",
+    # allauth
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Strip Safari-hostile headers from media responses (video fix).
+    # Must come right after SecurityMiddleware so it can override.
+    "core.project.middleware.MediaAwareSecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # allauth — must come after AuthenticationMiddleware
+    "allauth.account.middleware.AccountMiddleware",
     # Vocabulary onboarding gate — must come after AuthenticationMiddleware
     "learning.middleware.OnboardingGateMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# ── allauth config ────────────────────────────────────────
+# Google-only auth — no email/password forms
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+# Disable the built-in password signup flow completely
+ACCOUNT_ADAPTER = "users.adapters.NoPasswordSignupAdapter"
+# Allow Google social signup (this is the intended path)
+SOCIALACCOUNT_ADAPTER = "users.adapters.OpenSocialAdapter"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "OAUTH_PKCE_ENABLED": True,
+        # Auto-populate first_name, last_name, email on signup
+        "FETCH_USERINFO": True,
+    },
+}
+
+# Auto-create a user from the Google profile without showing a signup form
+SOCIALACCOUNT_AUTO_SIGNUP = True
+# Trust the email Google gives us — no verification needed
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+# Skip the intermediate "Continue with Google" confirmation page — go straight to Google
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 ROOT_URLCONF = "core.project.urls"
 
@@ -44,6 +95,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "learning.context_processors.addiction_layer",
             ],
         },
     },
@@ -97,10 +149,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
 from pathlib import Path as _Path
 
-STATICFILES_DIRS = [_Path(__file__).resolve().parent.parent.parent.parent / "static"]
+_BASE_DIR = _Path(__file__).resolve().parent.parent.parent.parent
+
+STATIC_URL = "static/"
+STATIC_ROOT = _BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [_BASE_DIR / "static"]
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = _BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

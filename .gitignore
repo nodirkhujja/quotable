@@ -8,6 +8,16 @@
 *.swo
 *~
 
+# Project-specific — generated / private
+.claude/
+.tmp_lexicon/
+tts_cache/
+reel_thumbnails/
+scene_frames/
+word_list.csv
+yt_clip.mp3
+*.srt
+
 
 ### Django ###
 *.log

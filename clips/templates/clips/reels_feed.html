@@ -1,0 +1,2786 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Reels — Quotable</title>
+    {% include "learning/_tokens.html" %}
+    <style>
+        :root { --duo-green: #4ADE80; --duo-green-dark: #22c55e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            background: #000;
+            color: var(--text-1);
+            font-family: var(--font-sans);
+            height: 100%;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        /* ── TOP BAR — minimal, matches the rail aesthetic ──── */
+        .topbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 50;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px;
+            /* Lighter gradient — just enough to keep the back arrow legible
+               on bright frames, no longer reads as a heavy chrome bar. */
+            background: linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 100%);
+            pointer-events: none; /* let video clicks pass through; children re-enable */
+        }
+        .topbar > * { pointer-events: auto; }
+        .topbar a.back {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s;
+        }
+        .topbar a.back:hover { background: rgba(255,255,255,0.1); }
+        .topbar a.back svg {
+            width: 18px; height: 18px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));
+        }
+        /* Streak chip on the topbar's LEFT side — "the app sees you."
+           Quiet, warm-tutor mood: no flame icon, no exclamation. Only
+           shows when streak >= 2 days so day-1 users don't feel pressured. */
+        .topbar-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .topbar .streak-chip {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(247, 201, 72, 0.92);
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(247, 201, 72, 0.28);
+            padding: 4px 9px;
+            border-radius: 999px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+        }
+
+        /* Welcome strip — appears on landing for ~4s, then fades.
+           "Welcome back, Nodir. 3 reels for today." Personal moment
+           before the practice begins. */
+        .welcome-strip {
+            position: fixed;
+            top: 64px;
+            left: 50%;
+            transform: translate(-50%, -8px);
+            z-index: 49;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(15,15,15,0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(247, 201, 72, 0.18);
+            border-radius: 999px;
+            color: rgba(255,255,255,0.95);
+            font-family: var(--font-display);
+            font-size: 13.5px;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            animation: welcome-show 5s ease-in-out forwards;
+        }
+        .welcome-strip .welcome-name {
+            color: #f7c948;
+            font-weight: 800;
+        }
+        @keyframes welcome-show {
+            0%   { opacity: 0; transform: translate(-50%, -8px); }
+            12%  { opacity: 1; transform: translate(-50%, 0); }
+            85%  { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -8px); }
+        }
+
+        /* Topbar right-side meta row — CEFR level + reel position in
+           the slot the "Reels" label vacated. Paired chips give the
+           user ambient orientation without shouting. */
+        .topbar-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .topbar .reel-level,
+        .topbar .reel-pos {
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 4px 9px;
+            border-radius: 999px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+        }
+        .topbar .reel-pos {
+            color: rgba(255,255,255,0.85);
+            background: rgba(0,0,0,0.3);
+        }
+        .topbar .reel-level {
+            color: #c8e9b4;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(74,222,128, 0.35);
+        }
+        .topbar .reel-level:empty { display: none; }
+
+        /* ── EMPTY STATE ─────────────────────────────────── */
+        .empty-feed {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+            color: var(--text-2); padding: 40px 20px;
+            text-align: center;
+        }
+        .empty-feed h2 {
+            font-family: var(--font-display);
+            font-size: 24px; font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .empty-feed p {
+            color: var(--text-3); font-size: 14px;
+            max-width: 360px; line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .empty-feed a {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 18px;
+            background: var(--duo-green);
+            color: #0a3300;
+            border-radius: 999px;
+            font-weight: 700; font-size: 14px;
+        }
+
+        /* ── FEED CONTAINER ──────────────────────────────── */
+        .feed {
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .reel-page {
+            position: relative;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            height: 100vh; height: 100svh;
+            width: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* Mobile: video fills screen width, height auto by aspect.
+           Desktop: video sized to a real 16:9 card (matches our source
+           content), so the visible video is as big as it can be without
+           letterboxing — the same trick Instagram uses. */
+        .reel-video {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            background: #000;
+            transition: filter .35s ease;
+        }
+        @media (min-width: 720px) {
+            .reel-video {
+                width: auto;
+                height: auto;
+                max-width: min(760px, 55svw);
+                max-height: calc(100svh - 80px);
+                aspect-ratio: 16 / 9;
+                border-radius: 16px;
+                /* Whisper-shadow — lifts the card without screaming
+                   "premium glass." Matches the rail's lighter feel. */
+                box-shadow: 0 8px 24px -4px rgba(0,0,0,0.4);
+            }
+        }
+        /* Blur is a TRANSITION SIGNAL — only during step instructions.
+           During recording the video plays clear (muted), so the user
+           can see the actor's mouth and visually shadow them while
+           speaking. The pink mic pulse signals recording state. */
+        body.shadow-intro .reel-video {
+            filter: blur(8px) brightness(0.42);
+        }
+
+        /* Tap-for-sound hint — visible only before the first user
+           interaction, since browsers block unmuted autoplay until
+           there's been a gesture. Vanishes the moment they tap. */
+        .sound-hint {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 45;
+            display: none;
+            align-items: center; gap: 8px;
+            padding: 11px 18px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 999px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: -0.005em;
+            pointer-events: none;
+            box-shadow: 0 12px 30px -10px rgba(0,0,0,0.7);
+            animation: sound-hint-pulse 1.6s ease-in-out infinite;
+        }
+        body.needs-sound-tap .sound-hint { display: inline-flex; }
+        .sound-hint svg { width: 14px; height: 14px; color: var(--duo-green); }
+        @keyframes sound-hint-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50%      { transform: translate(-50%, -50%) scale(1.04); }
+        }
+
+        /* ── PROGRESS BAR ────────────────────────────────── */
+        .progress-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: rgba(255,255,255,0.15);
+            z-index: 10;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--duo-green);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* ── PLAY/PAUSE OVERLAY — quieter feedback for a casual tap ── */
+        .play-overlay {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .2s;
+        }
+        .play-overlay.visible { opacity: 1; }
+        .play-overlay .icon {
+            width: 56px; height: 56px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(8px);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+        }
+        .play-overlay svg { width: 24px; height: 24px; }
+
+        /* CEFR badge moved to the topbar right meta row — see .reel-level. */
+
+        /* ── SCROLL HINT ─────────────────────────────────── */
+        .scroll-hint {
+            position: absolute;
+            bottom: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            pointer-events: none;
+            animation: scroll-hint-bounce 1.6s ease-in-out infinite;
+            z-index: 6;
+        }
+        .scroll-hint svg { width: 18px; height: 18px; }
+        @keyframes scroll-hint-bounce {
+            0%, 100% { transform: translate(-50%, 0); }
+            50%      { transform: translate(-50%, -6px); }
+        }
+
+        /* Loop progress chip — shows during the listen-and-repeat
+           steps (1-3) so the user knows which rep they're on. Hidden
+           during the blurred intro card and during recording. */
+        .shadow-progress {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 36;
+            display: none;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+        }
+        body.shadow-active:not(.shadow-intro):not(.recording-mode) .shadow-progress {
+            display: inline-flex;
+        }
+
+        /* ── SHADOW STEP OVERLAY ──────────────────────────────
+           Watch-page parity: while the shadow flow runs, blur the
+           video and tell the learner exactly what to do next. */
+        .step-overlay {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 35;
+            display: none;
+            text-align: center;
+            color: #fff;
+            padding: 22px 28px;
+            min-width: 280px;
+            max-width: 360px;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            box-shadow: 0 20px 50px -12px rgba(0,0,0,0.7);
+        }
+        /* Step overlay shows during the intro phase AND during the
+           pre-record "Get ready" beat. shadow-ready uses the overlay
+           but does NOT blur the video — the user sees the actor while
+           the mic activates. */
+        body.shadow-intro .step-overlay,
+        body.shadow-ready .step-overlay { display: block; }
+        @media (min-width: 720px) {
+            .step-overlay { left: calc(50% - 0px); }
+            body.show-vocab.shadow-intro .step-overlay { left: calc(25%); }
+        }
+        /* BIG. SHORT. CLEAR. — three lines max, large enough to read
+           in a single glance during the 2-second intro phase. */
+        .step-eyebrow {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: var(--duo-green);
+            margin-bottom: 14px;
+        }
+        .step-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 38px;
+            line-height: 1.08;
+            letter-spacing: -0.024em;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .step-meta {
+            font-size: 18px;
+            font-weight: 600;
+            color: #c8e9b4;
+            line-height: 1.3;
+            margin-bottom: 18px;
+        }
+        /* Old long instructions — kept hidden in case we ever want
+           them back, but the overlay is now action-only. */
+        .step-instructions { display: none; }
+        /* Step overlay action row — Stop (escape) + Skip (jump to record).
+           Skip is for users who already know the line and don't want to
+           sit through 12 reps. */
+        .step-actions {
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .step-stop, .step-skip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 16px;
+            border-radius: 999px;
+            font-family: var(--font-display);
+            font-size: 12.5px; font-weight: 700;
+            letter-spacing: -0.005em;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s, border-color .15s;
+        }
+        .step-stop {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.85);
+        }
+        .step-stop:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.32); }
+        .step-stop svg { width: 11px; height: 11px; }
+        .step-skip {
+            position: relative;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.22);
+            color: #fff;
+            overflow: hidden;
+        }
+        .step-skip:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.34); }
+        .step-skip svg { width: 11px; height: 11px; }
+        /* Hold-to-skip — protects the user from misfiring a tap that
+           bypasses 12 reps of pedagogy. 600ms fill draws across the
+           button as you hold; release before completion = cancel. */
+        .step-skip > * { position: relative; z-index: 1; }
+        .step-skip::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.32);
+            transform-origin: left center;
+            transform: scaleX(0);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .step-skip.holding::before {
+            animation: skip-fill 600ms linear forwards;
+        }
+        @keyframes skip-fill {
+            from { transform: scaleX(0); }
+            to   { transform: scaleX(1); }
+        }
+
+        /* ── SHADOW BAR — single integrated practice surface ── */
+        .shadow-bar {
+            position: fixed;
+            left: 16px; right: 88px;
+            bottom: 16px;
+            z-index: 40;
+            padding: 0;
+            background: transparent;
+            transition: opacity .25s ease;
+        }
+        /* During shadow flow, bar STAYS full opacity — the line is the
+           hero the user is supposed to read+repeat. We only block the
+           toggle/controls so a stray tap can't break the flow. */
+        body.shadow-active .shadow-bar .bar-status,
+        body.shadow-active .shadow-bar .bar-heard {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        @media (min-width: 720px) {
+            /* Reel card sized like Instagram Reels web — wider on
+               desktop so the video reads as the hero. Width follows
+               viewport height (9:16 ratio) so the video can fill the
+               card without huge letterbox, capped to a comfortable max. */
+            .reel-page {
+                max-width: min(540px, calc(100svh * 9 / 16));
+                margin: 0 auto;
+            }
+            .shadow-bar {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 540px;
+                right: auto;
+                bottom: 24px;
+            }
+        }
+
+        /* SUBS OVERLAY — lifted off the controls bar so the english +
+           Uzbek lines hug the bottom of the video frame, like captions
+           in real reels. Sits above the right rail's bottom edge. */
+        .subs-overlay {
+            position: fixed;
+            left: 16px;
+            right: 88px;  /* leave room for the right rail */
+            bottom: 70px;
+            z-index: 35;
+            pointer-events: none;
+            /* Subtle backdrop pill — barely there on dark frames,
+               kicks in on bright ones (skies, white kitchens, etc).
+               Guarantees legibility without feeling like a UI block. */
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.30);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: 12px;
+            transition: opacity .2s ease;
+        }
+        .subs-overlay.subs-fade { opacity: 0; }
+        @media (min-width: 720px) {
+            .subs-overlay {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 480px;
+                right: auto;
+                bottom: 84px;
+            }
+        }
+        .bar-line-en {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 20px;
+            line-height: 1.3;
+            letter-spacing: -0.014em;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+            margin-bottom: 6px;
+        }
+        /* Target words land in AMBER, not green. Reserves green for
+           actions (mic, primary CTAs, pass score). Amber says "look
+           here / this is the vocab" — a different semantic from green's
+           "do this / you did it." */
+        .bar-line-en .word-target {
+            color: #f7c948;
+            font-weight: 800;
+        }
+        /* After a mic attempt: hits white, target hits green, missed
+           red+strikethrough. Concrete pointers for the retry. */
+        .bar-line-en .missed {
+            color: #ff8a8a;
+            text-decoration: line-through;
+            text-decoration-color: rgba(255,138,138,0.55);
+            text-decoration-thickness: 1.5px;
+            opacity: 0.92;
+        }
+        /* Uzbek: always visible, slightly green-tinted, secondary
+           but readable. NOT toggleable — the meaning anchor stays. */
+        .bar-line-uz {
+            font-size: 14.5px;
+            line-height: 1.4;
+            color: rgba(200, 233, 180, 0.92);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            font-weight: 500;
+        }
+        .bar-line-uz:empty { display: none; }
+        body.recording-mode .bar-line-uz { opacity: 0.55; }
+
+        /* ── RIGHT ACTION RAIL — Shorts/TikTok-style ────────────
+           Three vertically stacked buttons clustered above the
+           bottom bar: Shadow (primary), Word (vocab panel),
+           Speed (with popup). Mirrors the Shorts UX pattern. */
+        .right-rail {
+            position: fixed;
+            right: 14px;
+            bottom: 90px;
+            z-index: 38;
+            display: flex; flex-direction: column;
+            gap: 22px;
+            align-items: center;
+        }
+        /* On wide screens, sit just outside the right edge of the
+           420px video card, vertically centered against its bottom-third. */
+        @media (min-width: 720px) {
+            /* Anchor the rail just outside the card's right edge AND
+               aligned with its bottom edge. The card's vertical position
+               is centered, so half the leftover viewport space sits
+               below it — that's where the rail's bottom should be,
+               with a small inset so the last button hugs the corner. */
+            .right-rail {
+                right: calc(50% - min(380px, 27.5svw) - 56px);
+                bottom: calc((100svh - min(760px, 55svw) * 9 / 16) / 2 + 12px);
+            }
+        }
+
+        /* MINIMAL RAIL — Instagram-Reels style. No circle backgrounds.
+           Just outlined icons with a small label below. The Shadow
+           primary gets the only filled treatment so it still reads as
+           the main action. */
+        .rail-btn {
+            position: relative;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: transparent;
+            border: 0;
+            color: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform .15s cubic-bezier(.2,.8,.2,1), background .15s;
+            padding: 0;
+        }
+        .rail-btn:hover {
+            background: rgba(255,255,255,0.08);
+            transform: scale(1.06);
+        }
+        .rail-btn:active { transform: scale(0.94); }
+        /* All icons share stroke-width 2, no fills, white. The base rule
+           wins over inline SVG attrs because we set them via CSS. */
+        .rail-btn svg {
+            width: 28px; height: 28px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));
+        }
+        .rail-btn .rail-label {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 50%; transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: rgba(255,255,255,0.95);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* All four rail buttons share the same minimal Instagram-Reels
+           aesthetic — white icon, mostly transparent, subtle hover.
+           Shadow gets a faint white-12% backdrop pill so the eye knows
+           where the action lives without breaking the monochrome palette. */
+        .rail-btn.primary {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .rail-btn.primary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* RECORDING — warm amber breathing pulse, not pink urgency.
+           "I'm listening, take your time" — supportive coach mood,
+           not ER-monitor anxiety. Slower easing (2s ease-in-out) so
+           the pulse feels like a calm breath, not a heartbeat. */
+        .rail-btn.recording {
+            background: rgba(247, 201, 72, 0.95) !important;
+            color: #3a2900 !important;
+            box-shadow: 0 0 0 0 rgba(247, 201, 72, 0.7);
+            animation: mic-breathe 2s ease-in-out infinite;
+        }
+        .rail-btn.recording svg { color: #3a2900 !important; }
+
+        /* Active state for toggle buttons — subtle white pill.
+           Used for Vocab (panel open) and Subs (off). */
+        .rail-btn.active {
+            background: rgba(255,255,255,0.16);
+        }
+        /* Subs OFF: dim the CC icon so it's clear the toggle is off */
+        .rail-btn.subs-off svg {
+            color: rgba(255,255,255,0.42);
+        }
+
+        @keyframes mic-breathe {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(247, 201, 72, 0.55); }
+            50%      { box-shadow: 0 0 0 14px rgba(247, 201, 72, 0); }
+        }
+
+        /* English caption visibility rules:
+             - en-hidden: user manually toggled subs OFF
+             - shadow-active.shadow-fast: shadow flow at 1× speed (Steps 3 & 4)
+               — at native pace the brain should listen, not read
+             - recording-mode: user is speaking; the line shouldn't be
+               available to read-along
+           At 0.5× and 0.75× steps the English STAYS visible so the
+           learner can map the sound to its written form (mapping phase).
+           Uzbek translation stays through everything. */
+        .bar-line-en {
+            transition: opacity .25s ease, filter .25s ease;
+        }
+        body.en-hidden .bar-line-en,
+        body.shadow-active.shadow-fast .bar-line-en,
+        body.recording-mode .bar-line-en {
+            opacity: 0;
+            filter: blur(6px);
+            pointer-events: none;
+        }
+
+        /* Speed text-as-glyph — bumped slightly to carry visual weight
+           on its own without the chevron crutch. */
+        .rail-btn .rail-speed-val {
+            font-family: var(--font-mono);
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));
+            line-height: 1;
+        }
+
+        /* Speed popup — three pills horizontal, slides out to the LEFT
+           of the speed button on tap. Tap a pill to play the target
+           line at that speed; tap outside to dismiss. */
+        .rail-speed-wrap { position: relative; }
+        .speed-popup {
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%) translateX(8px);
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            background: rgba(20,20,20,0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 999px;
+            box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease, transform .22s cubic-bezier(.2,.8,.2,1);
+        }
+        .speed-popup.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(-50%) translateX(0);
+        }
+        .speed-opt {
+            min-width: 44px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(0,0,0,0.4);
+            color: rgba(255,255,255,0.85);
+            border-radius: 999px;
+            font-family: var(--font-mono);
+            font-size: 12.5px; font-weight: 800;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            white-space: nowrap;
+        }
+        .speed-opt:hover { background: rgba(255,255,255,0.1); }
+        .speed-opt.active {
+            background: var(--duo-green);
+            border-color: var(--duo-green-dark);
+            color: #0a3300;
+        }
+        .speed-opt.playing {
+            background: rgba(74,222,128,0.22);
+            border-color: var(--duo-green);
+            color: var(--duo-green);
+        }
+
+        .bar-status {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.55);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+            transition: opacity .2s ease;
+        }
+        /* Collapse the status row entirely when there's nothing to say —
+           don't reserve dead space at the bottom of the screen. */
+        .bar-status:empty { display: none; }
+        .bar-status.listening { color: var(--duo-green); }
+        .bar-status.error { color: #ff8a8a; }
+
+        .bar-heard {
+            margin-top: 6px;
+            font-size: 12.5px;
+            color: rgba(255,255,255,0.78);
+            font-style: italic;
+            line-height: 1.4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            transition: opacity .2s ease;
+        }
+        .bar-heard:empty { display: none; }
+        /* Quiet everything else while the celebration card is open —
+           let the score own the screen. Subs dim to 30% so the user
+           can still read the colored line; status/heard go to 0. */
+        body.has-result .bar-status,
+        body.has-result .bar-heard {
+            opacity: 0;
+            pointer-events: none;
+        }
+        body.has-result .subs-overlay {
+            opacity: 0.32;
+        }
+
+        /* Score reveal — centered popup over the video, like an
+           Instagram celebration. Lives outside the bottom bar so it
+           never collides with the subs or status text. */
+        .bar-result {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            z-index: 55;
+            display: none;
+            flex-direction: column;
+            width: calc(100vw - 32px);
+            max-width: 380px;
+            padding: 20px 22px;
+            border-radius: 18px;
+            background: rgba(15,15,15,0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 24px 50px -10px rgba(0,0,0,0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .result-score-row {
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 14px;
+        }
+        .result-said {
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .result-said-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 4px;
+        }
+        .result-said-text {
+            color: rgba(255,255,255,0.92);
+            font-style: italic;
+        }
+        .result-said-text:empty::before {
+            content: '(silence)';
+            font-style: normal;
+            color: rgba(255,255,255,0.4);
+        }
+        .result-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        /* Compare spans both columns — it's the "killer" review action,
+           sandwiched between individual playbacks (above) and navigation
+           (below) so the eye reads: hear → compare → decide. */
+        .result-btn.compare {
+            grid-column: 1 / -1;
+            background: rgba(199, 233, 180, 0.12);
+            border-color: rgba(199, 233, 180, 0.35);
+            color: #c8e9b4;
+        }
+        .result-btn.compare:hover {
+            background: rgba(199, 233, 180, 0.22);
+            border-color: rgba(199, 233, 180, 0.5);
+        }
+        .result-btn.compare.playing {
+            animation: compare-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes compare-pulse {
+            0%, 100% { background: rgba(199, 233, 180, 0.16); }
+            50%      { background: rgba(199, 233, 180, 0.30); }
+        }
+
+        /* Disabled state for buttons before a recording is captured */
+        .result-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.04);
+        }
+        .result-btn:disabled:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.14);
+        }
+        .result-btn.compare:disabled {
+            background: rgba(199, 233, 180, 0.04);
+            border-color: rgba(199, 233, 180, 0.14);
+            color: rgba(199, 233, 180, 0.4);
+        }
+        .result-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 5px;
+            padding: 11px 8px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border-radius: 10px;
+            font-family: var(--font-display);
+            font-size: 12.5px; font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s, border-color .15s;
+        }
+        .result-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.24);
+        }
+        /* Don't force fill/stroke globally — each icon's inline attrs
+           are right (Listen is filled, Try again + Next are stroked). */
+        .result-btn svg { width: 12px; height: 12px; }
+        .result-btn.primary {
+            background: #fff;
+            color: #0a0a0a;
+            border-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .result-btn.primary:hover { background: #e8e8e8; }
+        /* Auto-advance drain — kept as scaffolding in case we add an
+           opt-in toggle later, but no longer triggered by default. */
+        .bar-result.show {
+            display: flex;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+            animation: result-pop .4s cubic-bezier(.2,1.6,.4,1);
+        }
+        @keyframes result-pop {
+            0%   { transform: translate(-50%, -50%) scale(0.78); opacity: 0; }
+            70%  { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        /* Verdict is now the headline — no numeric score competing
+           with it. Color-coded to the tier so the result still reads
+           at a glance. */
+        .bar-result .verdict {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.018em;
+            line-height: 1.2;
+            color: #fff;
+        }
+        /* Verdict tier colors — softened for the supportive coach mood.
+           "Miss" no longer reads as alarm-red; it's a warm peach that
+           says "needs another pass" without any drill-sergeant energy. */
+        .bar-result.good .verdict { color: var(--duo-green); }
+        .bar-result.close .verdict { color: #f7c948; }
+        .bar-result.miss .verdict { color: #ffb088; }
+        @keyframes next-drain {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
+        }
+
+        /* ── VOCAB SIDE PANEL ─────────────────────────── */
+        .vocab-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(2px);
+            z-index: 60;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+        }
+        body.show-vocab .vocab-backdrop {
+            opacity: 1; pointer-events: auto;
+        }
+        .vocab-panel {
+            position: fixed;
+            top: 0; bottom: 0;
+            right: 0;
+            width: 86%; max-width: 420px;
+            z-index: 61;
+            /* Flat near-black + hairline border to match the rail's
+               minimal aesthetic. Drop the gradient + heavy shadow. */
+            background: #0a0a0a;
+            border-left: 1px solid rgba(255,255,255,0.06);
+            transform: translateX(100%);
+            transition: transform .35s cubic-bezier(.2,.8,.2,1);
+            overflow-y: auto;
+            color: #fff;
+            /* Padding handled by the inner sections so sticky header has
+               full-bleed treatment. */
+            padding: 0;
+        }
+        body.show-vocab .vocab-panel { transform: translateX(0); }
+
+        /* Header sticks to the top so close X is always reachable —
+           even after scrolling down through tavsif + examples. */
+        .vocab-head {
+            position: sticky; top: 0;
+            z-index: 2;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(10,10,10,0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .vocab-eyebrow {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--duo-green);
+        }
+        .vocab-close {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.7);
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .vocab-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .vocab-close svg { width: 16px; height: 16px; }
+
+        .vocab-en {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.024em;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .vocab-uz {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: #c8e9b4;
+            line-height: 1.3;
+            letter-spacing: -0.018em;
+            padding: 14px 16px;
+            background: rgba(74,222,128, 0.08);
+            border-radius: 12px;
+            margin-bottom: 22px;
+        }
+        .vocab-section { margin-bottom: 22px; }
+        .vocab-section-title {
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 7px;
+        }
+        .vocab-section-body {
+            font-size: 14px;
+            line-height: 1.55;
+            color: rgba(255,255,255,0.86);
+        }
+        .vocab-section-body.uz {
+            color: rgba(200, 233, 180, 0.95);
+        }
+        .vocab-examples { display: flex; flex-direction: column; gap: 12px; }
+        .vocab-example {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .vocab-example .ex-en {
+            font-size: 14px;
+            color: #fff;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+        .vocab-example .ex-uz {
+            font-size: 12.5px;
+            color: rgba(200, 233, 180, 0.78);
+            line-height: 1.4;
+        }
+
+        /* Body container — the actual padding lives here so the sticky
+           header above can be flush to the top. */
+        .vocab-body-wrap {
+            padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
+        }
+
+        /* SCENE ANCHOR — the line where the user just heard the word.
+           Episodic memory hook. The whole reason TV-based learning works. */
+        .vocab-scene {
+            margin-bottom: 22px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+        }
+        .vocab-scene-line {
+            font-family: var(--font-display);
+            font-size: 15.5px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.4;
+            letter-spacing: -0.01em;
+            margin-bottom: 10px;
+        }
+        .vocab-scene-line .word-target {
+            color: #f7c948;
+            font-weight: 800;
+        }
+        .vocab-scene-listen {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 13px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 12px; font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s, border-color .15s;
+        }
+        .vocab-scene-listen:hover {
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .vocab-scene-listen svg {
+            width: 11px; height: 11px;
+            fill: #fff; stroke: none;
+        }
+
+        /* SAVE CTA — primary action at the bottom of the panel */
+        .vocab-save {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+            margin-top: 8px;
+            padding: 14px 18px;
+            background: #fff;
+            color: #0a0a0a;
+            border: 0;
+            border-radius: 14px;
+            font-family: var(--font-display);
+            font-size: 14.5px; font-weight: 800;
+            letter-spacing: -0.005em;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform .12s, background .15s, color .15s;
+        }
+        .vocab-save:hover { background: #e8e8e8; }
+        .vocab-save:active { transform: scale(0.98); }
+        .vocab-save svg {
+            width: 16px; height: 16px;
+            stroke: currentColor; fill: none;
+            stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .vocab-save.saved {
+            background: rgba(74,222,128, 0.16);
+            color: var(--duo-green);
+            cursor: default;
+        }
+        .vocab-save.saved:hover { background: rgba(74,222,128, 0.16); }
+        .vocab-save.saving { opacity: 0.6; cursor: wait; }
+
+        /* "More about this word" expander — collapsed by default so
+           only the essentials show. Single tap reveals the full study
+           material (tavsif, definition, examples, collocations). */
+        .vocab-more-toggle {
+            width: 100%;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 13px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.78);
+            font-family: var(--font-display);
+            font-size: 13.5px; font-weight: 700;
+            letter-spacing: -0.005em;
+            cursor: pointer;
+            margin-bottom: 22px;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .vocab-more-toggle:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border-color: rgba(255,255,255,0.12);
+        }
+        .vocab-more-toggle .chev {
+            display: inline-flex;
+            transition: transform .25s cubic-bezier(.2,.8,.2,1);
+            opacity: 0.6;
+        }
+        .vocab-more-toggle .chev svg {
+            width: 14px; height: 14px;
+        }
+        .vocab-more-toggle[aria-expanded="true"] .chev {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+        .vocab-more {
+            display: none;
+        }
+        .vocab-more.open {
+            display: block;
+            animation: vocab-more-fade .25s ease;
+        }
+        @keyframes vocab-more-fade {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Compact level chip lives in the header now (replacing the
+           tags row). Kind/category are system metadata, not learner-
+           facing — they're cut from the panel entirely. */
+        .vocab-head-meta {
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .vocab-head-level {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: rgba(74,222,128, 0.14);
+            color: var(--duo-green);
+            border: 1px solid rgba(74,222,128, 0.35);
+        }
+
+        .vocab-empty {
+            padding: 30px 0;
+            text-align: center;
+            color: rgba(255,255,255,0.45);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <span class="topbar-left">
+        <a class="back" href="{% url 'clips:home' %}" aria-label="Back to home">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </a>
+        {% if al_streak_days and al_streak_days >= 2 %}
+        <span class="streak-chip" aria-label="Current streak">{{ al_streak_days }}-day streak</span>
+        {% endif %}
+    </span>
+    <span class="topbar-right">
+        <span class="reel-level" id="reelLevel" aria-label="Difficulty level"></span>
+        <span class="reel-pos" id="reelPos" aria-live="polite"></span>
+    </span>
+</div>
+
+{% if first_name and reels %}
+<div class="welcome-strip" role="status">
+    {{ greeting }}, <span class="welcome-name">{{ first_name }}</span> · {{ reels|length }} reel{{ reels|length|pluralize }} for today
+</div>
+{% endif %}
+
+<div class="sound-hint" aria-hidden="true">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
+    </svg>
+    Tap anywhere for sound
+</div>
+
+{% if not reels %}
+<div class="empty-feed">
+    <h2>No reels yet</h2>
+    <p>An admin needs to curate the first batch of clips. Once published, they'll appear here as a TikTok-style feed for shadowing practice.</p>
+    <a href="{% url 'clips:home' %}">Back to Home</a>
+</div>
+{% else %}
+
+<div class="feed" id="feed">
+    {% for reel in reels %}
+    <section class="reel-page" id="reel-{{ reel.id }}" data-reel-id="{{ reel.id }}"
+             data-start="{{ reel.start_time }}" data-end="{{ reel.end_time }}">
+        <video class="reel-video" muted playsinline webkit-playsinline preload="metadata"
+               src="{{ reel.video_url|default:'' }}#t={{ reel.start_time }},{{ reel.end_time }}"></video>
+
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+
+        <div class="play-overlay">
+            <div class="icon">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        </div>
+
+        {% if forloop.first and reels|length > 1 %}
+        <div class="scroll-hint">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+            Swipe up
+        </div>
+        {% endif %}
+    </section>
+    {% endfor %}
+</div>
+
+<!-- Right action rail — Shorts/TikTok layout: Shadow / Vocab / Speed -->
+<div class="right-rail" id="rightRail">
+    <!-- Shadow: pure-stroked mic — same outline rhythm as Vocab and Subs. -->
+    <button class="rail-btn primary" id="railShadow" type="button" aria-label="Start shadow practice">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="11" rx="3"/>
+            <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"/>
+        </svg>
+        <span class="rail-label">Shadow</span>
+    </button>
+
+    <!-- Vocab: stylized "Aa" card glyph — explicitly says "this is about the word". -->
+    <button class="rail-btn" id="railVocab" type="button" aria-label="Show word details">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="15" rx="2.5"/>
+            <path d="M7.5 14.5l1.6-5 1.6 5M8 13h2.2"/>
+            <path d="M14 14.5v-3.2a1.5 1.5 0 0 1 1.5-1.5h.5a1.5 1.5 0 0 1 1.5 1.5v3.2M14 12.7h3"/>
+        </svg>
+        <span class="rail-label">Vocab</span>
+    </button>
+
+    <div class="rail-speed-wrap">
+        <button class="rail-btn" id="railSpeed" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Playback speed">
+            <span class="rail-speed-val" id="railSpeedVal">1×</span>
+            <span class="rail-label">Speed</span>
+        </button>
+        <div class="speed-popup" id="speedPopup">
+            <button class="speed-opt"        data-speed="0.5"  type="button">0.5×</button>
+            <button class="speed-opt"        data-speed="0.75" type="button">0.75×</button>
+            <button class="speed-opt active" data-speed="1"    type="button">1×</button>
+        </div>
+    </div>
+
+    <!-- Subs: literal "CC" inside a rounded rectangle. Universally
+         recognised; toggles English line visibility (Uzbek stays). -->
+    <button class="rail-btn" id="railSubs" type="button" aria-label="Toggle English subtitles" aria-pressed="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+            <text x="12" y="15.4" text-anchor="middle"
+                  fill="currentColor" stroke="none"
+                  font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
+                  font-weight="800" font-size="7.5"
+                  letter-spacing="0.4">CC</text>
+        </svg>
+        <span class="rail-label">Subs</span>
+    </button>
+</div>
+<div class="vocab-backdrop" id="vocabBackdrop"></div>
+<aside class="vocab-panel" id="vocabPanel" aria-label="Word details">
+    <div class="vocab-head">
+        <span class="vocab-head-meta">
+            <span class="vocab-head-level" id="vocabHeadLevel" hidden></span>
+        </span>
+        <button class="vocab-close" id="vocabClose" aria-label="Close">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div id="vocabBody"></div>
+</aside>
+
+<!-- Loop progress chip — visible during shadow playback (not intro/record) -->
+<div class="shadow-progress" id="shadowProgress"></div>
+
+<!-- Watch-style step overlay — shows during the multi-phase shadow flow -->
+<div class="step-overlay" id="stepOverlay">
+    <div class="step-eyebrow" id="stepEyebrow">Step 1 of 4</div>
+    <div class="step-title" id="stepTitle">Repeat with emotion</div>
+    <div class="step-meta" id="stepMeta">0.5× · Loop 1 of 3</div>
+    <div class="step-instructions" id="stepInstructions">
+        Listen to the line and repeat it out loud — match the rhythm.
+        <span class="uz">Qatorni eshiting va his bilan takrorlang.</span>
+    </div>
+    <div class="step-actions">
+        <button class="step-stop" id="stepStop" type="button">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z"/></svg>
+            Stop
+        </button>
+        <button class="step-skip" id="stepSkip" type="button" aria-label="Hold to skip to record">
+            <span>Hold to skip</span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Subs overlay — sits OVER the video, near its bottom edge, like
+     real reels captions. Updates with the active reel. -->
+<div class="subs-overlay" id="subsOverlay">
+    <div class="bar-line-en" id="barLineEn"></div>
+    <div class="bar-line-uz" id="barLineUz"></div>
+</div>
+
+<!-- Controls bar — minimal, only what changes during practice. -->
+<div class="shadow-bar" id="shadowBar">
+    <div class="bar-status" id="barStatus">When you're ready, tap Shadow.</div>
+    <div class="bar-heard" id="barHeard"></div>
+</div>
+
+<!-- Result popup — top-level sibling so its position:fixed is viewport-
+     relative on every breakpoint. (When it lived inside .shadow-bar,
+     the bar's translateX on desktop turned the popup's "fixed" into
+     "fixed relative to the bar" — buttons rendered off-screen.) -->
+<div class="bar-result" id="barResult">
+    <div class="result-score-row">
+        <div class="verdict" id="barVerdict"></div>
+    </div>
+    <div class="result-said">
+        <span class="result-said-label">You said</span>
+        <span class="result-said-text" id="resultSaidText"></span>
+    </div>
+    <div class="result-actions">
+        <button class="result-btn" id="resultListenBtn" type="button" aria-label="Listen to the original line">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            Listen
+        </button>
+        <button class="result-btn" id="resultVoiceBtn" type="button" aria-label="Hear your recording" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            Hear yourself
+        </button>
+        <button class="result-btn compare" id="resultCompareBtn" type="button" aria-label="Compare original and your recording" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13M7 7l3-3M7 7l3 3M17 17H4M17 17l-3 3M17 17l-3-3"/></svg>
+            <span id="resultCompareLabel">Compare — original, then you</span>
+        </button>
+        <button class="result-btn" id="resultRetryBtn" type="button" aria-label="Try again">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>
+            Try again
+        </button>
+        <button class="result-btn primary" id="barNextPill" type="button" aria-label="Next reel">
+            Next
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+    </div>
+</div>
+
+<script>
+    const REELS_DATA = {{ reels_json|safe }};
+    const reelById = Object.fromEntries(REELS_DATA.map(r => [String(r.id), r]));
+    const csrfToken = '{{ csrf_token }}';
+    // Renders to '' when no first name is set; otherwise to the user's first name.
+    const FIRST_NAME = '{{ first_name|default:""|escapejs }}';
+
+    function track(reelId, event) {
+        try {
+            return fetch(`/reels/${reelId}/track/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ event }),
+            }).then(r => r.ok ? r.json() : null).catch(() => null);
+        } catch { return Promise.resolve(null); }
+    }
+
+    function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function lineHtml(line) {
+        let html = escHtml(line.text);
+        for (const w of (line.target_words || [])) {
+            const safe = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(`\\b(${safe})\\b`, 'gi');
+            html = html.replace(re, '<span class="word-target">$1</span>');
+        }
+        return html;
+    }
+
+    // Color the line per-position using the LCS-matched array, so the
+    // visual feedback agrees with the score (a word that's right but
+    // out of order shows red — same as the grader treats it).
+    function lineWithFeedback(line, matched, tTokens) {
+        const targetWords = new Set();
+        for (const tw of (line.target_words || [])) {
+            for (const t of tokens(tw)) targetWords.add(t);
+        }
+        const wordRe = /[a-zA-Z]+(?:'[a-zA-Z]+)?/g;
+        let html = '';
+        let last = 0;
+        let tokenIdx = 0;
+        let m;
+        while ((m = wordRe.exec(line.text)) !== null) {
+            html += escHtml(line.text.slice(last, m.index));
+            const word = m[0];
+            const norm = word.toLowerCase();
+            const isMatched = matched[tokenIdx] === true;
+            const isTarget = targetWords.has(norm);
+            tokenIdx++;
+            if (!isMatched) {
+                html += `<span class="missed">${escHtml(word)}</span>`;
+            } else if (isTarget) {
+                html += `<span class="word-target">${escHtml(word)}</span>`;
+            } else {
+                html += escHtml(word);
+            }
+            last = wordRe.lastIndex;
+        }
+        html += escHtml(line.text.slice(last));
+        return html;
+    }
+
+    function pickShadowLine(data) {
+        if (!data || !data.lines || !data.lines.length) return null;
+        return data.lines.find(l => l.is_shadow_target) || data.lines[0];
+    }
+
+    function normalize(s) {
+        return (s || '').toLowerCase().replace(/[^\w\s']/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function tokens(s) { return normalize(s).split(' ').filter(Boolean); }
+
+    // Order-aware grader using Longest Common Subsequence.
+    //
+    //   target = "And it turns out it's my mother"
+    //   heard  = "mother my turns out it's"          (right words, wrong order)
+    //
+    // Bag-of-words gave this 86% (5/7 unique tokens in the heard set),
+    // even though the user said it backwards. LCS gives ~28% (only 2
+    // tokens are in the right sequence: turns, out — the trailing
+    // "mother my..." doesn't fit the target order).
+    //
+    // For shadowing this matters: prosody and word order ARE the skill.
+    function lcsAlign(target, heard) {
+        const m = target.length, n = heard.length;
+        // dp[i][j] = LCS length of target[0..i-1] vs heard[0..j-1]
+        const dp = Array.from({length: m + 1}, () => new Int32Array(n + 1));
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                if (target[i-1] === heard[j-1]) dp[i][j] = dp[i-1][j-1] + 1;
+                else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+            }
+        }
+        // Backtrack to mark which target indices were matched in order.
+        const matched = new Array(m).fill(false);
+        let i = m, j = n;
+        while (i > 0 && j > 0) {
+            if (target[i-1] === heard[j-1]) { matched[i-1] = true; i--; j--; }
+            else if (dp[i-1][j] >= dp[i][j-1]) i--;
+            else j--;
+        }
+        return { matched, lcs: dp[m][n] };
+    }
+
+    function gradeMatch(target, heard) {
+        const tTokens = tokens(target);
+        const hTokens = tokens(heard);
+        if (!tTokens.length) return { score: 0, matched: [], tTokens: [] };
+        const { matched, lcs } = lcsAlign(tTokens, hTokens);
+        const score = Math.round((lcs / tTokens.length) * 100);
+        return { score, matched, tTokens };
+    }
+
+    // ── Per-reel video lifecycle ─────────────────────────────
+    let activeReelEl = null;
+    let activeVideoEl = null;
+    let activeReelData = null;
+    let activeLine = null;          // target line — for the shadow drill
+    let _timeUpdateHandler = null;
+    let _selectedSpeed = 1.0;
+
+    // When false, subs follow video playback line-by-line (receptive
+    // mode: read the whole 20s scene). When true, subs lock to the
+    // shadow-target line (productive mode: drill that one line).
+    let _subsLocked = false;
+    const $subsOverlay = document.getElementById('subsOverlay');
+
+    // Find the transcript line whose [start, end] window contains t.
+    // 0.3s grace at the tail so the sub doesn't disappear before the
+    // actor finishes speaking.
+    function findLineAt(t) {
+        if (!activeReelData || !activeReelData.lines) return null;
+        for (const ln of activeReelData.lines) {
+            if (t >= ln.start_time && t <= ln.end_time + 0.3) return ln;
+        }
+        return null;
+    }
+
+    function renderSubsLine(line) {
+        if (!line) {
+            $subsOverlay.classList.add('subs-fade');
+            return;
+        }
+        $subsOverlay.classList.remove('subs-fade');
+        $barLineEn.innerHTML = lineHtml(line);
+        $barLineUz.textContent = (line.translation || '').trim();
+    }
+
+    // Browser autoplay policy: a fresh page reload denies unmuted
+    // playback until the user interacts. Track the first gesture and
+    // retroactively unmute whatever's currently playing.
+    let _userInteracted = false;
+
+    function _markInteracted() {
+        if (_userInteracted) return;
+        _userInteracted = true;
+        if (activeVideoEl && activeVideoEl.muted) {
+            try { activeVideoEl.muted = false; } catch {}
+        }
+        document.body.classList.remove('needs-sound-tap');
+        document.body.classList.add('has-interacted');
+        // Note: we deliberately do NOT call getUserMedia here. Mic and
+        // SpeechRecognition use separate permission flows in some
+        // browsers (notably Safari), and getUserMedia would cause an
+        // EXTRA permission prompt that doesn't help. The first Shadow
+        // tap is the one and only prompt the user should see — handled
+        // by reusing a single SR instance via _ensureRec().
+    }
+    ['click', 'touchstart', 'keydown'].forEach(ev => {
+        document.addEventListener(ev, _markInteracted, { capture: true, passive: true });
+    });
+
+    function activateReel(el) {
+        if (activeReelEl === el) return;
+        // Cancel any in-progress state when swapping
+        exitShadowFlow();
+        stopMic(true);
+        cancelAutoAdvance();
+        clearResultDisplay();
+        document.body.classList.remove('recording-mode');
+        // Topbar meta row — position + CEFR level chips. Both update
+        // on every reel activation so the user always knows where they
+        // are in the catalog and how hard the current word is.
+        const allReels = document.querySelectorAll('.reel-page');
+        const idx = Array.prototype.indexOf.call(allReels, el);
+        const $pos = document.getElementById('reelPos');
+        if ($pos && idx >= 0 && allReels.length > 0) {
+            $pos.textContent = `${idx + 1} / ${allReels.length}`;
+        }
+        const $level = document.getElementById('reelLevel');
+        if ($level) {
+            const lvl = reelById[el.dataset.reelId]?.cefr_level || '';
+            $level.textContent = lvl;
+        }
+        if (activeVideoEl) {
+            try { activeVideoEl.pause(); } catch {}
+            if (_timeUpdateHandler) {
+                activeVideoEl.removeEventListener('timeupdate', _timeUpdateHandler);
+            }
+        }
+        activeReelEl = el;
+        activeVideoEl = el.querySelector('.reel-video');
+        if (!activeVideoEl) return;
+
+        const reelId = el.dataset.reelId;
+        const start = parseFloat(el.dataset.start) || 0;
+        const end   = parseFloat(el.dataset.end) || 0;
+        activeReelData = reelById[reelId];
+        activeLine = pickShadowLine(activeReelData);
+
+        track(reelId, 'view');
+        renderBar();
+        renderVocab();
+
+        try { activeVideoEl.currentTime = start; activeVideoEl.playbackRate = 1.0; } catch {}
+        // Only attempt unmuted play after the user has actually interacted.
+        // On a fresh reload, start muted so autoplay works; we'll unmute the
+        // moment any tap/touch/key fires (see _markInteracted above).
+        activeVideoEl.muted = !_userInteracted;
+        const playPromise = activeVideoEl.play();
+        if (playPromise && playPromise.catch) {
+            playPromise.catch(() => {
+                activeVideoEl.muted = true;
+                activeVideoEl.play().catch(() => {});
+            });
+        }
+        if (!_userInteracted) document.body.classList.add('needs-sound-tap');
+
+        const progressEl = el.querySelector('.progress-fill');
+        let trackedComplete = false;
+
+        _timeUpdateHandler = () => {
+            const t = activeVideoEl.currentTime;
+            const dur = end - start;
+            const pct = dur > 0 ? Math.min(100, ((t - start) / dur) * 100) : 0;
+            if (progressEl) progressEl.style.width = pct + '%';
+            // Live subs: line-by-line during normal playback (receptive
+            // mode). When _subsLocked is true (shadow drill running),
+            // skip — the drill freezes subs on the target line.
+            if (!_subsLocked) renderSubsLine(findLineAt(t));
+            if (t >= end - 0.05) {
+                if (!trackedComplete) {
+                    trackedComplete = true;
+                    track(reelId, 'complete');
+                }
+                try { activeVideoEl.currentTime = start; } catch {}
+            }
+        };
+        activeVideoEl.addEventListener('timeupdate', _timeUpdateHandler);
+    }
+
+    const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+                activateReel(entry.target);
+            }
+        }
+    }, { threshold: [0, 0.6, 1.0] });
+    document.querySelectorAll('.reel-page').forEach(el => io.observe(el));
+
+    // Manual swipe → cancel any pending auto-advance so the timer
+    // doesn't fire on top of the user's own scroll.
+    const $feed = document.getElementById('feed');
+    if ($feed) {
+        let _scrollCancelArmed = false;
+        $feed.addEventListener('scroll', () => {
+            if (!_autoAdvanceTimer) return;
+            // Wait one frame so programmatic scrollIntoView from advance
+            // doesn't self-cancel.
+            if (!_scrollCancelArmed) {
+                _scrollCancelArmed = true;
+                requestAnimationFrame(() => {
+                    cancelAutoAdvance();
+                    _scrollCancelArmed = false;
+                });
+            }
+        }, { passive: true });
+    }
+
+    document.querySelectorAll('.reel-video').forEach(v => {
+        v.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (v !== activeVideoEl) return;
+            // Don't let casual taps interrupt the structured shadow flow
+            // or an active mic recording — both depend on programmatic
+            // pause/play and a stray tap breaks the state machine.
+            if (_shadow || recording) return;
+            const overlay = v.closest('.reel-page').querySelector('.play-overlay');
+            if (v.paused) {
+                v.play();
+                if (overlay) {
+                    overlay.classList.add('visible');
+                    setTimeout(() => overlay.classList.remove('visible'), 220);
+                }
+            } else {
+                v.pause();
+                if (overlay) overlay.classList.add('visible');
+            }
+        });
+    });
+
+    // ── DOM refs ─────────────────────────────────────────────
+    const $barLineEn = document.getElementById('barLineEn');
+    const $barLineUz = document.getElementById('barLineUz');
+    const $barStatus = document.getElementById('barStatus');
+    const $barHeard  = document.getElementById('barHeard');
+    const $barResult = document.getElementById('barResult');
+    const $barVerdict= document.getElementById('barVerdict');
+
+    // Right rail
+    const $railShadow   = document.getElementById('railShadow');
+    const $railVocab    = document.getElementById('railVocab');
+    const $railSpeed    = document.getElementById('railSpeed');
+    const $railSpeedVal = document.getElementById('railSpeedVal');
+    const $speedPopup   = document.getElementById('speedPopup');
+    const $speedOpts    = document.querySelectorAll('.speed-opt');
+    const $railSubs     = document.getElementById('railSubs');
+    // Mic on the rail is the Shadow button itself (one tap → flow / record)
+    const $barMic = $railShadow;
+
+    const $vocabBackdrop = document.getElementById('vocabBackdrop');
+    const $vocabClose    = document.getElementById('vocabClose');
+    const $vocabBody     = document.getElementById('vocabBody');
+
+    const $barNextPill = document.getElementById('barNextPill');
+    let _autoAdvanceTimer = null;
+
+    const $stepOverlay      = document.getElementById('stepOverlay');
+    const $stepEyebrow      = document.getElementById('stepEyebrow');
+    const $stepTitle        = document.getElementById('stepTitle');
+    const $stepMeta         = document.getElementById('stepMeta');
+    const $stepInstructions = document.getElementById('stepInstructions');
+    const $stepStop         = document.getElementById('stepStop');
+
+    function setBarStatus(text, cls) {
+        $barStatus.textContent = text;
+        $barStatus.classList.remove('listening', 'error');
+        if (cls) $barStatus.classList.add(cls);
+    }
+
+    function renderBar() {
+        // Receptive mode by default — live subs follow playback.
+        _subsLocked = false;
+        if (!activeReelData || !activeReelData.lines || !activeReelData.lines.length) {
+            $subsOverlay.classList.add('subs-fade');
+            $barLineEn.textContent = 'No lines on this reel yet.';
+            $barLineUz.textContent = '';
+        } else {
+            // First-frame state: show line 0 immediately. timeupdate
+            // takes over within a few frames as the video plays.
+            renderSubsLine(activeReelData.lines[0]);
+        }
+        $barHeard.textContent = '';
+        $barResult.classList.remove('show', 'good', 'close', 'miss');
+        $barMic.classList.remove('recording');
+
+        // Reset speed to 1× per reel + clear popup state
+        _selectedSpeed = 1.0;
+        $railSpeedVal.textContent = '1×';
+        $speedOpts.forEach(p => {
+            p.classList.toggle('active', parseFloat(p.dataset.speed) === 1.0);
+            p.classList.remove('playing');
+        });
+        closeSpeedPopup();
+
+        // Empty default status — the welcome strip carries the greeting,
+        // and the bottom row only speaks when something's actually happening.
+        setBarStatus('');
+    }
+
+    // ── Speed popup + manual speed playback ──────────────────
+    // Tap the rail Speed button → small horizontal popup of pills
+    // appears to the left. Tap a pill → plays the target line at
+    // that speed and that becomes the new selected speed.
+    function openSpeedPopup()  {
+        $speedPopup.classList.add('open');
+        $railSpeed.setAttribute('aria-expanded', 'true');
+    }
+    function closeSpeedPopup() {
+        $speedPopup.classList.remove('open');
+        $railSpeed.setAttribute('aria-expanded', 'false');
+    }
+
+    $railSpeed.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if ($speedPopup.classList.contains('open')) closeSpeedPopup();
+        else openSpeedPopup();
+    });
+    document.addEventListener('click', (e) => {
+        if (!$speedPopup.contains(e.target) && e.target !== $railSpeed) closeSpeedPopup();
+    });
+
+    let manualHandler = null;
+    function playLineAtSpeed(speed, optEl) {
+        if (!activeLine || !activeVideoEl) return;
+        if (manualHandler) {
+            activeVideoEl.removeEventListener('timeupdate', manualHandler);
+            manualHandler = null;
+        }
+        stopMic(true);
+        _selectedSpeed = speed;
+        $railSpeedVal.textContent = (speed === 1 ? '1×' : `${speed}×`);
+        $speedOpts.forEach(p => {
+            p.classList.toggle('active', p === optEl);
+            p.classList.remove('playing');
+        });
+        if (optEl) optEl.classList.add('playing');
+        try {
+            activeVideoEl.currentTime = activeLine.start_time;
+            activeVideoEl.playbackRate = speed;
+            activeVideoEl.muted = false;
+            activeVideoEl.play().catch(() => {});
+        } catch {}
+        const speedLabel = speed === 1 ? '' : ` (${speed}×)`;
+        setBarStatus('Listening…' + speedLabel, 'listening');
+
+        manualHandler = () => {
+            if (activeVideoEl.currentTime >= activeLine.end_time + 0.05) {
+                activeVideoEl.removeEventListener('timeupdate', manualHandler);
+                manualHandler = null;
+                try { activeVideoEl.pause(); activeVideoEl.playbackRate = 1.0; } catch {}
+                if (optEl) optEl.classList.remove('playing');
+                setBarStatus('Tap Shadow to record — or another speed');
+            }
+        };
+        activeVideoEl.addEventListener('timeupdate', manualHandler);
+    }
+
+    $speedOpts.forEach(p => {
+        p.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Don't let manual playback fight with active shadow flow
+            if (document.body.classList.contains('shadow-active')) return;
+            playLineAtSpeed(parseFloat(p.dataset.speed), p);
+            closeSpeedPopup();
+        });
+    });
+
+    // ── Watch-style 4-step shadow flow ──────────────────────────
+    // Mirrors clips/templates/clips/watch_source.html `_shadowSteps`.
+    // 0.5× → 0.75× → 1× (3 loops each, listen+repeat) → record at 1×.
+    // Three lines per step: a small step counter, BIG action, short Uzbek.
+    // Anything more than this can't be read in 2 seconds. Resist adding copy.
+    const SHADOW_STEPS = [
+        { title: 'Repeat slowly',   uz: 'Sekin takrorlang',    speed: 0.5,  loops: 3 },
+        { title: 'Speed up',        uz: 'Tezlatib ayting',     speed: 0.75, loops: 3 },
+        { title: 'Match the actor', uz: "Aktyorga moslang",    speed: 1.0,  loops: 3 },
+        { title: 'Now you say it',  uz: "Endi o'zingiz ayting", speed: 1.0,  loops: 1, record: true },
+    ];
+
+    let _shadow = null; // { stepIdx, loopIdx, listenHandler } — null when idle
+
+    // Two-phase per step (matches watch_source.html):
+    //   1. INTRO  — blur video, show step instructions for ~1.5s
+    //   2. PLAY   — unblur, line plays at step.speed, loops N times
+    //               with NO re-blur between loops; learner watches actor.
+    // Then advance to the next step's intro, until step 4 (record).
+    const STEP_INTRO_MS = 2000;
+
+    function enterShadowFlow() {
+        if (!activeLine || !activeVideoEl) return;
+        if (_shadow) return;
+        document.body.classList.add('shadow-active');
+        $barResult.classList.remove('show', 'good', 'close', 'miss');
+        $barHeard.textContent = '';
+        // Productive mode — freeze subs on the target line so the user
+        // sees exactly what they'll repeat through all 4 steps.
+        _subsLocked = true;
+        renderSubsLine(activeLine);
+        _shadow = { stepIdx: 0, loopIdx: 0, listenHandler: null, introTimer: null };
+        runShadowStep();
+    }
+
+    function exitShadowFlow() {
+        if (!_shadow) return;
+        if (_shadow.introTimer) { clearTimeout(_shadow.introTimer); _shadow.introTimer = null; }
+        if (_readyTimer) { clearTimeout(_readyTimer); _readyTimer = null; }
+        if (_shadow.listenHandler && activeVideoEl) {
+            activeVideoEl.removeEventListener('timeupdate', _shadow.listenHandler);
+        }
+        _shadow = null;
+        document.body.classList.remove('shadow-active', 'shadow-intro', 'shadow-fast', 'shadow-ready');
+        // Unfreeze subs — receptive mode resumes; timeupdate will sync
+        // on the very next firing.
+        _subsLocked = false;
+        try { if (activeVideoEl) activeVideoEl.playbackRate = 1.0; } catch {}
+    }
+
+    function runShadowStep() {
+        if (!_shadow || !activeLine || !activeVideoEl) return;
+        const step = SHADOW_STEPS[_shadow.stepIdx];
+
+        // ── INTRO PHASE ──
+        // Pause, blur, show: speed (small), action (BIG), Uzbek (medium).
+        try { activeVideoEl.pause(); } catch {}
+        document.body.classList.add('shadow-intro');
+        // Subs visibility ramp:
+        //   0.5×  → English shown (text-audio mapping phase)
+        //   0.75× → English hidden (build no-text recall)
+        //   1×    → English hidden (ear-only)
+        // CSS .shadow-fast hides English; we set it for any speed > 0.5.
+        document.body.classList.toggle('shadow-fast', step.speed > 0.5);
+        $stepEyebrow.textContent = `${step.speed}×  ·  ${_shadow.stepIdx + 1}/${SHADOW_STEPS.length}`;
+        $stepTitle.textContent = step.title;
+        $stepMeta.textContent = step.uz;
+
+        if (_shadow.introTimer) clearTimeout(_shadow.introTimer);
+        _shadow.introTimer = setTimeout(() => {
+            if (!_shadow) return;
+            _shadow.introTimer = null;
+            // ── PLAY PHASE ── unblur, hide overlay, run loops
+            document.body.classList.remove('shadow-intro');
+            startStepLoops(step);
+        }, STEP_INTRO_MS);
+    }
+
+    function updateLoopChip(step) {
+        const $p = document.getElementById('shadowProgress');
+        if (!$p || !_shadow) return;
+        if (step.record) { $p.textContent = ''; return; }
+        $p.textContent = `Loop ${_shadow.loopIdx + 1} / ${step.loops}  ·  ${step.speed}×`;
+    }
+
+    let _readyTimer = null;
+    function readyCountdown() {
+        if (!_shadow) return;
+        if (_readyTimer) clearTimeout(_readyTimer);
+        // shadow-ready shows the overlay WITHOUT blurring the video so
+        // the user can see the actor while the 900ms "Get ready" beat
+        // plays. shadow-intro blur would still be fading out via CSS
+        // transition for 350ms after we removed it — making the very
+        // start of recording look blurred. Hence the separate class.
+        document.body.classList.add('shadow-ready');
+        $stepEyebrow.textContent = 'Your turn';
+        $stepTitle.textContent = 'Get ready…';
+        $stepMeta.textContent = "Endi siz aytasiz";
+        _readyTimer = setTimeout(() => {
+            _readyTimer = null;
+            if (!_shadow) return;
+            document.body.classList.remove('shadow-active', 'shadow-intro', 'shadow-fast', 'shadow-ready');
+            startMic();
+        }, 900);
+    }
+
+    function startStepLoops(step) {
+        if (!_shadow) return;
+        updateLoopChip(step);
+        if (step.record) {
+            // Final step: line plays once at native, then short ready
+            // beat, then mic activates.
+            playLineForStep(step.speed, () => {
+                if (!_shadow) return;
+                readyCountdown();
+            });
+            return;
+        }
+        playLineForStep(step.speed, () => {
+            if (!_shadow) return;
+            _shadow.loopIdx++;
+            if (_shadow.loopIdx >= step.loops) {
+                _shadow.loopIdx = 0;
+                _shadow.stepIdx++;
+                if (_shadow.stepIdx >= SHADOW_STEPS.length) {
+                    exitShadowFlow();
+                    return;
+                }
+                // Next step → re-enter intro (blur + new instructions)
+                runShadowStep();
+            } else {
+                // Same step, next loop — chip updates, no blur, just replay
+                updateLoopChip(step);
+                startStepLoops(step);
+            }
+        });
+    }
+
+    function playLineForStep(speed, onDone) {
+        if (!activeLine || !activeVideoEl || !_shadow) return;
+        if (_shadow.listenHandler) {
+            activeVideoEl.removeEventListener('timeupdate', _shadow.listenHandler);
+        }
+        try {
+            activeVideoEl.currentTime = activeLine.start_time;
+            activeVideoEl.playbackRate = speed;
+            activeVideoEl.muted = false;
+            activeVideoEl.play().catch(() => {});
+        } catch {}
+        const handler = () => {
+            if (!_shadow) return;
+            if (activeVideoEl.currentTime >= activeLine.end_time + 0.05) {
+                activeVideoEl.removeEventListener('timeupdate', handler);
+                _shadow.listenHandler = null;
+                try { activeVideoEl.pause(); } catch {}
+                onDone();
+            }
+        };
+        _shadow.listenHandler = handler;
+        activeVideoEl.addEventListener('timeupdate', handler);
+    }
+
+    $stepStop.addEventListener('click', exitShadowFlow);
+
+    // Skip → bypass listen-and-repeat steps, jump straight to record.
+    // Requires a 600ms HOLD so a misfired tap can't blow past the
+    // 12-rep pedagogy. Visual fill ring drains across the button.
+    const $stepSkip = document.getElementById('stepSkip');
+    let _skipHoldTimer = null;
+    function _doSkipToRecord() {
+        if (!_shadow) return;
+        if (_shadow.introTimer) { clearTimeout(_shadow.introTimer); _shadow.introTimer = null; }
+        if (_shadow.listenHandler && activeVideoEl) {
+            activeVideoEl.removeEventListener('timeupdate', _shadow.listenHandler);
+            _shadow.listenHandler = null;
+        }
+        _shadow.stepIdx = SHADOW_STEPS.length - 1;
+        _shadow.loopIdx = 0;
+        runShadowStep();
+    }
+    function _startSkipHold(e) {
+        if (e && e.cancelable) e.preventDefault();
+        if (!_shadow) return;
+        if (_skipHoldTimer) { clearTimeout(_skipHoldTimer); }
+        $stepSkip.classList.remove('holding');
+        // Force reflow so the animation re-fires cleanly on a second hold.
+        void $stepSkip.offsetWidth;
+        $stepSkip.classList.add('holding');
+        _skipHoldTimer = setTimeout(() => {
+            _skipHoldTimer = null;
+            $stepSkip.classList.remove('holding');
+            _doSkipToRecord();
+        }, 600);
+    }
+    function _cancelSkipHold() {
+        if (_skipHoldTimer) { clearTimeout(_skipHoldTimer); _skipHoldTimer = null; }
+        $stepSkip.classList.remove('holding');
+    }
+    if ($stepSkip) {
+        $stepSkip.addEventListener('mousedown', _startSkipHold);
+        $stepSkip.addEventListener('touchstart', _startSkipHold, { passive: false });
+        ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(ev => {
+            $stepSkip.addEventListener(ev, _cancelSkipHold);
+        });
+    }
+
+    // ── Mic recording (Step 4 + standalone retry) ────────────
+    const SRCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // Recording cap: line duration + 2s buffer (min 3s, max 12s). Flat
+    // 5s was cutting people off mid-word on long lines and wasting time
+    // on short ones.
+    function _recCapMs() {
+        if (!activeLine) return 5000;
+        const lineMs = Math.max(0, (activeLine.end_time - activeLine.start_time) * 1000);
+        return Math.min(12000, Math.max(3000, lineMs + 2000));
+    }
+    let drillRec = null;
+    let recording = false;
+    let _recTimeout = null;
+
+    function stopMic(silent) {
+        if (_recTimeout) { clearTimeout(_recTimeout); _recTimeout = null; }
+        if (drillRec) {
+            // Detach handlers but keep the instance alive — abort/recreate
+            // is what was triggering Safari's repeat permission prompt.
+            try { drillRec.onresult = drillRec.onend = drillRec.onerror = null; } catch {}
+            try { drillRec.stop(); } catch {}
+        }
+        _stopAudioCapture();
+        _stopRecordingLoop();
+        recording = false;
+        $barMic.classList.remove('recording');
+        document.body.classList.remove('recording-mode');
+        if (!silent) setBarStatus('Tap mic to retry');
+    }
+
+    function _ensureRec() {
+        // Reuse a single SpeechRecognition instance across attempts.
+        // Creating a new one (or calling abort + new) re-prompts for
+        // mic permission on Safari and some Chrome versions, even after
+        // the user has clicked Allow.
+        if (drillRec) return drillRec;
+        const rec = new SRCtor();
+        rec.lang = 'en-US';
+        rec.continuous = false;
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
+        drillRec = rec;
+        return rec;
+    }
+
+    // ── Own-voice playback (MediaRecorder) ───────────────────
+    // Captures the user's audio while SpeechRecognition is also running.
+    // The same stream is reused across attempts so getUserMedia prompts
+    // exactly once per session.
+    let _audioStream = null;
+    let _audioRecorder = null;
+    let _audioChunks = [];
+    let _recordedAudioUrl = null;
+    let _voicePlaybackAudio = null;
+
+    async function _ensureAudioStream() {
+        if (_audioStream) return _audioStream;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
+        try {
+            _audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            return _audioStream;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function _startAudioCapture() {
+        if (!_audioStream) return;
+        if (!window.MediaRecorder) return;
+        _audioChunks = [];
+        // Discard previous recording's blob URL so we don't leak.
+        if (_recordedAudioUrl) {
+            try { URL.revokeObjectURL(_recordedAudioUrl); } catch {}
+            _recordedAudioUrl = null;
+        }
+        try {
+            _audioRecorder = new MediaRecorder(_audioStream);
+            _audioRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) _audioChunks.push(e.data);
+            };
+            _audioRecorder.onstop = () => {
+                if (!_audioChunks.length) return;
+                const blob = new Blob(_audioChunks, { type: _audioRecorder.mimeType || 'audio/webm' });
+                _recordedAudioUrl = URL.createObjectURL(blob);
+                // Enable Hear-yourself + Compare on the result popup.
+                const voiceBtn = document.getElementById('resultVoiceBtn');
+                const compareBtn = document.getElementById('resultCompareBtn');
+                if (voiceBtn) voiceBtn.disabled = false;
+                if (compareBtn) compareBtn.disabled = false;
+            };
+            _audioRecorder.start();
+        } catch (e) { /* mime not supported, fall back silently */ }
+    }
+
+    function _stopAudioCapture() {
+        if (_audioRecorder && _audioRecorder.state === 'recording') {
+            try { _audioRecorder.stop(); } catch {}
+        }
+    }
+
+    function _playOwnVoice() {
+        if (!_recordedAudioUrl) return;
+        if (_voicePlaybackAudio) {
+            try { _voicePlaybackAudio.pause(); } catch {}
+            _voicePlaybackAudio = null;
+        }
+        _voicePlaybackAudio = new Audio(_recordedAudioUrl);
+        _voicePlaybackAudio.play().catch(() => {});
+    }
+
+    // Compare: play the original line, then the user's recording —
+    // back-to-back. Button label updates so the user knows which is
+    // playing without ambiguity.
+    let _compareTimer = null;
+    function _stopCompare() {
+        if (_compareTimer) { clearTimeout(_compareTimer); _compareTimer = null; }
+        if (_voicePlaybackAudio) {
+            try { _voicePlaybackAudio.pause(); } catch {}
+            _voicePlaybackAudio = null;
+        }
+        if (activeVideoEl) {
+            try { activeVideoEl.pause(); } catch {}
+        }
+        const btn = document.getElementById('resultCompareBtn');
+        const lbl = document.getElementById('resultCompareLabel');
+        if (btn) btn.classList.remove('playing');
+        if (lbl) lbl.textContent = 'Compare — original, then you';
+    }
+    function _playCompare() {
+        if (!activeLine || !activeVideoEl || !_recordedAudioUrl) return;
+        _stopCompare();
+        const btn = document.getElementById('resultCompareBtn');
+        const lbl = document.getElementById('resultCompareLabel');
+        if (btn) btn.classList.add('playing');
+
+        // Phase 1 — play original.
+        if (lbl) lbl.textContent = 'Original…';
+        try {
+            activeVideoEl.currentTime = activeLine.start_time;
+            activeVideoEl.muted = false;
+            activeVideoEl.playbackRate = 1.0;
+            activeVideoEl.play().catch(() => {});
+        } catch {}
+
+        const lineDurMs = Math.max(0, (activeLine.end_time - activeLine.start_time) * 1000);
+        // Phase 2 — after the original ends + 250ms gap, play user's voice.
+        _compareTimer = setTimeout(() => {
+            _compareTimer = null;
+            if (activeVideoEl) {
+                try { activeVideoEl.pause(); } catch {}
+            }
+            if (lbl) lbl.textContent = 'You…';
+            _voicePlaybackAudio = new Audio(_recordedAudioUrl);
+            _voicePlaybackAudio.onended = () => {
+                _voicePlaybackAudio = null;
+                if (btn) btn.classList.remove('playing');
+                if (lbl) lbl.textContent = 'Compare — original, then you';
+            };
+            _voicePlaybackAudio.play().catch(() => _stopCompare());
+        }, lineDurMs + 250);
+    }
+
+    // While the user is recording, loop the target line MUTED on the
+    // video so they can see the actor's mouth (visual shadowing) while
+    // their own voice is captured by the mic without audio bleed.
+    let _recordingLoopHandler = null;
+    function _startRecordingLoop() {
+        if (!activeVideoEl || !activeLine) return;
+        try {
+            activeVideoEl.muted = true;
+            activeVideoEl.currentTime = activeLine.start_time;
+            activeVideoEl.playbackRate = 1.0;
+            activeVideoEl.play().catch(() => {});
+        } catch {}
+        // Loop just this line while recording is active.
+        _recordingLoopHandler = () => {
+            if (!recording || !activeLine) {
+                _stopRecordingLoop();
+                return;
+            }
+            if (activeVideoEl.currentTime >= activeLine.end_time + 0.05) {
+                try { activeVideoEl.currentTime = activeLine.start_time; } catch {}
+            }
+        };
+        activeVideoEl.addEventListener('timeupdate', _recordingLoopHandler);
+    }
+    function _stopRecordingLoop() {
+        if (_recordingLoopHandler && activeVideoEl) {
+            activeVideoEl.removeEventListener('timeupdate', _recordingLoopHandler);
+        }
+        _recordingLoopHandler = null;
+        if (activeVideoEl) {
+            try {
+                activeVideoEl.pause();
+                // Restore mute state to whatever the page-wide audio
+                // policy says (unmuted once the user has interacted).
+                activeVideoEl.muted = !_userInteracted;
+            } catch {}
+        }
+    }
+
+    async function startMic() {
+        if (!SRCtor) {
+            setBarStatus('Voice not supported in this browser', 'error');
+            return;
+        }
+        if (!activeLine) {
+            setBarStatus('No line to shadow on this reel', 'error');
+            return;
+        }
+        cancelAutoAdvance();
+        clearResultDisplay();
+
+        // Open the audio stream + start MediaRecorder so we can play
+        // the recording back after. Stream is cached — first attempt
+        // prompts, subsequent attempts reuse silently.
+        await _ensureAudioStream();
+        _startAudioCapture();
+        // Lock playback buttons until this recording finishes.
+        const voiceBtn = document.getElementById('resultVoiceBtn');
+        const compareBtn = document.getElementById('resultCompareBtn');
+        if (voiceBtn) voiceBtn.disabled = true;
+        if (compareBtn) compareBtn.disabled = true;
+        _stopCompare();
+
+        const rec = _ensureRec();
+        // Reset handlers but reuse the instance (the whole point — no
+        // re-prompt). If the previous attempt is still ending, the
+        // start() below will throw and we'll recover in the catch.
+        rec.onresult = rec.onend = rec.onerror = null;
+
+        recording = true;
+        $barMic.classList.add('recording');
+        document.body.classList.add('recording-mode');
+        // Now that `recording` is true, kick off the silent video loop.
+        // (Doing this before the flag flip caused the loop's timeupdate
+        // handler to see !recording and immediately tear itself down.)
+        _startRecordingLoop();
+        $barLineEn.innerHTML = lineHtml(activeLine);
+        $barHeard.textContent = '';
+        $barResult.classList.remove('show', 'good', 'close', 'miss');
+        setBarStatus('Listening… repeat the line', 'listening');
+
+        let finalText = '';
+        rec.onresult = (e) => {
+            let interim = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const r = e.results[i];
+                if (r.isFinal) finalText += (finalText ? ' ' : '') + r[0].transcript.trim();
+                else interim += r[0].transcript;
+            }
+            $barHeard.textContent = (finalText + (interim ? ' ' + interim : '')).trim();
+        };
+        rec.onerror = (ev) => {
+            recording = false;
+            $barMic.classList.remove('recording');
+            document.body.classList.remove('recording-mode');
+            if (_recTimeout) { clearTimeout(_recTimeout); _recTimeout = null; }
+            _stopAudioCapture();
+            _stopRecordingLoop();
+            if (ev.error === 'no-speech') setBarStatus('Didn\'t catch that — tap mic to try', 'error');
+            else if (ev.error === 'not-allowed') setBarStatus('Mic blocked — allow in browser settings', 'error');
+            else setBarStatus('Mic error — tap mic to retry', 'error');
+            if (_shadow) exitShadowFlow();
+        };
+        rec.onend = () => {
+            recording = false;
+            $barMic.classList.remove('recording');
+            document.body.classList.remove('recording-mode');
+            if (_recTimeout) { clearTimeout(_recTimeout); _recTimeout = null; }
+            _stopAudioCapture();
+            _stopRecordingLoop();
+            if (_shadow) exitShadowFlow();
+            const heard = ($barHeard.textContent || finalText || '').trim();
+            if (!heard) {
+                setBarStatus('Didn\'t catch that — tap mic to try', 'error');
+                return;
+            }
+            showResult(heard);
+        };
+
+        try {
+            rec.start();
+        } catch (err) {
+            // Instance is mid-end / in an "InvalidStateError" — wait one
+            // tick and retry once. If still failing, recreate as a last
+            // resort (this is the only path that re-prompts permission).
+            setTimeout(() => {
+                try { rec.start(); }
+                catch (err2) {
+                    try { rec.abort(); } catch {}
+                    drillRec = null;
+                    const fresh = _ensureRec();
+                    fresh.onresult = rec.onresult;
+                    fresh.onerror = rec.onerror;
+                    fresh.onend = rec.onend;
+                    try { fresh.start(); } catch {
+                        recording = false;
+                        $barMic.classList.remove('recording');
+                        document.body.classList.remove('recording-mode');
+                        if (_shadow) exitShadowFlow();
+                        setBarStatus('Mic busy — tap again', 'error');
+                    }
+                }
+            }, 80);
+        }
+        // Dynamic cap: line duration + 2s buffer (3-12s). Stops the
+        // long-running recognition session some browsers leave open
+        // without cutting off short pauses on long lines.
+        if (_recTimeout) clearTimeout(_recTimeout);
+        _recTimeout = setTimeout(() => {
+            _recTimeout = null;
+            if (drillRec && recording) {
+                try { drillRec.stop(); } catch {}
+            }
+        }, _recCapMs());
+    }
+
+    function showResult(heard) {
+        if (!activeLine) return;
+        const { score, matched, tTokens } = gradeMatch(activeLine.text, heard);
+        $barLineEn.innerHTML = lineWithFeedback(activeLine, matched, tTokens);
+        $barResult.classList.remove('good', 'close', 'miss', 'has-next', 'draining');
+        // Verdict copy — warm-tutor voice. Uses the student's first
+        // name on a passing attempt so the moment lands as personal.
+        let verdict, cls;
+        if (score >= 80) {
+            verdict = FIRST_NAME ? `Nice, ${FIRST_NAME} — that's the rhythm.` : "Nice — that's the rhythm.";
+            cls = 'good';
+        } else if (score >= 55) {
+            verdict = 'Close. One more pass, take your time.';
+            cls = 'close';
+        } else {
+            verdict = 'Take a breath. Try again at a slower speed.';
+            cls = 'miss';
+        }
+        $barVerdict.textContent = verdict;
+        // Show what the user actually said — concrete reference next to the
+        // colored target line in the bottom subs overlay.
+        const $said = document.getElementById('resultSaidText');
+        if ($said) $said.textContent = (heard || '').trim();
+        // Re-trigger the pop animation by toggling .show off-then-on
+        $barResult.classList.remove('show');
+        void $barResult.offsetWidth;
+        $barResult.classList.add('show', cls);
+        document.body.classList.add('has-result');
+        setBarStatus('');
+        if (score >= 55 && activeReelData) track(String(activeReelData.id), 'shadow');
+
+        // Auto-advance is OPT-IN, not default — pushy "next next next"
+        // is TikTok mood; we want the student to control the pace.
+        // The Next button stays visible; tap when ready.
+        // (scheduleAutoAdvance() is preserved as a function in case we
+        // surface a toggle for power users in a future pass.)
+    }
+
+    function clearResultDisplay() {
+        document.body.classList.remove('has-result');
+        $barResult.classList.remove('show', 'good', 'close', 'miss', 'has-next', 'draining');
+    }
+
+    function scheduleAutoAdvance() {
+        cancelAutoAdvance();
+        $barResult.classList.add('has-next');
+        // Two-frame delay so the drain animation restarts cleanly
+        // even if Next pill was already visible.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            $barResult.classList.add('draining');
+        }));
+        _autoAdvanceTimer = setTimeout(() => {
+            _autoAdvanceTimer = null;
+            advanceToNextReel();
+        }, 3000);
+    }
+
+    function cancelAutoAdvance() {
+        if (_autoAdvanceTimer) { clearTimeout(_autoAdvanceTimer); _autoAdvanceTimer = null; }
+        $barResult.classList.remove('draining');
+    }
+
+    function advanceToNextReel() {
+        cancelAutoAdvance();
+        clearResultDisplay();
+        if (!activeReelEl) return;
+        let next = activeReelEl.nextElementSibling;
+        while (next && !next.classList.contains('reel-page')) next = next.nextElementSibling;
+        if (next) next.scrollIntoView({ behavior: 'smooth' });
+        // IO activates on intersection ≥0.6
+    }
+
+    $barNextPill.addEventListener('click', advanceToNextReel);
+
+    // Result popup actions: Listen replays the line, Try again restarts mic.
+    const $resultListenBtn = document.getElementById('resultListenBtn');
+    const $resultRetryBtn  = document.getElementById('resultRetryBtn');
+    if ($resultListenBtn) {
+        $resultListenBtn.addEventListener('click', () => {
+            cancelAutoAdvance();
+            // Reuse the existing 1× line replay (used by the speed popup
+            // and the vocab "Listen" pill). Doesn't dismiss the result.
+            playLineAtSpeed(1.0, null);
+        });
+    }
+    if ($resultRetryBtn) {
+        $resultRetryBtn.addEventListener('click', () => {
+            cancelAutoAdvance();
+            clearResultDisplay();
+            startMic();
+        });
+    }
+
+    // "Hear yourself" — play back the captured MediaRecorder blob.
+    const $resultVoiceBtn = document.getElementById('resultVoiceBtn');
+    if ($resultVoiceBtn) {
+        $resultVoiceBtn.addEventListener('click', () => {
+            cancelAutoAdvance();
+            _stopCompare();
+            _playOwnVoice();
+        });
+    }
+
+    // "Compare" — play original, then user's recording, back-to-back.
+    const $resultCompareBtn = document.getElementById('resultCompareBtn');
+    if ($resultCompareBtn) {
+        $resultCompareBtn.addEventListener('click', () => {
+            cancelAutoAdvance();
+            // If already playing, second tap stops the compare.
+            if ($resultCompareBtn.classList.contains('playing')) {
+                _stopCompare();
+                return;
+            }
+            _playCompare();
+        });
+    }
+
+    // Mic button: enters shadow flow if idle, OR records standalone
+    // (after the flow has run once OR if no flow). Same button, two
+    // contexts — gives the user a one-tap recovery.
+    $barMic.addEventListener('click', () => {
+        if (recording) { stopMic(false); return; }
+        // Already in shadow flow? Tap mic skips remaining listen steps
+        // and jumps to record.
+        if (_shadow && !_shadow.listenHandler) return; // mid-listen; ignore
+        if (_shadow) {
+            // jump to record step
+            if (_shadow.listenHandler && activeVideoEl) {
+                activeVideoEl.removeEventListener('timeupdate', _shadow.listenHandler);
+                _shadow.listenHandler = null;
+            }
+            _shadow.stepIdx = SHADOW_STEPS.length - 1; // record step
+            _shadow.loopIdx = 0;
+            runShadowStep();
+            return;
+        }
+        // Idle: kick off the full 4-step flow
+        enterShadowFlow();
+    });
+
+    // ── Vocab side panel — progressive disclosure ───────────
+    // Default view shows only the essentials: english, uzbek, scene
+    // anchor, save. The full study material (tavsif, definition,
+    // examples, collocations) is hidden behind one expander so the
+    // first read isn't a wall of text.
+    function renderVocab() {
+        const v = activeReelData && activeReelData.vocab;
+        const $headLevel = document.getElementById('vocabHeadLevel');
+        if (!v) {
+            $vocabBody.innerHTML = '<div class="vocab-body-wrap"><div class="vocab-empty">No vocab card for this reel yet.</div></div>';
+            if ($headLevel) $headLevel.hidden = true;
+            return;
+        }
+
+        // Level chip in the sticky header (replaces the old tags row).
+        // Kind/category were system metadata, not learner-facing — cut.
+        if ($headLevel) {
+            if (v.level) {
+                $headLevel.textContent = v.level;
+                $headLevel.hidden = false;
+            } else {
+                $headLevel.hidden = true;
+            }
+        }
+
+        // Scene anchor — the format (a quoted line + Listen pill) makes
+        // it self-evident; no eyebrow label needed.
+        let scene = '';
+        if (activeLine) {
+            scene = `
+                <div class="vocab-scene">
+                    <div class="vocab-scene-line">${lineHtml(activeLine)}</div>
+                    <button class="vocab-scene-listen" id="vocabSceneListen" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                        Listen
+                    </button>
+                </div>`;
+        }
+
+        // Default-visible: tavsif + first example. No eyebrow titles —
+        // the format speaks for itself (Uzbek prose / EN+UZ pair card).
+        const tavsifBlock = v.tavsif ? `
+            <div class="vocab-section">
+                <div class="vocab-section-body uz">${escHtml(v.tavsif)}</div>
+            </div>
+        ` : '';
+
+        let firstExampleBlock = '';
+        if (v.translated_examples && v.translated_examples.length > 0) {
+            const first = v.translated_examples[0];
+            firstExampleBlock = `
+                <div class="vocab-section">
+                    <div class="vocab-examples">
+                        <div class="vocab-example">
+                            <div class="ex-en">${escHtml(first.en || '')}</div>
+                            <div class="ex-uz">${escHtml(first.uz || '')}</div>
+                        </div>
+                    </div>
+                </div>`;
+        } else if (v.example) {
+            firstExampleBlock = `
+                <div class="vocab-section">
+                    <div class="vocab-section-body">${escHtml(v.example)}</div>
+                </div>`;
+        }
+
+        // Inside More: definition, pattern, remaining examples, collocations.
+        let restExamplesBlock = '';
+        if (v.translated_examples && v.translated_examples.length > 1) {
+            restExamplesBlock = `<div class="vocab-section">
+                <div class="vocab-section-title">More examples</div>
+                <div class="vocab-examples">
+                    ${v.translated_examples.slice(1).map(p => `
+                        <div class="vocab-example">
+                            <div class="ex-en">${escHtml(p.en || '')}</div>
+                            <div class="ex-uz">${escHtml(p.uz || '')}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        const moreHtml = `
+            ${v.description ? `
+                <div class="vocab-section">
+                    <div class="vocab-section-title">Definition</div>
+                    <div class="vocab-section-body">${escHtml(v.description)}</div>
+                </div>
+            ` : ''}
+            ${v.pattern ? `
+                <div class="vocab-section">
+                    <div class="vocab-section-title">Pattern</div>
+                    <div class="vocab-section-body" style="font-family:var(--font-mono);font-size:13px;">${escHtml(v.pattern)}</div>
+                </div>
+            ` : ''}
+            ${restExamplesBlock}
+            ${v.collocations && v.collocations.length ? `
+                <div class="vocab-section">
+                    <div class="vocab-section-title">Collocations</div>
+                    <div class="vocab-section-body">${v.collocations.map(c => escHtml(c)).join(' · ')}</div>
+                </div>
+            ` : ''}
+        `.trim();
+
+        // Only show the expander if there's actually something inside it.
+        const expander = moreHtml ? `
+            <button class="vocab-more-toggle" id="vocabMoreToggle" type="button" aria-expanded="false" aria-controls="vocabMore">
+                <span>More about this word</span>
+                <span class="chev">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+            </button>
+            <div class="vocab-more" id="vocabMore">${moreHtml}</div>
+        ` : '';
+
+        $vocabBody.innerHTML = `
+            <div class="vocab-body-wrap">
+                <div class="vocab-en">${escHtml(v.english || '')}</div>
+                <div class="vocab-uz">${escHtml(v.uzbek || '')}</div>
+                ${scene}
+                ${tavsifBlock}
+                ${firstExampleBlock}
+                ${expander}
+                <button class="vocab-save${v.saved ? ' saved' : ''}" id="vocabSaveBtn" type="button">
+                    ${v.saved ? `
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                        Saved to notebook
+                    ` : `
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                        Save to my notebook
+                    `}
+                </button>
+            </div>
+        `;
+
+        const sceneBtn = document.getElementById('vocabSceneListen');
+        if (sceneBtn) sceneBtn.addEventListener('click', vocabPlayLine);
+
+        const saveBtn = document.getElementById('vocabSaveBtn');
+        if (saveBtn) saveBtn.addEventListener('click', vocabSaveWord);
+
+        const moreToggle = document.getElementById('vocabMoreToggle');
+        const moreEl = document.getElementById('vocabMore');
+        if (moreToggle && moreEl) {
+            moreToggle.addEventListener('click', () => {
+                const open = moreEl.classList.toggle('open');
+                moreToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+    }
+
+    // Listen to the target line from inside the vocab panel — reuses
+    // the same video element. Pauses any speed-popup playback first.
+    function vocabPlayLine() {
+        if (!activeLine || !activeVideoEl) return;
+        try {
+            activeVideoEl.currentTime = activeLine.start_time;
+            activeVideoEl.playbackRate = 1.0;
+            activeVideoEl.muted = false;
+            activeVideoEl.play().catch(() => {});
+        } catch {}
+        // Stop at end of the line so the panel reading isn't disturbed.
+        const stop = () => {
+            if (activeVideoEl.currentTime >= activeLine.end_time + 0.05) {
+                activeVideoEl.removeEventListener('timeupdate', stop);
+                try { activeVideoEl.pause(); } catch {}
+            }
+        };
+        activeVideoEl.addEventListener('timeupdate', stop);
+    }
+
+    // Save the reel's vocab word to the user's WordNote (existing endpoint).
+    function vocabSaveWord() {
+        const btn = document.getElementById('vocabSaveBtn');
+        const v = activeReelData && activeReelData.vocab;
+        if (!btn || !v || !activeLine) return;
+        if (btn.classList.contains('saved') || btn.classList.contains('saving')) return;
+        btn.classList.add('saving');
+        btn.textContent = 'Saving…';
+        fetch(`/learning/words/transcript/${activeLine.transcript_id}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                word: v.english,
+                translation: v.uzbek || '',
+                definition: v.description || '',
+                stage: 'inbox',
+            }),
+        })
+        .then(r => r.json().catch(() => ({})).then(j => ({ ok: r.ok, j })))
+        .then(({ ok, j }) => {
+            btn.classList.remove('saving');
+            if (ok || (j && j.error && /already/i.test(j.error))) {
+                btn.classList.add('saved');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                    Saved to notebook
+                `;
+                if (activeReelData) track(String(activeReelData.id), 'save');
+            } else {
+                btn.textContent = 'Couldn’t save — try again';
+            }
+        })
+        .catch(() => {
+            btn.classList.remove('saving');
+            btn.textContent = 'Couldn’t save — try again';
+        });
+    }
+
+    function openVocab()  {
+        document.body.classList.add('show-vocab');
+        $railVocab.classList.add('active');
+        // User wants to study — pull the auto-advance timer + pause
+        // the reel video so audio doesn't compete with reading.
+        cancelAutoAdvance();
+        if (activeVideoEl) { try { activeVideoEl.pause(); } catch {} }
+    }
+    function closeVocab() {
+        document.body.classList.remove('show-vocab');
+        $railVocab.classList.remove('active');
+        // Resume the reel where it was — or restart if it ended.
+        if (activeVideoEl) {
+            try { activeVideoEl.play().catch(() => {}); } catch {}
+        }
+    }
+
+    $railVocab.addEventListener('click', () => {
+        if (document.body.classList.contains('show-vocab')) closeVocab();
+        else openVocab();
+    });
+    $vocabClose.addEventListener('click', closeVocab);
+    $vocabBackdrop.addEventListener('click', closeVocab);
+
+    // ── English subs toggle (Uzbek always stays) ─────────────
+    $railSubs.addEventListener('click', () => {
+        const off = document.body.classList.toggle('en-hidden');
+        $railSubs.classList.toggle('subs-off', off);
+        $railSubs.setAttribute('aria-pressed', off ? 'false' : 'true');
+    });
+
+    // Esc closes any open overlay
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.body.classList.contains('show-vocab')) closeVocab();
+        else if (_shadow) exitShadowFlow();
+        else if (recording) stopMic(false);
+    });
+
+    // Activate the first reel on load (or whichever is in URL hash).
+    window.addEventListener('load', () => {
+        const hash = window.location.hash || '';
+        let target = null;
+        if (hash.startsWith('#reel-')) target = document.querySelector(hash);
+        target = target || document.querySelector('.reel-page');
+        if (target) {
+            target.scrollIntoView();
+            activateReel(target);
+        }
+    });
+</script>
+
+{% endif %}
+
+</body>
+</html>

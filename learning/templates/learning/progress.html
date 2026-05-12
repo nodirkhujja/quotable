@@ -4,401 +4,2597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Progress — Quotable</title>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Progress — Quotable</title>
+    {% include "learning/_tokens.html" %}
     <style>
-        :root {
-            --bg:      #0a0a0a;
-            --bg-2:    #111111;
-            --bg-3:    #1a1a1a;
-            --border:  #1f1f1f;
-            --border-2:#2e2e2e;
-            --text:    #ffffff;
-            --text-2:  #a3a3a3;
-            --text-3:  #525252;
-            --accent:  #ff6b35;
-            --green:   #10b981;
-            --blue:    #3b82f6;
-            --purple:  #8b5cf6;
-            --amber:   #f59e0b;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
 
-        /* ── NAV (same as home) ── */
+        body {
+            background: var(--app-bg);
+            color: var(--text-1);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            line-height: 1.5;
+            position: relative;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        /* ── CINEMATIC BACKDROP (matches practice page) ──────────── */
+        .scene-bg {
+            position: fixed; inset: 0; z-index: -1;
+            pointer-events: none; overflow: hidden;
+        }
+        .scene-bg::before {
+            content: ''; position: absolute; inset: -8%;
+            background-image: var(--scene-img, none);
+            background-size: cover; background-position: center top;
+            filter: blur(40px) saturate(0.85) brightness(0.55);
+            opacity: 0.32; transform: scale(1.15);
+        }
+        .scene-bg::after {
+            content: ''; position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,0,0,0.15), rgba(0,0,0,0.90) 70%),
+                linear-gradient(180deg, rgba(0,0,0,0.45), rgba(8,9,14,0.97) 60%);
+        }
+
+        /* ── NAV ──────────────────────────────────────────────────── */
         .nav {
-            position:sticky; top:0; z-index:100; height:60px;
-            display:flex; align-items:center; gap:0; padding:0 36px;
-            background:rgba(10,10,10,0.9); backdrop-filter:blur(20px);
-            border-bottom:1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            height: 56px;
+            display: flex; align-items: center;
+            padding: 0 var(--space-5); gap: var(--space-4);
+            background: var(--surface-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-1);
         }
-        .logo { font-family:'Courier Prime',monospace; font-size:1.25rem; font-weight:700; color:var(--accent); text-decoration:none; margin-right:32px; }
-        .nav-links { display:flex; align-items:center; gap:4px; }
-        .nav-right { display:flex; align-items:center; gap:6px; margin-left:24px; flex-shrink:0; }
-        .nav-link { font-size:13.5px; font-weight:500; color:rgba(255,255,255,0.65); text-decoration:none; padding:6px 13px; border-radius:7px; transition:color .15s,background .15s; }
-        .nav-link:hover { color:#fff; background:var(--bg-3); }
-        .nav-link.active { color:#fff; }
-        .nav-divider { width:1px; height:18px; background:#2e2e2e; margin:0 4px; }
-        .level-pill {
-            font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
-            padding:4px 11px; border-radius:20px; border:1px solid;
+        .nav-back {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--text-2);
+            font-size: var(--text-sm); font-weight: 500;
+            transition: color var(--motion-fast) var(--ease);
         }
-        .level-pill[data-level="beginner"]           { color:#10b981; background:rgba(16,185,129,.10); border-color:rgba(16,185,129,.25); }
-        .level-pill[data-level="intermediate"]       { color:#3b82f6; background:rgba(59,130,246,.10); border-color:rgba(59,130,246,.25); }
-        .level-pill[data-level="upper_intermediate"] { color:#8b5cf6; background:rgba(139,92,246,.10); border-color:rgba(139,92,246,.25); }
-        .level-pill[data-level="advanced"]           { color:#f59e0b; background:rgba(245,158,11,.10); border-color:rgba(245,158,11,.25); }
-
-        /* ── PAGE ── */
-        .page { max-width:960px; margin:0 auto; padding:48px 36px 80px; }
-
-        .page-title { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
-        .page-sub   { font-size:14px; color:var(--text-2); margin-bottom:44px; }
-
-        /* ── STAT STRIP ── */
-        .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:44px; }
-        .stat {
-            background:var(--bg-2); border:1px solid var(--border);
-            border-radius:12px; padding:20px;
+        .nav-back:hover { color: var(--text-1); }
+        .nav-back svg { width: 14px; height: 14px; }
+        .nav-title {
+            font-size: var(--text-sm); font-weight: 600;
+            color: var(--text-1);
+            font-family: var(--font-display);
         }
-        .stat-value { font-size:2rem; font-weight:700; letter-spacing:-.03em; line-height:1; margin-bottom:5px; }
-        .stat-label { font-size:11.5px; color:var(--text-3); font-weight:500; }
-        .stat-value.green  { color:var(--green); }
-        .stat-value.blue   { color:var(--blue); }
-        .stat-value.amber  { color:var(--amber); }
-        .stat-value.purple { color:var(--purple); }
+        .nav-spacer { flex: 1; }
 
-        /* ── SECTION HEADER ── */
-        .section { margin-bottom:44px; }
-        .section-title { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
-
-        /* ── PIPELINE ── */
-        .pipeline { display:flex; align-items:center; gap:0; }
-        .pipe-stage {
-            flex:1; background:var(--bg-2); border:1px solid var(--border);
-            border-radius:10px; padding:16px 18px;
-            text-align:center;
+        /* ── PAGE ─────────────────────────────────────────────────── */
+        .page {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: var(--space-6) var(--space-5) var(--space-8);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
         }
-        .pipe-stage + .pipe-stage { margin-left:-1px; border-radius:0; }
-        .pipe-stage:first-child { border-radius:10px 0 0 10px; }
-        .pipe-stage:last-child  { border-radius:0 10px 10px 0; }
-        .pipe-val   { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; line-height:1; margin-bottom:4px; }
-        .pipe-name  { font-size:11px; color:var(--text-3); font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
-        .pipe-arrow { font-size:18px; color:var(--text-3); padding:0 6px; flex-shrink:0; }
-        .pipe-val.inbox    { color:var(--text-2); }
-        .pipe-val.learning { color:var(--blue); }
-        .pipe-val.mastered { color:var(--green); }
 
-        /* total pipeline bar */
-        .pipe-bar-wrap { margin-top:16px; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden; display:flex; }
-        .pipe-bar-inbox    { background:var(--border-2); }
-        .pipe-bar-learning { background:var(--blue); }
-        .pipe-bar-mastered { background:var(--green); }
-
-        /* ── FORECAST ── */
-        .forecast-box {
-            background:var(--bg-2); border:1px solid var(--border);
-            border-radius:12px; padding:24px;
+        /* ── CINEMATIC WIN CARD — latest mastered with scene backdrop ──
+           If the WordNote has a scene_frame (frame from the moment they
+           saved the word) we use it as a darkened backdrop. The text sits
+           over a deep gradient so the word and quote stay readable. */
+        .cine-card {
+            position: relative;
+            padding: var(--space-7) var(--space-5) var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-2);
+            border-radius: var(--radius-3);
+            overflow: hidden;
+            isolation: isolate;
         }
-        .forecast-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-        .forecast-tag { font-size:12px; color:var(--text-3); }
-        .forecast-val { font-size:1.6rem; font-weight:700; color:var(--green); letter-spacing:-.02em; }
-        .forecast-caption { font-size:13px; color:var(--text-2); }
-
-        /* simple SVG chart lives here */
-        .chart-wrap { margin-top:20px; }
-        svg.forecast-chart { width:100%; height:80px; display:block; }
-
-        /* ── HEATMAP ── */
-        .heatmap-scroll { overflow-x:auto; padding-bottom:4px; }
-        .heatmap { display:grid; grid-template-rows:repeat(7,12px); grid-auto-flow:column; gap:3px; width:max-content; }
-        .heatmap-cell {
-            width:12px; height:12px; border-radius:2px;
-            background:var(--bg-3);
+        .cine-card .scene-bg-img {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(8px) saturate(1.05);
+            transform: scale(1.1);
+            opacity: 0.42;
+            z-index: -1;
         }
-        .heatmap-cell[data-count="1"] { background:rgba(255,107,53,.25); }
-        .heatmap-cell[data-count="2"] { background:rgba(255,107,53,.50); }
-        .heatmap-cell[data-count="3"],
-        .heatmap-cell[data-count="4"],
-        .heatmap-cell[data-count="5"] { background:rgba(255,107,53,.80); }
-        .heatmap-cell[data-count="6"],
-        .heatmap-cell[data-count="7"],
-        .heatmap-cell[data-count="8"],
-        .heatmap-cell[data-count="9"] { background:var(--accent); }
-        .heatmap-legend { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:11px; color:var(--text-3); }
-        .heatmap-legend-cell { width:10px; height:10px; border-radius:2px; }
-
-        /* ── SESSION STATS ── */
-        .session-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-        .ss-card {
-            background:var(--bg-2); border:1px solid var(--border);
-            border-radius:10px; padding:16px; text-align:center;
+        .cine-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(13,14,20,0.55) 0%, rgba(13,14,20,0.95) 80%),
+                linear-gradient(135deg, var(--brand-wash) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
         }
-        .ss-val { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; line-height:1; margin-bottom:4px; }
-        .ss-label { font-size:11px; color:var(--text-3); font-weight:500; }
-
-        /* ── SESSION LIST ── */
-        .session-list { display:flex; flex-direction:column; gap:8px; }
-        .session-row {
-            display:flex; align-items:center; gap:16px;
-            background:var(--bg-2); border:1px solid var(--border);
-            border-radius:10px; padding:14px 18px;
-            transition: border-color 0.15s;
+        .cine-card.no-image {
+            background:
+                linear-gradient(135deg, var(--brand-wash) 0%, transparent 50%),
+                linear-gradient(180deg, var(--surface-1), var(--surface-2));
         }
-        .session-row:hover { border-color: var(--border-2); }
-        .sr-icon {
-            width:36px; height:36px; border-radius:9px;
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0;
+        .cine-card.no-image::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            inset: auto;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, var(--brand-soft) 0%, transparent 65%);
+            pointer-events: none;
+            z-index: 0;
         }
-        .sr-icon.quiz { background:rgba(168,85,247,0.12); color:#a855f7; }
-        .sr-icon.cloze { background:rgba(16,185,129,0.12); color:#10b981; }
-        .sr-icon svg { width:16px; height:16px; stroke:currentColor; fill:none; }
-        .sr-body { flex:1; min-width:0; }
-        .sr-title { font-size:13.5px; font-weight:600; }
-        .sr-meta { font-size:12px; color:var(--text-3); margin-top:2px; }
-        .sr-right { text-align:right; flex-shrink:0; }
-        .sr-score { font-size:15px; font-weight:700; font-family:'Courier Prime',monospace; }
-        .sr-score.purple { color:var(--purple); }
-        .sr-score.green { color:var(--green); }
-        .sr-accuracy { font-size:11px; color:var(--text-3); margin-top:2px; }
-        .sr-time { font-size:11px; color:var(--text-3); }
+        .cine-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+            margin-bottom: var(--space-4);
+            position: relative;
+            z-index: 1;
+        }
+        .cine-eyebrow .check {
+            display: inline-flex;
+            width: 16px; height: 16px;
+            background: var(--emerald-soft);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            color: var(--emerald);
+        }
+        .cine-eyebrow .check svg { width: 10px; height: 10px; }
+        .cine-word {
+            font-family: var(--font-display);
+            font-size: clamp(44px, 8vw, 72px);
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.045em;
+            margin-bottom: var(--space-3);
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(180deg, var(--text-1) 0%, var(--brand-hot) 130%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        .cine-quote {
+            position: relative;
+            z-index: 1;
+            padding: var(--space-3) 0 var(--space-3) var(--space-4);
+            border-left: 2px solid var(--brand);
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-style: italic;
+            color: var(--text-2);
+            line-height: 1.55;
+            margin-bottom: var(--space-3);
+            max-width: 92%;
+            letter-spacing: -0.005em;
+        }
+        .cine-meta {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--brand);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .cine-meta .age {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: none;
+            letter-spacing: 0.04em;
+            padding: 2px 8px;
+            background: var(--surface-3);
+            border-radius: var(--radius-pill);
+            font-weight: 500;
+        }
+        .cine-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: var(--space-4);
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--border-1);
+            position: relative;
+            z-index: 1;
+        }
+        .cine-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            color: var(--text-2);
+            font-family: var(--font-display);
+            font-weight: 500;
+        }
+        .cine-chip .age {
+            font-size: 10px;
+            color: var(--text-4);
+            font-family: var(--font-sans);
+        }
 
-        /* ── EMPTY ── */
-        .empty-hint { padding:32px; text-align:center; color:var(--text-3); font-size:14px; background:var(--bg-2); border:1px solid var(--border); border-radius:12px; }
+        /* ── CINEMATIC CARD: Full collection flowing under the hero ── */
+        .cine-collection {
+            position: relative;
+            z-index: 1;
+            margin-top: var(--space-5);
+            padding-top: var(--space-4);
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .cine-collection-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--emerald);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-bottom: var(--space-3);
+        }
+        .cine-collection-list {
+            text-align: center;
+            line-height: 1.7;
+        }
+        .cine-collection-word {
+            display: inline-block;
+            margin: 2px 3px;
+            font-family: var(--font-display);
+            color: var(--text-1);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            transition: color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+            cursor: default;
+        }
+        .cine-collection-word:hover {
+            color: var(--emerald);
+            transform: translateY(-1px);
+        }
+        .cine-collection-dot {
+            color: var(--text-4);
+            opacity: 0.5;
+            margin: 0 1px;
+            font-weight: 300;
+        }
+        .cine-collection-more {
+            text-align: center;
+            margin-top: var(--space-3);
+            font-size: 12px;
+            color: var(--text-3);
+            font-style: italic;
+            font-family: var(--font-display);
+        }
+        .cine-collection-more a {
+            color: var(--emerald);
+            font-weight: 600;
+            font-style: normal;
+            text-decoration: none;
+            border-bottom: 1px solid var(--emerald-line);
+        }
 
-        @media(max-width:768px){
-            .nav { padding:0 20px; }
-            .nav-links { display:none; }
-            .page { padding:32px 20px 60px; }
-            .stats { grid-template-columns:repeat(2,1fr); }
-            .session-stats { grid-template-columns:repeat(2,1fr); }
-            .pipeline { flex-direction:column; align-items:stretch; }
-            .pipe-stage { border-radius:10px !important; margin-left:0 !important; margin-top:-1px; }
-            .pipe-arrow { display:none; }
-            .sr-meta { font-size:11px; }
+        /* ── WORDS WALL — typographic flow of mastered words ─────── */
+        .words-wall {
+            position: relative;
+            padding: var(--space-6) var(--space-5);
+            background:
+                radial-gradient(ellipse 70% 50% at 50% 0%, rgba(74,222,128, 0.06), transparent 70%),
+                var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            overflow: hidden;
+        }
+        .words-wall-eyebrow {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+        }
+        .words-wall-eyebrow .label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #4ADE80;
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+        }
+        .words-wall-eyebrow .meta {
+            font-size: 11px;
+            color: var(--text-3);
+            font-variant-numeric: tabular-nums;
+        }
+        .words-wall-list {
+            text-align: center;
+            line-height: 1.7;
+            padding: var(--space-2) 0;
+        }
+        .words-wall-word {
+            display: inline-block;
+            margin: 3px 4px;
+            font-family: var(--font-display);
+            color: var(--text-1);
+            font-weight: 600;
+            transition: color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+            cursor: default;
+            letter-spacing: -0.01em;
+        }
+        .words-wall-word:hover {
+            color: #4ADE80;
+            transform: translateY(-1px);
+        }
+        .words-wall-dot {
+            color: var(--text-4);
+            margin: 0 2px;
+            font-weight: 300;
+            opacity: 0.6;
+        }
+        .words-wall-fade {
+            margin-top: var(--space-4);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-1);
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-3);
+            font-style: italic;
+            font-family: var(--font-display);
+        }
+        .words-wall-fade a {
+            color: #4ADE80;
+            font-weight: 600;
+            font-style: normal;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(74,222,128,0.3);
+        }
+
+        /* ── COLLECTION WALL — mastered words inside breakdown card ── */
+        .collection-wall {
+            margin-top: var(--space-4);
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--border-1);
+        }
+        .collection-wall-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--emerald);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-bottom: var(--space-3);
+        }
+        .collection-wall-list {
+            text-align: center;
+            line-height: 1.7;
+        }
+        .collection-wall-word {
+            display: inline-block;
+            margin: 2px 3px;
+            font-family: var(--font-display);
+            color: var(--text-1);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            transition: color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+            cursor: default;
+        }
+        .collection-wall-word:hover {
+            color: var(--emerald);
+            transform: translateY(-1px);
+        }
+        .collection-wall-dot {
+            color: var(--text-4);
+            opacity: 0.5;
+            margin: 0 1px;
+            font-weight: 300;
+        }
+        .collection-wall-more {
+            text-align: center;
+            margin-top: var(--space-3);
+            font-size: 12px;
+            color: var(--text-3);
+            font-style: italic;
+            font-family: var(--font-display);
+        }
+        .collection-wall-more a {
+            color: var(--emerald);
+            font-weight: 600;
+            font-style: normal;
+            text-decoration: none;
+            border-bottom: 1px solid var(--emerald-line);
+        }
+
+        /* ── TOP SHOW LINE — small caption with show poster ──────── */
+        .top-show-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: var(--space-4);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-1);
+            font-size: 13px;
+            color: var(--text-3);
+            font-family: var(--font-display);
+            font-style: italic;
+        }
+        .top-show-poster {
+            width: 36px; height: 50px;
+            border-radius: 4px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            border: 1px solid var(--border-2);
+        }
+        .top-show-line b {
+            color: var(--text-1);
+            font-weight: 700;
+            font-style: normal;
+            font-family: var(--font-display);
+        }
+
+        /* ── EDITORIAL SECTION DIVIDER — hairline between sections ── */
+        .ed-divider {
+            margin: var(--space-6) 0 var(--space-4);
+            height: 1px;
+            background: var(--border-1);
+            border: 0;
+        }
+
+        /* ── BREAKDOWN — editorial layout, no card chrome ────────── */
+        .breakdown {
+            padding: var(--space-3) 0;
+            background: transparent;
+            border: 0;
+        }
+        .breakdown-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+            margin-bottom: var(--space-3);
+        }
+        .breakdown-total {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: var(--space-4);
+        }
+        .breakdown-total .num {
+            font-family: var(--font-display);
+            font-size: 80px;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 0.9;
+            letter-spacing: -0.05em;
+            font-variant-numeric: tabular-nums;
+        }
+        .breakdown-total .label {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            color: var(--text-3);
+            font-style: italic;
+            font-weight: 500;
+        }
+        .breakdown-bar {
+            display: flex;
+            height: 12px;
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+            background: var(--surface-3);
+            margin-bottom: var(--space-4);
+            gap: 2px;
+        }
+        .breakdown-seg {
+            height: 100%;
+            transition: width 1s var(--ease-spring);
+            min-width: 4px;
+        }
+        .breakdown-seg.mastered { background: var(--emerald); }
+        .breakdown-seg.learning { background: var(--amber); }
+        .breakdown-seg.risk     { background: var(--red); }
+        .breakdown-seg.inbox    { background: var(--text-4); }
+        .breakdown-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .breakdown-row {
+            display: grid;
+            grid-template-columns: 14px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 0;
+            font-family: var(--font-display);
+            text-decoration: none;
+            color: inherit;
+        }
+        .breakdown-row a.breakdown-row:hover .label { color: var(--brand); }
+        .breakdown-row .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .breakdown-row .dot.mastered { background: var(--emerald); }
+        .breakdown-row .dot.learning { background: var(--amber); }
+        .breakdown-row .dot.risk     { background: var(--red); }
+        .breakdown-row .dot.inbox    { background: var(--text-4); }
+        .breakdown-row .label {
+            font-size: var(--text-base);
+            color: var(--text-1);
+            font-weight: 500;
+            transition: color var(--motion-fast) var(--ease);
+        }
+        .breakdown-row .label .sub {
+            font-size: 12px;
+            color: var(--text-3);
+            font-family: var(--font-sans);
+            font-weight: 400;
+            margin-left: 4px;
+        }
+        .breakdown-row .count {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        /* ── PRACTICE BREAKDOWN — editorial layout ───────────────── */
+        .practice-card {
+            padding: var(--space-3) 0;
+            background: transparent;
+            border: 0;
+        }
+        .practice-eyebrow {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: var(--space-2);
+        }
+        .practice-eyebrow .label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+        }
+        .practice-eyebrow .meta {
+            font-size: 11px;
+            color: var(--text-3);
+            font-variant-numeric: tabular-nums;
+        }
+        .practice-caption {
+            font-family: var(--font-display);
+            font-size: var(--text-base);
+            font-weight: 500;
+            color: var(--text-2);
+            line-height: 1.45;
+            margin-bottom: var(--space-4);
+            font-style: italic;
+        }
+        .practice-caption b {
+            color: var(--text-1);
+            font-weight: 700;
+            font-style: normal;
+        }
+        .practice-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .practice-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 60px;
+            gap: 12px;
+            align-items: center;
+        }
+        .practice-row .label {
+            font-size: 13px;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+        .practice-row .bar-track {
+            height: 8px;
+            background: var(--surface-2);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+        }
+        .practice-row .bar-fill {
+            height: 100%;
+            border-radius: var(--radius-pill);
+            transition: width var(--motion-slow) var(--ease);
+        }
+        .practice-row .count {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-1);
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            letter-spacing: -0.02em;
+        }
+
+        /* ── PRACTICE COACH — adaptive what-to-do-next nudge ────── */
+        .practice-coach {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: var(--space-3);
+            align-items: flex-start;
+            margin-top: var(--space-4);
+            padding: var(--space-4);
+            background: var(--amber-soft);
+            border: 1px solid var(--amber-line);
+            border-radius: var(--radius-2);
+        }
+        .practice-coach:has(.practice-coach-icon svg path[d*="M5 13l4 4"]) {
+            background: var(--emerald-soft);
+            border-color: var(--emerald-line);
+        }
+        .practice-coach-icon {
+            width: 28px; height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-2);
+            border-radius: 50%;
+            color: var(--amber);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .practice-coach-icon svg { width: 14px; height: 14px; }
+        .practice-coach-body { min-width: 0; }
+        .practice-coach-text {
+            font-family: var(--font-display);
+            font-size: var(--text-sm);
+            color: var(--text-1);
+            line-height: 1.5;
+            margin: 0;
+        }
+        .practice-coach-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--amber);
+            text-decoration: none;
+            transition: gap var(--motion-fast) var(--ease);
+        }
+        .practice-coach-cta:hover { gap: 7px; }
+        .practice-coach-cta svg { width: 12px; height: 12px; }
+
+        /* ── PILLARS ROW — three big stats side by side ──────────── */
+        .pillars {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        .pillar {
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            padding: var(--space-4) var(--space-3);
+            text-align: center;
+        }
+        .pillar-num {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.035em;
+            font-variant-numeric: tabular-nums;
+        }
+        .pillar-num.brand { color: var(--brand); }
+        .pillar-num .unit {
+            font-size: 16px;
+            color: var(--text-3);
+            font-weight: 600;
+            margin-left: 2px;
+        }
+        .pillar-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-top: 6px;
+        }
+        .pillar-mood {
+            font-size: 10px;
+            color: var(--text-3);
+            margin-top: 4px;
+            font-style: italic;
+            font-family: var(--font-display);
+        }
+        .pillar-mood.good { color: var(--emerald); }
+        .pillar-mood.warn { color: var(--amber); }
+
+        /* ── VOICE CARD — always visible, with empty state CTA ───── */
+        .voice-card {
+            padding: var(--space-5);
+            background:
+                linear-gradient(135deg, var(--purple-soft) 0%, transparent 60%),
+                var(--surface-1);
+            border: 1px solid var(--purple-line);
+            border-radius: var(--radius-3);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-4);
+            align-items: center;
+        }
+        .voice-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--purple);
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+            margin-bottom: var(--space-3);
+        }
+        .voice-num-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        .voice-num {
+            font-family: var(--font-display);
+            font-size: 44px;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+        }
+        .voice-num.purple { color: var(--purple); }
+        .voice-num-label {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            color: var(--text-2);
+            font-style: italic;
+            font-weight: 500;
+        }
+        .voice-detail {
+            font-size: 13px;
+            color: var(--text-2);
+            margin-top: 6px;
+            line-height: 1.5;
+            font-family: var(--font-display);
+        }
+        .voice-detail b {
+            color: var(--brand);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .voice-detail b.purple { color: var(--purple); }
+        .voice-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            background: var(--purple);
+            color: #1a0535;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .voice-cta:hover { filter: brightness(1.1); }
+        .voice-cta svg { width: 12px; height: 12px; }
+
+        /* ── LETTER-STYLE STAT BLOCKS — prose with bold numbers ──── */
+        .lf-block {
+            margin: var(--space-2) 0;
+            padding: var(--space-5) var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+        }
+        .lf-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.26em;
+            margin-bottom: var(--space-3);
+        }
+        .lf-line {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 500;
+            color: var(--text-2);
+            line-height: 1.55;
+            letter-spacing: -0.01em;
+        }
+        .lf-line + .lf-line { margin-top: 8px; }
+        .lf-line b {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--text-1);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        .lf-line b.emerald { color: var(--emerald); }
+        .lf-line b.amber   { color: var(--amber); }
+        .lf-line b.red     { color: var(--red); }
+        .lf-line b.brand   { color: var(--brand); }
+        .lf-line b.purple  { color: var(--purple); }
+        .lf-line a {
+            color: var(--brand);
+            text-decoration: none;
+            border-bottom: 1px solid var(--brand-line, rgba(255,107,53,0.3));
+            font-weight: 600;
+        }
+        .lf-line a:hover {
+            border-bottom-color: var(--brand);
+        }
+        .lf-bar {
+            margin-top: 10px;
+            height: 4px;
+            background: var(--surface-3);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+        }
+        .lf-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--emerald) 0%, #86EFAC 100%);
+            border-radius: var(--radius-pill);
+        }
+        .lf-aside {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-top: 6px;
+            font-style: italic;
+            font-family: var(--font-display);
+        }
+
+        /* ── STAT GRID — comprehensive overview cards ────────────── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        .stat-cell {
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            padding: var(--space-4);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            transition: border-color var(--motion-fast) var(--ease);
+        }
+        a.stat-cell { text-decoration: none; }
+        a.stat-cell:hover { border-color: var(--border-2); }
+        .stat-cell-num {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.025em;
+        }
+        .stat-cell-num .unit {
+            font-size: 14px;
+            color: var(--text-3);
+            font-weight: 500;
+            margin-left: 2px;
+        }
+        .stat-cell-num.emerald { color: var(--emerald); }
+        .stat-cell-num.amber   { color: var(--amber); }
+        .stat-cell-num.red     { color: var(--red); }
+        .stat-cell-num.brand   { color: var(--brand); }
+        .stat-cell-num.purple  { color: var(--purple); }
+        .stat-cell-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+        .stat-cell-mood {
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .stat-cell-mood::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            display: inline-block;
+            background: currentColor;
+        }
+        .stat-cell-mood.good { color: var(--emerald); }
+        .stat-cell-mood.warn { color: var(--amber); }
+        .stat-cell-mood.bad  { color: var(--red); }
+        .stat-cell-mood.muted{ color: var(--text-3); }
+
+        .stat-section-label {
+            font-family: var(--font-display);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-top: var(--space-3);
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 720px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── SECTION HEADINGS — three clear groups ──────────────── */
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-top: var(--space-3);
+            margin-bottom: 2px;
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.014em;
+        }
+        .section-heading .sub {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-3);
+            font-family: var(--font-sans);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+        }
+        .section-heading::before {
+            content: '';
+            flex: 0 0 14px;
+            height: 1px;
+            background: var(--brand);
+            opacity: 0.7;
+        }
+        .section-heading + * {
+            margin-top: 2px;
+        }
+
+        /* ── PLAIN-ENGLISH EXPLAINERS — small tooltips for jargon ── */
+        .explainer {
+            font-size: 12px;
+            color: var(--text-3);
+            line-height: 1.4;
+            margin-top: 6px;
+            font-style: italic;
+        }
+        .explainer b {
+            color: var(--text-2);
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        /* ── STREAK CHIP — inline next to Today's Plan ──────────── */
+        .streak-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: var(--amber-soft);
+            border: 1px solid var(--amber-line);
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--amber);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .streak-chip svg {
+            width: 12px; height: 12px;
+        }
+
+        /* ── 1. IDENTITY HEADER — slim with trajectory ───────────── */
+        .head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-4);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border-1);
+        }
+        .head-info { min-width: 0; }
+        .head-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            margin-bottom: 6px;
+        }
+        .head-title {
+            font-family: var(--font-display);
+            font-size: var(--text-xl);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        .head-title b {
+            color: var(--brand);
+            font-weight: 700;
+        }
+        .head-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .head-trend[data-dir="up"]   { color: var(--emerald); background: var(--emerald-soft); border: 1px solid var(--emerald-line); }
+        .head-trend[data-dir="flat"] { color: var(--text-2);  background: var(--surface-2);    border: 1px solid var(--border-1); }
+        .head-trend[data-dir="down"] { color: var(--amber);   background: var(--amber-soft);   border: 1px solid var(--amber-line); }
+        .head-trend svg { width: 11px; height: 11px; }
+
+        /* ── 2. TODAY HERO — Apple-fitness scale ring ────────────── */
+        .today {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: var(--space-5);
+            align-items: center;
+            padding: var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-2);
+            border-radius: var(--radius-3);
+            position: relative;
+            overflow: hidden;
+        }
+        .today::before {
+            content: '';
+            position: absolute;
+            top: -60px; left: -60px;
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, var(--brand-soft) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .today-ring-wrap {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+        .today-ring-svg {
+            width: 180px; height: 180px;
+            transform: rotate(-90deg);
+        }
+        .today-ring-track {
+            fill: none;
+            stroke: var(--surface-3);
+            stroke-width: 12;
+        }
+        .today-ring-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dasharray 1.2s var(--ease-spring);
+        }
+        .today-ring-center {
+            position: absolute; inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .today-ring-num {
+            font-family: var(--font-display);
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+        }
+        .today-ring-num .of {
+            font-size: 18px;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+        .today-ring-label {
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .today-info { z-index: 1; min-width: 0; }
+        .today-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-bottom: var(--space-3);
+        }
+        .today-eyebrow .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--brand);
+            box-shadow: 0 0 8px var(--brand-ring);
+        }
+        .today-headline {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1.2;
+            letter-spacing: -0.018em;
+            margin-bottom: 6px;
+        }
+        .today-headline.done {
+            color: var(--brand);
+        }
+        .today-sub {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            line-height: 1.45;
+            margin-bottom: var(--space-4);
+        }
+        .today-sub b {
+            color: var(--text-2);
+            font-weight: 600;
+        }
+        .today-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            background: var(--brand);
+            color: #1a0d05;
+            font-size: var(--text-sm);
+            font-weight: 700;
+            border-radius: var(--radius-2);
+            transition: filter var(--motion-fast) var(--ease), gap var(--motion-fast) var(--ease);
+        }
+        .today-cta:hover { filter: brightness(1.08); gap: 9px; }
+        .today-cta:active { transform: translateY(1px); }
+        .today-cta svg { width: 13px; height: 13px; }
+        .today-cta.done {
+            background: var(--emerald-soft);
+            color: var(--emerald);
+            border: 1px solid var(--emerald-line);
+        }
+
+        /* ── 3. STREAK BAR ────────────────────────────────────────── */
+        .streak-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+        }
+        .streak-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+        .streak-flame {
+            width: 36px; height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .streak-flame svg {
+            width: 32px; height: 32px;
+            filter: drop-shadow(0 0 6px rgba(249,115,22,0.5));
+        }
+        .streak-text-num {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .streak-text-num .big {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.03em;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .streak-text-num .unit {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            font-weight: 500;
+        }
+        .streak-label {
+            font-size: 10px;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .streak-badge {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .streak-badge-label {
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .streak-badge-value {
+            font-size: var(--text-sm);
+            color: var(--text-1);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .streak-badge-value b { color: var(--amber); }
+
+        /* ── TODAY'S PLAN — concrete daily prescription ──────────── */
+        .plan-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-4);
+            align-items: center;
+            padding: var(--space-4) var(--space-5);
+            background:
+                linear-gradient(135deg, var(--brand-soft) 0%, transparent 70%),
+                var(--surface-1);
+            border: 1px solid var(--brand-line, rgba(255,107,53,0.22));
+            border-radius: var(--radius-3);
+            position: relative;
+            overflow: hidden;
+        }
+        .plan-card.done {
+            background:
+                linear-gradient(135deg, var(--emerald-soft) 0%, transparent 70%),
+                var(--surface-1);
+            border-color: var(--emerald-line);
+        }
+        .plan-content {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .plan-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+        }
+        .plan-card.done .plan-eyebrow { color: var(--emerald); }
+        .plan-eyebrow .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--brand);
+            box-shadow: 0 0 8px var(--brand-ring);
+        }
+        .plan-card.done .plan-eyebrow .dot { background: var(--emerald); box-shadow: 0 0 8px rgba(74,222,128, 0.5); }
+        .plan-line {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 600;
+            color: var(--text-1);
+            line-height: 1.3;
+            letter-spacing: -0.012em;
+        }
+        .plan-line b {
+            font-weight: 800;
+            color: var(--brand);
+            font-variant-numeric: tabular-nums;
+        }
+        .plan-card.done .plan-line b { color: var(--emerald); }
+        .plan-line .sep {
+            color: var(--text-4);
+            font-weight: 400;
+            margin: 0 4px;
+        }
+        .plan-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: var(--brand);
+            color: #1a0d05;
+            font-size: var(--text-sm);
+            font-weight: 700;
+            border-radius: var(--radius-2);
+            white-space: nowrap;
+            transition: filter var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+            flex-shrink: 0;
+        }
+        .plan-cta:hover { filter: brightness(1.08); }
+        .plan-cta:active { transform: translateY(1px); }
+        .plan-cta svg { width: 13px; height: 13px; }
+
+        /* ── AT RISK — overdue words hero list ───────────────────── */
+        .risk-card {
+            padding: var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--red-line, rgba(239,68,68,0.22));
+            border-radius: var(--radius-3);
+            position: relative;
+            overflow: hidden;
+        }
+        .risk-card::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, var(--red-soft) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .risk-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+            position: relative;
+            z-index: 1;
+        }
+        .risk-title {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.01em;
+        }
+        .risk-title .count {
+            font-size: var(--text-lg);
+            font-weight: 800;
+            color: var(--red);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.025em;
+        }
+        .risk-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--red);
+            white-space: nowrap;
+            transition: gap var(--motion-fast) var(--ease);
+        }
+        .risk-card:hover .risk-cta { gap: 7px; }
+        .risk-cta svg { width: 12px; height: 12px; }
+        .risk-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        .risk-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--space-3);
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--surface-2);
+            border-radius: var(--radius-2);
+            transition: background var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
+            border: 1px solid transparent;
+        }
+        .risk-row:hover {
+            background: var(--surface-3);
+            border-color: var(--red-line, rgba(239,68,68,0.22));
+        }
+        .risk-info { min-width: 0; }
+        .risk-word {
+            font-family: var(--font-display);
+            font-size: var(--text-base);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.012em;
+            line-height: 1.2;
+        }
+        .risk-translation {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-top: 2px;
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .risk-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .risk-overdue {
+            font-size: 11px;
+            color: var(--red);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .risk-scene {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--text-4);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── VOCAB STATUS — sentence-style summary line ──────────── */
+        .vocab-status {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 14px 22px;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            line-height: 1.5;
+        }
+        .vocab-status .stat-item {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .vocab-status .stat-num {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: 700;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        .vocab-status .stat-num.mastered { color: var(--emerald); }
+        .vocab-status .stat-num.learning { color: var(--amber); }
+        .vocab-status .stat-num.slipping { color: var(--red); }
+        .vocab-status .stat-num.shadowed { color: var(--purple); }
+        .vocab-status .stat-num.streak   { color: var(--brand); }
+        .vocab-status .stat-label {
+            color: var(--text-3);
+            font-weight: 500;
+        }
+        .vocab-status .stat-divider {
+            width: 1px;
+            height: 18px;
+            background: var(--border-1);
+            display: inline-block;
+        }
+
+        /* ── CEFR LEVEL CARD — the language identity hero ─────────── */
+        .level-card {
+            position: relative;
+            padding: var(--space-5);
+            background:
+                linear-gradient(135deg, var(--brand-wash) 0%, transparent 60%),
+                var(--surface-1);
+            border: 1px solid var(--border-2);
+            border-radius: var(--radius-3);
+            overflow: hidden;
+        }
+        .level-card::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, var(--brand-soft) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .level-eyebrow {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-bottom: var(--space-3);
+        }
+        .level-row {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-3);
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        .level-code {
+            font-family: var(--font-display);
+            font-size: 56px;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            background: linear-gradient(180deg, var(--text-1) 0%, var(--brand-hot) 110%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .level-name {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 500;
+            color: var(--text-2);
+            font-style: italic;
+            letter-spacing: -0.01em;
+        }
+        .level-progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 12px;
+            color: var(--text-3);
+            margin-top: var(--space-3);
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
+            position: relative;
+            z-index: 1;
+        }
+        .level-progress-meta b { color: var(--brand); font-weight: 700; }
+        .level-progress-meta .target { color: var(--text-1); font-weight: 600; }
+        .level-bar {
+            height: 6px;
+            background: var(--surface-3);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .level-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-deep) 0%, var(--brand-hot) 100%);
+            border-radius: var(--radius-pill);
+            transition: width 1s var(--ease-spring);
+        }
+
+        /* ── 4. QUALITY ROW — accuracy + retention + time ────────── */
+        .insight-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-3);
+        }
+        .insight {
+            padding: var(--space-4);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+        }
+        .insight-eyebrow {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 8px;
+        }
+        .insight-value {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1.05;
+            letter-spacing: -0.018em;
+        }
+        .insight-sub {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-top: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+        .insight-sub.brand { color: var(--brand); font-weight: 600; }
+
+        /* ── HEATMAP — LeetCode-style flat layout ────────────────── */
+        .hm-leetcode-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+            flex-wrap: wrap;
+        }
+        .hm-submissions {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .hm-submissions .hm-num {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.03em;
+            font-variant-numeric: tabular-nums;
+        }
+        .hm-submissions .hm-num-label {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            font-weight: 500;
+        }
+        .hm-meta {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-3);
+            font-variant-numeric: tabular-nums;
+        }
+        .hm-meta b {
+            color: var(--text-1);
+            font-weight: 700;
+        }
+        .hm-meta .sep {
+            color: var(--text-4);
+        }
+
+        .heatmap-card {
+            padding: var(--space-3) 0;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+        }
+        .section-title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+        }
+        .section-title-text {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.012em;
+        }
+        .section-title-meta {
+            font-size: 11px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-variant-numeric: tabular-nums;
+        }
+        .section-title-meta a { color: var(--brand); font-weight: 600; }
+        /* LeetCode-style: each month is a self-contained block with
+           the month label centered below. Distinct gap between blocks. */
+        .heatmap-scroll {
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: thin;
+        }
+        .heatmap-scroll::-webkit-scrollbar { height: 4px; }
+        .heatmap-scroll::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+        .heatmap {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 4px 0;
+            width: max-content;
+        }
+        .hm-month-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .hm-month-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 12px);
+            grid-auto-flow: column;
+            gap: 3px;
+        }
+        .hm-month-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-3);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .hm-cell {
+            width: 12px; height: 12px;
+            /* Empty days must be CLEARLY visible — not phantom voids.
+               Brighter fill + subtle border makes every cell read as
+               an actual day even when there's no activity. */
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            transition: outline var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+        }
+        .hm-cell:hover {
+            outline: 1px solid var(--text-2);
+            outline-offset: 1px;
+        }
+        /* Duolingo green palette: #4ADE80 → rgb(88, 204, 2) */
+        .hm-cell[data-v="1"] { background: rgba(74,222,128, 0.25); }
+        .hm-cell[data-v="2"] { background: rgba(74,222,128, 0.45); }
+        .hm-cell[data-v="3"] { background: rgba(74,222,128, 0.65); }
+        .hm-cell[data-v="4"], .hm-cell[data-v="5"] { background: rgba(74,222,128, 0.85); }
+        .hm-cell[data-v="6"], .hm-cell[data-v="7"], .hm-cell[data-v="8"], .hm-cell[data-v="9"] { background: #4ADE80; }
+        /* Legend */
+        .hm-legend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: var(--space-3);
+            font-size: 11px;
+            color: var(--text-3);
+            justify-content: flex-end;
+        }
+        .hm-legend-swatch {
+            width: 10px; height: 10px;
+            border-radius: 2px;
+            background: var(--surface-2);
+        }
+        .hm-insight {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: var(--space-4);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-1);
+            font-size: var(--text-sm);
+            color: var(--text-2);
+            line-height: 1.45;
+        }
+        .hm-insight b {
+            color: var(--brand);
+            font-weight: 600;
+        }
+        .hm-insight svg {
+            width: 14px; height: 14px;
+            color: var(--brand);
+            flex-shrink: 0;
+        }
+
+        /* ── 6. LATEST WIN — hero a single mastered word ─────────── */
+        .latest-win {
+            position: relative;
+            padding: var(--space-6) var(--space-5);
+            background:
+                linear-gradient(135deg, var(--brand-wash) 0%, transparent 60%),
+                var(--surface-1);
+            border: 1px solid var(--border-2);
+            border-radius: var(--radius-3);
+            overflow: hidden;
+        }
+        .latest-win-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            margin-bottom: var(--space-4);
+        }
+        .latest-win-eyebrow .check {
+            display: inline-flex;
+            width: 16px; height: 16px;
+            background: var(--emerald-soft);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            color: var(--emerald);
+        }
+        .latest-win-eyebrow .check svg { width: 10px; height: 10px; }
+        .latest-win-word {
+            font-family: var(--font-display);
+            font-size: clamp(40px, 7vw, 60px);
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1;
+            letter-spacing: -0.04em;
+            margin-bottom: var(--space-3);
+        }
+        .latest-win-meta {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            font-family: var(--font-mono);
+            letter-spacing: 0.04em;
+            margin-bottom: var(--space-4);
+        }
+        .latest-win-meta b { color: var(--brand); font-weight: 600; }
+        .latest-win-other {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-1);
+        }
+        .latest-win-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            color: var(--text-2);
+            font-family: var(--font-display);
+            font-weight: 500;
+        }
+        .latest-win-chip-age {
+            font-size: 10px;
+            color: var(--text-4);
+            font-family: var(--font-sans);
+        }
+
+        /* ── SPEAKING PRACTICE — shadowing card ─────────────────────── */
+        .shadow-card {
+            padding: var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+        }
+        /* Sentence hero: "You've shadowed 20 lines" with the number popping */
+        .shadow-hero {
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border-1);
+        }
+        .shadow-hero-line {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: var(--text-1);
+            line-height: 1.25;
+            letter-spacing: -0.018em;
+        }
+        .shadow-hero-line .pop {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 36px;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            color: var(--purple);
+            font-variant-numeric: tabular-nums;
+            margin-right: 2px;
+        }
+        .shadow-hero-sub {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 14px;
+            margin-top: 8px;
+            font-size: var(--text-sm);
+            color: var(--text-3);
+        }
+        .shadow-hero-sub .stat {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .shadow-hero-sub .stat b {
+            color: var(--text-1);
+            font-weight: 700;
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+        }
+        .shadow-hero-sub .stat .brand b { color: var(--brand); }
+        .shadow-hero-sub .sep {
+            color: var(--text-4);
+        }
+        .shadow-recent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .shadow-line {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px 12px;
+            background: var(--surface-2);
+            border-radius: var(--radius-2);
+            border-left: 2px solid var(--purple-line);
+        }
+        .shadow-line.no-subs { border-left-color: var(--brand); }
+        .shadow-line-text {
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: var(--text-sm);
+            color: var(--text-1);
+            line-height: 1.4;
+        }
+        .shadow-line-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-3);
+            font-size: 10px;
+            color: var(--text-3);
+            font-family: var(--font-mono);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .shadow-line-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+        .shadow-line-badge.no-subs {
+            background: var(--brand-soft);
+            color: var(--brand);
+        }
+        .shadow-line-badge.partial {
+            background: var(--purple-soft);
+            color: var(--purple);
+        }
+        .shadow-empty {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            line-height: 1.5;
+            padding: var(--space-3) 0;
+        }
+        .shadow-empty a {
+            color: var(--brand);
+            font-weight: 600;
+        }
+
+        /* ── 7. TOP SOURCES ───────────────────────────────────────── */
+        .sources-card {
+            padding: var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+        }
+        .source-row {
+            display: grid;
+            grid-template-columns: 1fr 120px 36px;
+            gap: var(--space-4);
+            align-items: center;
+            padding: var(--space-3) 0;
+            border-bottom: 1px solid var(--border-1);
+        }
+        .source-row:last-child { border-bottom: 0; }
+        .source-row:first-child { padding-top: 0; }
+        .source-info { min-width: 0; }
+        .source-title {
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--text-1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .source-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 0.06em;
+            margin-top: 2px;
+        }
+        .source-bar-track {
+            height: 5px;
+            background: var(--surface-2);
+            border-radius: var(--radius-pill);
+            overflow: hidden;
+        }
+        .source-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-deep) 0%, var(--brand-hot) 100%);
+            border-radius: var(--radius-pill);
+            transition: width var(--motion-slow) var(--ease);
+        }
+        .source-num {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            letter-spacing: -0.02em;
+        }
+
+        /* ── COACH (only when actionable) ─────────────────────────── */
+        .coach {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            border-left: 3px solid var(--brand);
+            transition: background var(--motion-fast) var(--ease);
+        }
+        .coach[data-tone="warning"] { border-left-color: var(--amber); }
+        .coach[data-tone="go"]      { border-left-color: var(--emerald); }
+        .coach:hover { background: var(--surface-2); }
+        .coach-content { min-width: 0; flex: 1; }
+        .coach-headline {
+            font-size: var(--text-base);
+            font-weight: 600;
+            color: var(--text-1);
+            line-height: 1.35;
+        }
+        .coach-sub {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+        .coach-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--brand);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .coach[data-tone="warning"] .coach-cta { color: var(--amber); }
+        .coach[data-tone="go"] .coach-cta      { color: var(--emerald); }
+
+        @media (max-width: 600px) {
+            .page { padding: var(--space-5) var(--space-4) var(--space-7); gap: var(--space-3); }
+            .head { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+            .today { grid-template-columns: 1fr; gap: var(--space-4); }
+            .today-ring-wrap { width: 160px; height: 160px; margin: 0 auto; }
+            .today-ring-svg { width: 160px; height: 160px; }
+            .insight-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .insight { padding: var(--space-3); }
+            .insight-value { font-size: var(--text-md); }
+            .source-row { grid-template-columns: 1fr 70px 32px; gap: var(--space-3); }
+            .latest-win-word { font-size: 40px; }
+            .streak-bar { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+            .streak-badge { text-align: left; }
+        }
+
+        /* ── FIRST STEPS — new-user welcome card ─────────────────── */
+        .first-steps {
+            background: var(--surface-1);
+            border: 1px solid var(--border-1);
+            border-radius: var(--radius-3);
+            padding: var(--space-5);
+        }
+        .first-steps-head {
+            font-family: var(--font-display);
+            font-size: var(--text-md);
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.012em;
+            margin-bottom: 4px;
+        }
+        .first-steps-sub {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            margin-bottom: var(--space-5);
+        }
+        .first-steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+        .fs-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+        }
+        .fs-num {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 1px solid var(--border-1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            color: var(--text-2);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .fs-body { flex: 1; }
+        .fs-title {
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--text-1);
+            margin-bottom: 2px;
+        }
+        .fs-desc {
+            font-size: 12px;
+            color: var(--text-3);
+            margin-bottom: 8px;
+        }
+        .fs-cta {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 12px; font-weight: 600;
+            color: var(--brand);
+            transition: color var(--motion-fast) var(--ease);
+        }
+        .fs-cta:hover { color: var(--brand-hot); }
+        .fs-cta svg { width: 12px; height: 12px; }
+
+        /* ── HEATMAP EMPTY STATE ─────────────────────────────────── */
+        .hm-empty-label {
+            font-size: var(--text-sm);
+            color: var(--text-3);
+            font-style: italic;
+        }
+        .hm-meta-hint {
+            font-size: 12px;
+            color: var(--text-3);
         }
     </style>
 </head>
-<body>
+<body{% if scene_source.thumbnail %} style="--scene-img: url('{{ scene_source.thumbnail.url }}');"{% endif %}>
+
+<div class="scene-bg" aria-hidden="true"></div>
 
 <nav class="nav">
-    <a href="{% url 'clips:home' %}" class="logo">QUOTABLE</a>
-
-    <div style="flex:1"></div>
-
-    <div class="nav-right">
-        <a href="{% url 'learning:practice' %}" class="nav-link">Practice</a>
-        {% if level %}
-            <div class="nav-divider"></div>
-            <span class="level-pill" data-level="{{ level }}">{{ level_display }}</span>
-        {% endif %}
-    </div>
+    <a href="{% url 'learning:practice' %}" class="nav-back">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Practice
+    </a>
+    <span class="nav-title">Progress</span>
+    <div class="nav-spacer"></div>
 </nav>
 
 <div class="page">
 
-    <div class="page-title">Your Learning Journey</div>
-    <div class="page-sub">Every word compounds. Here's where you are.</div>
-
-    <!-- ── STAT STRIP ── -->
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-value">{{ total_words }}</div>
-            <div class="stat-label">Words in vault</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value green">{{ mastered_count }}</div>
-            <div class="stat-label">Mastered forever</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value amber">{{ streak }}</div>
-            <div class="stat-label">Day streak</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value blue">{{ session_minutes }}</div>
-            <div class="stat-label">Minutes invested</div>
-        </div>
-    </div>
-
-    <!-- ── PIPELINE ── -->
-    <div class="section">
-        <div class="section-title">Word Pipeline</div>
-        {% if total_words %}
-        <div class="pipeline">
-            <div class="pipe-stage">
-                <div class="pipe-val inbox">{{ inbox_count }}</div>
-                <div class="pipe-name">Inbox</div>
-            </div>
-            <div class="pipe-arrow">→</div>
-            <div class="pipe-stage">
-                <div class="pipe-val learning">{{ learning_count }}</div>
-                <div class="pipe-name">Learning</div>
-            </div>
-            <div class="pipe-arrow">→</div>
-            <div class="pipe-stage">
-                <div class="pipe-val mastered">{{ mastered_count }}</div>
-                <div class="pipe-name">Mastered</div>
+    {% comment %}── ONE-LINE SUMMARY — day + personal moment + trajectory ──{% endcomment %}
+    <header class="head">
+        <div class="head-info">
+            <div class="head-eyebrow">
+                Day {{ journey_days|default:1 }}
+                {% if first_word %}· started with <i style="color:var(--text-2);font-weight:600;font-style:italic;font-family:var(--font-display);">"{{ first_word }}"</i>{% elif total_words %}· <b style="color:var(--text-1);font-weight:700;">{{ mastered_count }}</b> mastered{% endif %}
             </div>
         </div>
-        {% if total_words %}
-        <div class="pipe-bar-wrap">
-            <div class="pipe-bar-inbox"    style="flex:{{ inbox_count }}"></div>
-            <div class="pipe-bar-learning" style="flex:{{ learning_count }}"></div>
-            <div class="pipe-bar-mastered" style="flex:{% if mastered_count %}{{ mastered_count }}{% else %}0{% endif %}"></div>
-        </div>
+        {% if total_words >= 5 %}
+            {% if trajectory_delta > 0 %}
+                <span class="head-trend" data-dir="up">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l5-5 5 5"/></svg>
+                    +{{ trajectory_delta }} this week
+                </span>
+            {% elif trajectory_delta < 0 %}
+                <span class="head-trend" data-dir="down">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l5 5 5-5"/></svg>
+                    {{ trajectory_delta }} this week
+                </span>
+            {% endif %}
         {% endif %}
-        {% else %}
-        <div class="empty-hint">Save your first word while watching — it'll show up here.</div>
-        {% endif %}
-    </div>
+    </header>
 
-    <!-- ── FORECAST ── -->
-    <div class="section">
-        <div class="section-title">7-Day Forecast</div>
-        <div class="forecast-box">
-            <div class="forecast-row">
-                <div>
-                    <div style="font-size:13px;color:var(--text-3);margin-bottom:4px;">At your current pace</div>
-                    {% if daily_rate > 0 %}
-                    <div style="font-size:14px;color:var(--text-2);">
-                        <strong style="color:var(--text);">+{{ forecast_7 }}</strong> words this week ·
-                        <strong style="color:var(--text);">+{{ forecast_30 }}</strong> this month
-                    </div>
-                    {% else %}
-                    <div style="font-size:14px;color:var(--text-3);">Save a few words to unlock your forecast.</div>
-                    {% endif %}
-                </div>
-                {% if daily_rate > 0 %}
-                <div style="text-align:right;">
-                    <div class="forecast-val">+{{ forecast_7 }}</div>
-                    <div class="forecast-tag">next 7 days</div>
-                </div>
+    {% comment %}── Today's Plan — actionable, with streak chip inline ──{% endcomment %}
+    {% if today_plan.cta_url %}
+    <a href="{{ today_plan.cta_url }}" class="plan-card" style="text-decoration:none;">
+        <div class="plan-content">
+            <span class="plan-eyebrow">
+                <span class="dot"></span> Today's plan
+                {% if streak %}
+                <span class="streak-chip" title="Day {{ streak }} streak">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="flame-mini" x1="50%" y1="0%" x2="50%" y2="100%">
+                                <stop offset="0%" stop-color="#fbbf24"/>
+                                <stop offset="50%" stop-color="#f97316"/>
+                                <stop offset="100%" stop-color="#dc2626"/>
+                            </linearGradient>
+                        </defs>
+                        <path fill="url(#flame-mini)" d="M12 2.5c-.5 4-3 5-3 8a3 3 0 006 0c0-1-.5-1.8-.5-1.8s2 1.8 2 4.3a6.5 6.5 0 11-13 0c0-3.5 2.5-5 3-7C7 4 9 3 12 2.5z"/>
+                    </svg>
+                    {{ streak }} day streak
+                </span>
                 {% endif %}
-            </div>
+            </span>
+            <span class="plan-line">
+                {% if today_plan.new_target %}<b>{{ today_plan.new_target }}</b> new{% endif %}
+                {% if today_plan.new_target and today_plan.reviews_due %}<span class="sep">·</span>{% endif %}
+                {% if today_plan.reviews_due %}<b>{{ today_plan.reviews_due }}</b> to review{% endif %}
+                <span class="sep">·</span>
+                ~<b>{{ today_plan.minutes }}</b> min
+            </span>
+        </div>
+        <span class="plan-cta">
+            {{ today_plan.cta_label }}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+        </span>
+    </a>
+    {% else %}
+    <div class="plan-card done">
+        <div class="plan-content">
+            <span class="plan-eyebrow">
+                <span class="dot"></span> Today's plan
+                {% if streak %}
+                <span class="streak-chip" title="Day {{ streak }} streak">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f97316" d="M12 2.5c-.5 4-3 5-3 8a3 3 0 006 0c0-1-.5-1.8-.5-1.8s2 1.8 2 4.3a6.5 6.5 0 11-13 0c0-3.5 2.5-5 3-7C7 4 9 3 12 2.5z"/></svg>
+                    {{ streak }} day streak
+                </span>
+                {% endif %}
+            </span>
+            <span class="plan-line">All caught up. <b>0</b> to do today.</span>
+        </div>
+    </div>
+    {% endif %}
 
-            {% if daily_rate > 0 %}
-            <!-- Simple SVG line chart: today→7 days -->
-            <div class="chart-wrap">
-                <svg class="forecast-chart" viewBox="0 0 400 80" preserveAspectRatio="none">
-                    <!-- baseline -->
-                    <line x1="0" y1="70" x2="400" y2="70" stroke="#1f1f1f" stroke-width="1"/>
-                    <!-- today dot -->
-                    <circle cx="0" cy="70" r="4" fill="var(--text-3)"/>
-                    <!-- forecast line -->
-                    <line x1="0" y1="70" x2="400" y2="10" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 3"/>
-                    <!-- end dot -->
-                    <circle cx="400" cy="10" r="5" fill="var(--green)"/>
-                    <!-- labels -->
-                    <text x="4"   y="68" fill="#525252" font-size="10" font-family="Inter,sans-serif">Today · {{ total_words }}</text>
-                    <text x="280" y="8"  fill="#10b981" font-size="10" font-family="Inter,sans-serif">Day 7 · {{ total_words|add:forecast_7 }}</text>
-                </svg>
+    {% comment %}── REMOVED: at-risk list section.
+       Today's Plan already says "X to review · Review now" — the
+       detailed 5-word list duplicated that. The "Might forget" row
+       in the Collection breakdown below is also tappable for the
+       same destination. No need for a 3rd repeat. ──{% endcomment %}
+
+    {% comment %}── FIRST STEPS — shown only for new users with no words yet ──{% endcomment %}
+    {% if not total_words %}
+    <div class="first-steps">
+        <div class="first-steps-head">Your journey starts here</div>
+        <div class="first-steps-sub">Three steps to your first mastered word.</div>
+        <div class="first-steps-list">
+            <div class="fs-item">
+                <div class="fs-num">1</div>
+                <div class="fs-body">
+                    <div class="fs-title">Watch a scene</div>
+                    <div class="fs-desc">Hover any word for an instant translation — find ones that stop you.</div>
+                    <a href="{% url 'clips:home' %}" class="fs-cta">Browse clips <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></a>
+                </div>
+            </div>
+            <div class="fs-item">
+                <div class="fs-num">2</div>
+                <div class="fs-body">
+                    <div class="fs-title">Save the word</div>
+                    <div class="fs-desc">One tap adds it to your notebook with the exact scene it came from.</div>
+                    <a href="{% url 'learning:word_note_list' %}" class="fs-cta">Open notebook <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></a>
+                </div>
+            </div>
+            <div class="fs-item">
+                <div class="fs-num">3</div>
+                <div class="fs-body">
+                    <div class="fs-title">Practice until it's yours</div>
+                    <div class="fs-desc">Spaced repetition moves it from inbox → learning → mastered.</div>
+                    <a href="{% url 'learning:practice' %}" class="fs-cta">Start practice <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if total_words %}<hr class="ed-divider">{% endif %}
+
+    {% comment %}── BREAKDOWN — visual stage proportions, big number ──{% endcomment %}
+    {% if total_words %}
+    <section class="breakdown">
+        <div class="breakdown-eyebrow">Your collection</div>
+        <div class="breakdown-total">
+            <span class="num">{{ total_words }}</span>
+            <span class="label">word{{ total_words|pluralize }} collected</span>
+        </div>
+        {% comment %}Bar shows ONLY mutually-exclusive stages. "Might forget"
+        is a review-status overlay (a word can be mastered AND overdue),
+        so it doesn't belong in the stage breakdown — adding it as a
+        4th segment makes the math nonsensical (44+3+47 ≠ 47).{% endcomment %}
+        <div class="breakdown-bar" aria-label="Stage breakdown">
+            {% if mastered_count %}<div class="breakdown-seg mastered" style="flex: {{ mastered_count }};" title="{{ mastered_count }} mastered"></div>{% endif %}
+            {% if learning_count %}<div class="breakdown-seg learning" style="flex: {{ learning_count }};" title="{{ learning_count }} learning"></div>{% endif %}
+            {% if inbox_count %}<div class="breakdown-seg inbox" style="flex: {{ inbox_count }};" title="{{ inbox_count }} just saved"></div>{% endif %}
+        </div>
+        <div class="breakdown-rows">
+            <div class="breakdown-row">
+                <span class="dot mastered"></span>
+                <span class="label">Mastered <span class="sub">— solid in memory</span></span>
+                <span class="count">{{ mastered_count }}</span>
+            </div>
+            {% if learning_count %}
+            <div class="breakdown-row">
+                <span class="dot learning"></span>
+                <span class="label">Learning <span class="sub">— still working on them</span></span>
+                <span class="count">{{ learning_count }}</span>
+            </div>
+            {% endif %}
+            {% if inbox_count %}
+            <div class="breakdown-row">
+                <span class="dot inbox"></span>
+                <span class="label">Just saved <span class="sub">— not yet practiced</span></span>
+                <span class="count">{{ inbox_count }}</span>
             </div>
             {% endif %}
         </div>
-    </div>
+        {% comment %}Word wall moved to end-of-page Mastered section.{% endcomment %}
 
-    <!-- ── SESSION HISTORY ── -->
-    <div class="section">
-        <div class="section-title">Practice Sessions</div>
-        {% if total_sessions %}
-        <div class="session-stats">
-            <div class="ss-card">
-                <div class="ss-val" style="color:var(--purple);">{{ high_score|default:0 }}</div>
-                <div class="ss-label">High Score</div>
-            </div>
-            <div class="ss-card">
-                <div class="ss-val" style="color:var(--amber);">x{{ best_combo_ever|default:0 }}</div>
-                <div class="ss-label">Best Combo</div>
-            </div>
-            <div class="ss-card">
-                <div class="ss-val" style="color:var(--green);">{{ rolling_accuracy }}%</div>
-                <div class="ss-label">Avg Accuracy (last 10)</div>
-            </div>
-            <div class="ss-card">
-                <div class="ss-val" style="color:var(--text-2);">{{ total_sessions }}</div>
-                <div class="ss-label">Sessions Played</div>
-            </div>
+        {% if top_show %}
+        <div class="top-show-line">
+            {% if top_show.poster %}
+            <span class="top-show-poster" style="background-image: url('{{ top_show.poster }}');" aria-hidden="true"></span>
+            {% endif %}
+            <span>Mostly from <b>{{ top_show.title }}</b> — {{ top_show.words }} word{{ top_show.words|pluralize }} across {{ top_show.episodes }} episode{{ top_show.episodes|pluralize }}.</span>
         </div>
+        {% endif %}
+    </section>
+    {% endif %}
 
-        <div class="session-list">
-            {% for s in recent_sessions %}
-            <div class="session-row">
-                <div class="sr-icon {% if s.session_type == 'quiz' %}quiz{% else %}cloze{% endif %}">
-                    {% if s.session_type == 'quiz' %}
-                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                    {% else %}
-                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <polyline points="1 20 1 14 7 14"/>
-                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                    </svg>
-                    {% endif %}
+    {% comment %}── REMOVED: Pillars row (streak/time/accuracy).
+       Streak shown in Today's Plan chip; time + accuracy now part of
+       Practice breakdown context. Less duplication, easier to scan. ──{% endcomment %}
+
+    {% if practice_modes %}<hr class="ed-divider">{% endif %}
+
+    {% comment %}── PRACTICE BREAKDOWN — bars + adaptive balance coach ──{% endcomment %}
+    {% if practice_modes %}
+    <section class="practice-card">
+        <div class="practice-eyebrow">
+            <span class="label">How you practice</span>
+            <span class="meta">{{ practice_total }} total actions</span>
+        </div>
+        {% if top_practice %}
+        <p class="practice-caption">
+            Most of your time goes to <b>{{ top_practice.label|lower }}</b>.
+        </p>
+        {% endif %}
+        <div class="practice-rows">
+            {% for m in practice_modes %}
+            <div class="practice-row">
+                <span class="label">{{ m.label }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ m.pct }}%; background: {{ m.color }};"></div>
                 </div>
-                <div class="sr-body">
-                    <div class="sr-title">
-                        {% if s.session_type == 'quiz' %}Quiz{% elif s.session_type == 'cloze' %}Review{% else %}{{ s.session_type|title }}{% endif %}
-                    </div>
-                    <div class="sr-meta">
-                        {{ s.correct_answers }}/{{ s.quotes_reviewed }} correct
-                        {% if s.best_combo > 1 %} · x{{ s.best_combo }} combo{% endif %}
-                        · {{ s.duration_minutes }}m
-                    </div>
-                </div>
-                <div class="sr-right">
-                    {% if s.session_type == 'quiz' and s.score %}
-                    <div class="sr-score purple">{{ s.score }}</div>
-                    {% endif %}
-                    <div class="sr-accuracy">{{ s.accuracy }}%</div>
-                    <div class="sr-time">{{ s.started_at|timesince }} ago</div>
-                </div>
+                <span class="count">{{ m.count }}</span>
             </div>
             {% endfor %}
         </div>
-        {% else %}
-        <div class="empty-hint">Complete a quiz or review to see your session history here.</div>
-        {% endif %}
-    </div>
 
-    <!-- ── HEATMAP ── -->
-    <div class="section">
-        <div class="section-title">Study Activity — Last 12 Weeks</div>
-        {% if heatmap_days %}
+        {% if practice_balance_tip %}
+        <div class="practice-coach">
+            <div class="practice-coach-icon">
+                {% if practice_balance_tip.missing %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                {% else %}
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                {% endif %}
+            </div>
+            <div class="practice-coach-body">
+                <p class="practice-coach-text">{{ practice_balance_tip.text }}</p>
+                {% if practice_balance_tip.cta_url %}
+                <a href="{{ practice_balance_tip.cta_url }}" class="practice-coach-cta">
+                    {{ practice_balance_tip.cta_label }}
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% comment %}── (At-risk moved up to action-zone, near Today's Plan) ──{% endcomment %}
+
+    <hr class="ed-divider">
+
+    {% comment %}── ACTIVITY HEATMAP — LeetCode-style header ──{% endcomment %}
+    <div class="heatmap-card">
+        <div class="hm-leetcode-header">
+            {% if heatmap_total_actions %}
+            <div class="hm-submissions">
+                <span class="hm-num">{{ heatmap_total_actions }}</span>
+                <span class="hm-num-label">learning actions in the past year</span>
+            </div>
+            <div class="hm-meta">
+                <span>Total active days: <b>{{ heatmap_active_days }}</b></span>
+                <span class="sep">·</span>
+                <span>Max streak: <b>{{ heatmap_max_streak }}</b></span>
+            </div>
+            {% else %}
+            <div class="hm-submissions">
+                <span class="hm-empty-label">Activity appears here as you learn</span>
+            </div>
+            <div class="hm-meta">
+                <span class="hm-meta-hint">Start today — day 1 of your streak</span>
+            </div>
+            {% endif %}
+        </div>
         <div class="heatmap-scroll">
             <div class="heatmap" id="heatmap"></div>
         </div>
-        <div class="heatmap-legend">
+        <div class="hm-legend">
             <span>Less</span>
-            <div class="heatmap-legend-cell" style="background:var(--bg-3)"></div>
-            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.25)"></div>
-            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.50)"></div>
-            <div class="heatmap-legend-cell" style="background:rgba(255,107,53,.80)"></div>
-            <div class="heatmap-legend-cell" style="background:var(--accent)"></div>
+            <span class="hm-legend-swatch"></span>
+            <span class="hm-legend-swatch" style="background: rgba(74,222,128, 0.30);"></span>
+            <span class="hm-legend-swatch" style="background: rgba(74,222,128, 0.55);"></span>
+            <span class="hm-legend-swatch" style="background: rgba(74,222,128, 0.80);"></span>
+            <span class="hm-legend-swatch" style="background: #4ADE80;"></span>
             <span>More</span>
         </div>
-        {% else %}
-        <div class="empty-hint">Complete your first review session to see your activity heatmap.</div>
+        {% if best_weekday_name and best_weekday_multiplier %}
+        <div class="hm-insight">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <span>Your <b>{{ best_weekday_name }}s</b> are <b>{{ best_weekday_multiplier }}×</b> your average day. Lean into it.</span>
+        </div>
         {% endif %}
     </div>
 
+    {% if recent_mastered %}<hr class="ed-divider">{% endif %}
+
+    {% comment %}── MASTERED — final celebration section: cinematic + word wall ──{% endcomment %}
+    {% if recent_mastered %}
+    <section class="cine-card{% if not recent_mastered.0.scene_image %} no-image{% endif %}">
+        {% if recent_mastered.0.scene_image %}
+        <div class="scene-bg-img" style="background-image: url('{{ recent_mastered.0.scene_image }}');"></div>
+        {% endif %}
+        <div class="cine-eyebrow">
+            <span class="check">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+            </span>
+            Just mastered
+        </div>
+        <div class="cine-word">{{ recent_mastered.0.word }}</div>
+        {% if recent_mastered.0.scene_quote %}
+        <blockquote class="cine-quote">"{{ recent_mastered.0.scene_quote }}"</blockquote>
+        {% endif %}
+        {% if recent_mastered.0.scene_show or recent_mastered.0.scene_code %}
+        <div class="cine-meta">
+            {% if recent_mastered.0.scene_show %}{{ recent_mastered.0.scene_show }}{% endif %}{% if recent_mastered.0.scene_code %} · {{ recent_mastered.0.scene_code }}{% endif %}
+            <span class="age">{{ recent_mastered.0.age }}</span>
+        </div>
+        {% endif %}
+
+        {% if all_mastered_words|length > 1 %}
+        <div class="cine-collection">
+            <div class="cine-collection-label">+ all {{ mastered_count }} mastered words</div>
+            <div class="cine-collection-list">
+                {% for w in all_mastered_words|slice:"1:50" %}
+                    <span class="cine-collection-word" style="font-size: {% cycle '17px' '15px' '14px' '16px' '15px' '17px' '14px' '16px' %};">{{ w }}</span>{% if not forloop.last %}<span class="cine-collection-dot">·</span>{% endif %}
+                {% endfor %}
+            </div>
+            {% if mastered_count > 50 %}
+            <div class="cine-collection-more">
+                and <a href="{% url 'learning:word_note_list' %}">{{ mastered_count|add:'-50' }} more</a> in your notebook.
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
 </div>
 
+{% include "learning/_page_tracker.html" with page_name="progress" %}
+
 <script>
-(function () {
+(function() {
+    // ── Today's ring (animates fill on load) ─────────────────────
+    const r = 42;
+    const C = 2 * Math.PI * r;
+    const today = {{ today_words }};
+    const goal  = {{ daily_word_goal }};
+    const ratio = goal > 0 ? Math.min(today / goal, 1) : 0;
+    const fillLen = C * ratio;
+    const ringEl = document.getElementById('today-ring-fill');
+    if (ringEl) {
+        ringEl.setAttribute('stroke-dasharray', '0 ' + C);
+        requestAnimationFrame(() => {
+            ringEl.setAttribute('stroke-dasharray', fillLen + ' ' + (C - fillLen));
+        });
+    }
+
+    // ── Heatmap (LeetCode style: month-block layout) ─────────────
+    // Each month is a self-contained 7-row grid with its label below.
+    // Days that fall outside the month leave hidden cells, so the
+    // first/last weeks of a month visually align by weekday position.
     const days = {{ heatmap_days|safe }};
-    const grid = document.getElementById('heatmap');
-    if (!grid) return;
-    days.forEach(function (d) {
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
-        const c = Math.min(d.count, 9);
-        if (c > 0) cell.setAttribute('data-count', c);
-        cell.title = d.date + (d.count ? ' · ' + d.count + ' session' + (d.count > 1 ? 's' : '') : '');
-        grid.appendChild(cell);
+    const hmEl = document.getElementById('heatmap');
+    if (hmEl && days.length) {
+        const monthAbbrev = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        // Group days by year-month
+        const groups = [];
+        let curr = null;
+        days.forEach(d => {
+            const date = new Date(d.date);
+            const key = date.getFullYear() + '-' + date.getMonth();
+            if (!curr || curr.key !== key) {
+                curr = {
+                    key,
+                    month: date.getMonth(),
+                    year: date.getFullYear(),
+                    label: monthAbbrev[date.getMonth()],
+                    days: [],
+                };
+                groups.push(curr);
+            }
+            curr.days.push(d);
+        });
+
+        // Render each month as its own block.
+        groups.forEach(g => {
+            const block = document.createElement('div');
+            block.className = 'hm-month-block';
+
+            // Determine starting weekday of the month's first visible day.
+            const firstDay = new Date(g.days[0].date);
+            const startDow = (firstDay.getDay() + 6) % 7;   // Mon=0..Sun=6
+            const totalCells = startDow + g.days.length;
+            const weekCols = Math.ceil(totalCells / 7);
+
+            const grid = document.createElement('div');
+            grid.className = 'hm-month-grid';
+
+            // grid-auto-flow: column → fill column-by-column.
+            for (let col = 0; col < weekCols; col++) {
+                for (let row = 0; row < 7; row++) {
+                    const cellIdx = col * 7 + row;
+                    const dayIdx = cellIdx - startDow;
+                    const cell = document.createElement('div');
+                    cell.className = 'hm-cell';
+                    if (dayIdx < 0 || dayIdx >= g.days.length) {
+                        cell.style.visibility = 'hidden';
+                    } else {
+                        const d = g.days[dayIdx];
+                        if (d.count > 0) cell.setAttribute('data-v', Math.min(d.count, 9));
+                        cell.title = d.date + (d.count ? ' · ' + d.count + ' actions' : ' · no activity');
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+
+            const label = document.createElement('div');
+            label.className = 'hm-month-label';
+            label.textContent = g.label;
+
+            block.appendChild(grid);
+            block.appendChild(label);
+            hmEl.appendChild(block);
+        });
+
+        // Auto-scroll to the rightmost (most recent) month so today's
+        // activity is what the user sees first.
+        const scrollEl = hmEl.closest('.heatmap-scroll');
+        if (scrollEl) {
+            requestAnimationFrame(() => {
+                scrollEl.scrollLeft = scrollEl.scrollWidth;
+            });
+        }
+    }
+
+    // ── Source bars (proportional) ───────────────────────────────
+    const fills = document.querySelectorAll('.source-bar-fill');
+    let max = 0;
+    fills.forEach(f => max = Math.max(max, +f.dataset.count));
+    fills.forEach(f => {
+        const pct = max > 0 ? (+f.dataset.count / max) * 100 : 0;
+        f.style.width = pct + '%';
     });
 })();
 </script>
-
 </body>
 </html>

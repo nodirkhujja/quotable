@@ -13,7 +13,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 
 from clips.models import Episode, Source, Transcript
-from learning.models import SuggestedWord
+from vocab.models import SuggestedWord
 
 
 class Command(BaseCommand):

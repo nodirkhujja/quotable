@@ -64,5 +64,25 @@ import-words-all:
 		poetry run python -m core.manage import_translations --source 1 --season $$s --episode $$e --file $$f; \
 	done
 
+.PHONY: import-transcript
+import-transcript:
+	poetry run python -m core.manage import_transcript_translations --source $(source) --season $(s) --episode $(e) --file media/translation/transcript/$(file)
+
+.PHONY: import-piw
+import-piw:
+	poetry run python -m core.manage import_piw --source $(source) --season $(s) --episode $(e) --file media/translation/piw/$(file)
+
+.PHONY: import-episode
+import-episode:
+	@echo "Importing transcript translations..."
+	poetry run python -m core.manage import_transcript_translations --source $(source) --season $(s) --episode $(e) --file media/translation/transcript/$(file)
+	@echo "Importing PIW (Phrases/Idioms/Words)..."
+	poetry run python -m core.manage import_piw --source $(source) --season $(s) --episode $(e) --file media/translation/piw/$(file)
+	@echo "Done — episode S$(s)E$(e) fully imported."
+
+.PHONY: extract-vocab
+extract-vocab:
+	poetry run python -m core.manage extract_vocab --source $(source) --season $(s) --episode $(e)
+
 .PHONY: update
 update: install migrate install-pre-commit;

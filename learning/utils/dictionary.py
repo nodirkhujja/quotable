@@ -3,7 +3,7 @@ import re
 import requests
 from django.db import transaction
 
-from learning.models import WordCache
+from vocab.models import WordCache
 
 
 def clean_definition(raw_def):

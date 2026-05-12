@@ -2,1208 +2,913 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vocab Check — Quotable</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Where are you, in English? — Quotable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{{ test_content|json_script:"test-content" }}
+{% csrf_token %}
+<style>
+:root {
+  --bg:          #0D0E14;
+  --bg-soft:     #12131A;
+  --surface:     #17181F;
+  --surface-2:   #20222C;
+  --line:        rgba(255,255,255,0.08);
+  --line-soft:   rgba(255,255,255,0.05);
+  --line-strong: rgba(255,255,255,0.14);
 
-    :root {
-      --bg:       #0b0b10;
-      --surface:  #13131c;
-      --surface2: #1c1c28;
-      --border:   #252535;
-      --text:     #eaeaf4;
-      --muted:    #6868a0;
-      --radius:   20px;
+  --ink:         #ECECF1;
+  --ink-soft:    #B4B5C0;
+  --ink-faint:   #8E8F9B;
+  --ink-dim:     #5E6070;
 
-      /* Tier palette */
-      --t1: #10b981;
-      --t2: #3b82f6;
-      --t3: #8b5cf6;
-      --t4: #f59e0b;
-      --t5: #f43f5e;
+  --accent:      #FF6B35;
+  --accent-hot:  #FF8558;
+  --accent-deep: #E85424;
+  --accent-soft: rgba(255,107,53,0.14);
+  --accent-ring: rgba(255,107,53,0.35);
+  --accent-wash: rgba(255,107,53,0.08);
+  --ready:       #4ADE80;
+  --ready-soft:  rgba(74,222,128,0.14);
 
-      /* Active tier (overridden by JS) */
-      --tier: #10b981;
-    }
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 24px 60px -20px rgba(0,0,0,0.7), 0 12px 30px -10px rgba(0,0,0,0.4);
+  --glow-accent: 0 0 40px -4px rgba(255,107,53,0.4);
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif:   var(--font-display);
+  --radius:       12px;
+}
 
-    /* Ambient background glow — follows tier color */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -160px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, color-mix(in srgb, var(--tier) 10%, transparent) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-      transition: background 0.5s ease;
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Screens ──────────────────────────────────────────────── */
-    .screen {
-      display: none;
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 400px;
-      padding: 28px 20px;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100dvh;
-      justify-content: center;
-    }
-    .screen.active { display: flex; }
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+body {
+  min-height: 100dvh;
+  padding-bottom: 120px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(800px circle at 90% 0%, rgba(255,107,53,0.07), transparent 55%),
+    radial-gradient(600px circle at 10% 100%, rgba(139,92,246,0.05), transparent 60%),
+    var(--bg);
+}
 
-    /* ══════════════════════════════════════════════════════════
-       SCREEN 1 — Welcome
-    ══════════════════════════════════════════════════════════ */
-    .welcome-orb {
-      position: relative;
-      width: 100px;
-      height: 100px;
-      margin-bottom: 28px;
-    }
-    .welcome-orb-ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: conic-gradient(from 0deg, var(--t1), var(--t2), var(--t3), var(--t4), var(--t5), var(--t1));
-      animation: spin 6s linear infinite;
-    }
-    .welcome-orb-inner {
-      position: absolute;
-      inset: 4px;
-      background: var(--bg);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.wrap {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 36px 28px 32px;
+}
 
-    .welcome-title {
-      font-size: 30px;
-      font-weight: 800;
-      text-align: center;
-      line-height: 1.2;
-      margin-bottom: 12px;
-      letter-spacing: -0.5px;
-    }
-    .welcome-title em {
-      font-style: normal;
-      background: linear-gradient(90deg, var(--t1), var(--t2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .welcome-sub {
-      color: var(--muted);
-      text-align: center;
-      font-size: 15px;
-      line-height: 1.65;
-      margin-bottom: 36px;
-      max-width: 300px;
-    }
+/* ── Topbar ───────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.wordmark::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 14px -2px var(--accent-ring);
+}
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.step-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all 0.2s ease;
+}
+.step-dot.done { background: var(--ink-faint); }
+.step-dot.active {
+  background: var(--accent);
+  width: 18px;
+  border-radius: 3px;
+}
+.step-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
 
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 100%;
-      margin-bottom: 40px;
-    }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px 10px;
-      text-align: center;
-    }
-    .stat-num {
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--text);
-      line-height: 1;
-    }
-    .stat-lbl {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
+/* ── Hero ─────────────────────────────────────────── */
+.hero { margin-bottom: 28px; }
+.hero-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.hero-eyebrow-row::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  max-width: 80px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--ink);
+  max-width: 20ch;
+  margin-bottom: 16px;
+}
+.hero-title em { font-style: normal; color: var(--accent); }
+.lede {
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+.lede strong { color: var(--ink); font-weight: 600; }
 
-    .btn-start {
-      position: relative;
-      width: 100%;
-      max-width: 320px;
-      padding: 17px;
-      border: none;
-      border-radius: 100px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      cursor: pointer;
-      background: linear-gradient(135deg, var(--t1) 0%, var(--t2) 100%);
-      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.35);
-      transition: transform 0.15s, box-shadow 0.2s;
-      overflow: hidden;
-    }
-    .btn-start::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
-    }
-    .btn-start:hover  { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(16,185,129,0.45); }
-    .btn-start:active { transform: scale(0.97); }
+/* ── Internal step indicator ──────────────────────── */
+.tstep {
+  display: flex;
+  gap: 8px;
+  margin: 24px 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  flex-wrap: wrap;
+}
+.tstep-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: all 0.18s;
+}
+.tstep-pill .n {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+.tstep-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 20px -4px var(--accent-ring);
+}
+.tstep-pill.active .n { color: rgba(255,255,255,0.8); }
+.tstep-pill.done { color: var(--ink-soft); border-color: var(--line-strong); }
+.tstep-pill.done .n { color: var(--reward); }
 
-    /* ══════════════════════════════════════════════════════════
-       SCREEN 2 — Assessment
-    ══════════════════════════════════════════════════════════ */
-    #screen-assessment {
-      justify-content: flex-start;
-      padding-top: 48px;
-      gap: 0;
-    }
+/* ── Section heads ────────────────────────────────── */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 40px 0 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.section-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.section-num {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.section-sub {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
 
-    /* Progress */
-    .progress-wrap { width: 100%; margin-bottom: 24px; }
-    .progress-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    .progress-meta #progress-tier-label {
-      font-weight: 600;
-      color: var(--tier);
-      transition: color 0.4s ease;
-      font-size: 12px;
-    }
-    .progress-track {
-      background: var(--surface2);
-      border-radius: 100px;
-      height: 5px;
-      overflow: hidden;
-    }
-    #progress-fill {
-      height: 100%;
-      border-radius: 100px;
-      width: 0%;
-      background: var(--tier);
-      transition: width 0.35s ease, background 0.4s ease;
-    }
+/* ── Word pills ───────────────────────────────────── */
+.word-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.word-pill {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  position: relative;
+}
+.word-pill:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.word-pill.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  padding-left: 32px;
+  box-shadow: 0 0 16px -4px var(--accent-ring);
+}
+.word-pill.checked:hover {
+  background: var(--accent-hot);
+  border-color: var(--accent-hot);
+}
+.word-pill.checked::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+}
+.word-pill.checked::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='M2 7.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-    /* Card stack (depth illusion) */
-    .card-stack {
-      position: relative;
-      width: 100%;
-      max-width: 360px;
-      margin-bottom: 6px;
-      /* extra bottom padding so ghost cards peek below */
-      padding-bottom: 20px;
-    }
-    .card-ghost {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      border-radius: var(--radius);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-    }
-    .card-ghost-1 {
-      bottom: 10px;
-      width: calc(100% - 20px);
-      height: 56px;
-      opacity: 0.55;
-    }
-    .card-ghost-2 {
-      bottom: 0;
-      width: calc(100% - 40px);
-      height: 48px;
-      opacity: 0.28;
-    }
+/* ── Grammar MCQ ──────────────────────────────────── */
+.grammar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+}
+.gcard-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gcard-num {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.gcard-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-left: auto;
+}
+.gcard-prompt {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.gcard-prompt .blank {
+  display: inline-block;
+  min-width: 2.4em;
+  border-bottom: 2px solid var(--ink-faint);
+  margin: 0 2px;
+  vertical-align: -2px;
+}
+.gopts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.gopt {
+  appearance: none;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.14s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gopt:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.gopt-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-dim);
+  flex-shrink: 0;
+  transition: all 0.14s;
+}
+.gopt.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 0 20px -6px var(--accent-ring);
+}
+.gopt.selected .gopt-marker {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--bg-soft);
+}
 
-    /* Main swipe card */
-    .swipe-card {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      border-radius: var(--radius);
-      padding: 24px 22px 20px;
-      cursor: grab;
-      user-select: none;
-      will-change: transform;
-      /* Tier-colored gradient border */
-      background:
-        linear-gradient(var(--surface), var(--surface)) padding-box,
-        linear-gradient(135deg, var(--tier) 0%, transparent 60%) border-box;
-      border: 1.5px solid transparent;
-      transition: box-shadow 0.15s;
-    }
-    .swipe-card:active { cursor: grabbing; }
-    .swipe-card.animate-out {
-      transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.34s ease;
-    }
-    .swipe-card.go-right {
-      transform: translateX(130%) rotate(18deg) !important;
-      opacity: 0;
-    }
-    .swipe-card.go-left {
-      transform: translateX(-130%) rotate(-18deg) !important;
-      opacity: 0;
-    }
+/* ── Results ──────────────────────────────────────── */
+.results {
+  text-align: center;
+  padding: 48px 0 24px;
+}
+.results-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+.results-title {
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.results-title em {
+  font-style: normal;
+  color: var(--reward);
+  text-shadow: 0 0 30px rgba(74,222,128,0.35);
+}
+.results-cefr {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 36px;
+}
+.results-stats {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 32px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.results-stat {
+  padding: 18px 32px;
+  text-align: center;
+}
+.results-stat + .results-stat { border-left: 1px solid var(--line); }
+.results-stat-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.results-stat-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.results-lede {
+  font-size: 15px;
+  color: var(--ink-soft);
+  max-width: 44ch;
+  margin: 0 auto 32px;
+  line-height: 1.6;
+}
+.results-cta {
+  appearance: none;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  height: 52px;
+  padding: 0 32px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.18s;
+  box-shadow: var(--shadow-md), var(--glow-accent);
+}
+.results-cta:hover {
+  background: var(--accent-hot);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 60px -4px rgba(255,107,53,0.55);
+}
+.results-cta svg { width: 12px; height: 12px; }
 
-    /* Stamp overlays (inside card) */
-    .swipe-stamp {
-      position: absolute;
-      top: 18px;
-      padding: 5px 12px;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 900;
-      letter-spacing: 1.5px;
-      opacity: 0;
-      pointer-events: none;
-      border: 2.5px solid;
-      text-transform: uppercase;
-      transition: opacity 0.1s;
-    }
-    #know-hint {
-      right: 18px;
-      color: var(--t1);
-      border-color: var(--t1);
-      transform: rotate(12deg);
-    }
-    #dontknow-hint {
-      left: 18px;
-      color: var(--t5);
-      border-color: var(--t5);
-      transform: rotate(-12deg);
-    }
+/* ── Action bar ───────────────────────────────────── */
+.actbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13,14,20,0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--line);
+  z-index: 50;
+}
+.actbar-inner {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.counter .num {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.counter.ready { color: var(--ink); }
+.act-btn {
+  appearance: none;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  height: 46px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: var(--glow-accent);
+}
+.act-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.act-btn:not(:disabled):hover { background: var(--accent-hot); transform: translateY(-1px); box-shadow: var(--shadow-md), 0 0 32px -4px var(--accent-ring); }
+.act-btn svg { width: 12px; height: 12px; transition: transform 0.18s; }
+.act-btn:not(:disabled):hover svg { transform: translateX(2px); }
 
-    /* Card header */
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .tier-dot { display: none; }
-    .card-tier-badge {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--muted);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 3px 9px;
-      letter-spacing: 0.3px;
-    }
-    .card-pos-pill {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--muted);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 3px 10px;
-      font-style: italic;
-    }
+/* ── Page switching ───────────────────────────────── */
+.page { display: none; }
+.page.visible { display: block; animation: pageIn 0.25s ease-out; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    /* The word */
-    .card-word-wrap {
-      position: relative;
-      text-align: center;
-      margin-bottom: 20px;
-      padding: 10px 0 16px;
-    }
-    .word-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 220px;
-      height: 80px;
-      background: var(--tier);
-      opacity: 0.07;
-      border-radius: 50%;
-      filter: blur(36px);
-      pointer-events: none;
-      transition: background 0.4s;
-    }
-    .card-word {
-      position: relative;
-      font-size: 50px;
-      font-weight: 900;
-      letter-spacing: -2px;
-      line-height: 1;
-      color: var(--text);
-      filter: drop-shadow(0 0 18px color-mix(in srgb, var(--tier) 40%, transparent));
-      transition: filter 0.4s;
-    }
-
-    .card-pos { display: none; } /* moved to pill in header */
-
-    /* GIF */
-    .card-gif {
-      width: 100%;
-      max-height: 110px;
-      object-fit: cover;
-      border-radius: 12px;
-      margin-bottom: 14px;
-      display: none;
-    }
-
-    /* Meaning toggle */
-    .toggle-meaning {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-      text-align: left;
-    }
-    .toggle-meaning:hover {
-      border-color: var(--tier);
-      color: var(--text);
-    }
-    .card-meaning { margin-top: 12px; }
-    .card-meaning.hidden { display: none; }
-    .card-translation {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--tier);
-      margin-bottom: 6px;
-      transition: color 0.4s;
-    }
-    .card-example {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-      font-style: italic;
-    }
-
-    /* Action buttons */
-    .action-row {
-      display: flex;
-      gap: 12px;
-      width: 100%;
-      max-width: 360px;
-      margin-top: 20px;
-    }
-    .btn-action {
-      flex: 1;
-      height: 56px;
-      border-radius: 16px;
-      border: 1.5px solid;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      transition: transform 0.12s, background 0.15s;
-      background: transparent;
-    }
-    .btn-action:active { transform: scale(0.93); }
-    .btn-dontknow {
-      border-color: color-mix(in srgb, var(--t5) 50%, transparent);
-      color: var(--t5);
-    }
-    .btn-dontknow:hover { background: color-mix(in srgb, var(--t5) 12%, transparent); }
-    .btn-know {
-      border-color: color-mix(in srgb, var(--t1) 50%, transparent);
-      color: var(--t1);
-    }
-    .btn-know:hover { background: color-mix(in srgb, var(--t1) 12%, transparent); }
-    .btn-icon { font-size: 16px; line-height: 1; }
-
-    .swipe-tip {
-      margin-top: 12px;
-      font-size: 11px;
-      color: color-mix(in srgb, var(--muted) 60%, transparent);
-      text-align: center;
-      letter-spacing: 0.3px;
-    }
-
-    /* Fast-swipe modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.75);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      display: none;
-    }
-    .modal-overlay.visible { display: flex; }
-    .modal-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px 24px;
-      max-width: 300px;
-      text-align: center;
-      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    @keyframes popIn {
-      from { transform: scale(0.85); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
-    }
-    .modal-icon  { font-size: 40px; margin-bottom: 14px; }
-    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .modal-body  { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 22px; }
-    .btn-modal-ok {
-      background: var(--t1);
-      color: #fff;
-      border: none;
-      border-radius: 100px;
-      padding: 12px 32px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    .btn-modal-ok:hover { opacity: 0.85; }
-
-    /* ══════════════════════════════════════════════════════════
-       SCREEN 3 — Results
-    ══════════════════════════════════════════════════════════ */
-    #screen-results { justify-content: flex-start; padding-top: 52px; gap: 20px; }
-
-    .results-top { text-align: center; width: 100%; }
-
-    .results-confetti { font-size: 44px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
-    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-
-    .results-label { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
-
-    #result-count {
-      font-size: 72px;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: -3px;
-      background: linear-gradient(135deg, var(--t1) 0%, var(--t2) 55%, var(--t3) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 6px;
-    }
-    .result-unit {
-      font-size: 16px;
-      color: var(--muted);
-      font-weight: 500;
-      -webkit-text-fill-color: var(--muted);
-    }
-
-    .level-badge {
-      display: inline-block;
-      padding: 7px 20px;
-      border-radius: 100px;
-      font-size: 14px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 0.4px;
-      margin-top: 10px;
-    }
-    @keyframes badgePop {
-      0%   { transform: scale(0.4) translateY(6px); opacity: 0; }
-      65%  { transform: scale(1.08); }
-      100% { transform: scale(1);    opacity: 1; }
-    }
-    .badge-pop {
-      animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-
-    /* Tier breakdown card */
-    .breakdown-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      width: 100%;
-    }
-    .breakdown-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 16px;
-    }
-    .tier-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-    .tier-row.visible { opacity: 1; transform: translateY(0); }
-    .tier-label {
-      font-size: 12px;
-      font-weight: 600;
-      width: 20px;
-      flex-shrink: 0;
-    }
-    .tier-name {
-      font-size: 11px;
-      color: var(--muted);
-      width: 58px;
-      flex-shrink: 0;
-    }
-    .tier-bar-wrap {
-      flex: 1;
-      background: var(--surface2);
-      border-radius: 100px;
-      height: 7px;
-      overflow: hidden;
-    }
-    .tier-bar {
-      height: 100%;
-      border-radius: 100px;
-      width: 0%;
-      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .tier-pct {
-      font-size: 12px;
-      color: var(--muted);
-      width: 30px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    /* Insight chips */
-    .insights-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-    .insight-chip {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 12px;
-      text-align: center;
-    }
-    .insight-chip-label {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 5px;
-    }
-    .insight-chip-value { font-size: 15px; font-weight: 700; }
-    .chip-strong .insight-chip-value { color: var(--t1); }
-    .chip-focus  .insight-chip-value { color: var(--t4); }
-
-    /* Spinner / finishing overlay */
-    .spinner {
-      width: 38px; height: 38px;
-      border: 3px solid var(--surface2);
-      border-top-color: var(--t1);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    #finishing-overlay {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      z-index: 50;
-    }
-    #finishing-overlay.visible { display: flex; }
-    .finishing-text { font-size: 15px; color: var(--muted); }
-  </style>
+@media (max-width: 640px) {
+  .wrap { padding: 28px 20px 24px; }
+  .topbar { margin-bottom: 32px; }
+  .hero-title { font-size: 36px; }
+  .section-head { margin: 32px 0 12px; }
+  .gcard { padding: 18px; }
+  .gcard-prompt { font-size: 18px; }
+  .actbar-inner { padding: 14px 20px; flex-wrap: wrap; }
+  .act-btn { flex: 1; justify-content: center; }
+  .results-stat { padding: 14px 18px; }
+  .results-stat-num { font-size: 26px; }
+}
+</style>
 </head>
 <body>
-{% csrf_token %}
+<div class="wrap">
 
-<!-- ══════════════════════════════════════════
-     SCREEN 1 — Welcome
-══════════════════════════════════════════ -->
-<div id="screen-welcome" class="screen active">
-  <div class="welcome-orb">
-    <div class="welcome-orb-ring"></div>
-    <div class="welcome-orb-inner">🧠</div>
-  </div>
-
-  <h1 class="welcome-title">Find Your<br><em>English Level</em></h1>
-  <p class="welcome-sub">
-    Swipe through 30 words. Mark which ones you know.
-    We'll tailor your content to match your vocabulary.
-  </p>
-
-  <div class="stat-grid">
-    <div class="stat-card">
-      <div class="stat-num">30</div>
-      <div class="stat-lbl">words</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num">~2</div>
-      <div class="stat-lbl">minutes</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num">5</div>
-      <div class="stat-lbl">tiers</div>
-    </div>
-  </div>
-
-  <button class="btn-start" id="start-btn">Let's go →</button>
-</div>
-
-
-<!-- ══════════════════════════════════════════
-     SCREEN 2 — Assessment
-══════════════════════════════════════════ -->
-<div id="screen-assessment" class="screen">
-
-  <div class="progress-wrap">
-    <div class="progress-meta">
-      <span id="progress-text">0 / 30</span>
-      <span id="progress-tier-label"></span>
-    </div>
-    <div class="progress-track">
-      <div id="progress-fill"></div>
-    </div>
-  </div>
-
-  <div class="card-stack">
-    <div class="card-ghost card-ghost-2"></div>
-    <div class="card-ghost card-ghost-1"></div>
-
-    <div class="swipe-card" id="swipe-card">
-      <!-- Stamp overlays -->
-      <div class="swipe-stamp" id="know-hint">KNOW IT ✓</div>
-      <div class="swipe-stamp" id="dontknow-hint">✕ NOPE</div>
-
-      <!-- Header row: tier dot + badge + pos pill -->
-      <div class="card-header">
-        <span class="tier-dot" id="tier-dot"></span>
-        <span class="card-tier-badge" id="card-tier-badge">Tier 1</span>
-        <span class="card-pos-pill" id="card-pos"></span>
+  <div class="topbar">
+    <div class="wordmark">Quotable</div>
+    <div class="stepper">
+      <div class="step-dots">
+        <span class="step-dot done"></span>
+        <span class="step-dot done"></span>
+        <span class="step-dot active"></span>
       </div>
+      <span class="step-label">Step 3 of 3</span>
+    </div>
+  </div>
 
-      <!-- The word (hero element) -->
-      <div class="card-word-wrap">
-        <div class="word-glow" id="word-glow"></div>
-        <div class="card-word" id="card-word">…</div>
+  <div class="hero">
+    <div class="hero-eyebrow-row"><span class="eyebrow">Quick placement</span></div>
+    <h1 class="hero-title">Where are you, <em>in English</em>?</h1>
+    <p class="lede">
+      Two short pages, about a minute total. No right or wrong &mdash; just tap what you <strong>confidently</strong> know. We'll set your level and take you in.
+    </p>
+    <div class="tstep">
+      <span class="tstep-pill active" id="pill1"><span class="n">01</span><span>Vocab</span></span>
+      <span class="tstep-pill" id="pill2"><span class="n">02</span><span>Grammar</span></span>
+      <span class="tstep-pill" id="pill3"><span class="n">03</span><span>Your level</span></span>
+    </div>
+  </div>
+
+  <!-- PAGE 1 — Vocab -->
+  <div class="page visible" id="page1">
+    <div class="section-head">
+      <div class="section-title-wrap">
+        <span class="section-num">No. 01</span>
+        <h2 class="section-title">Everyday words</h2>
       </div>
+      <div class="section-sub">tap what you know</div>
+    </div>
+    <div class="word-grid" id="grid-easy"></div>
 
-      <img class="card-gif" id="card-gif" alt="" />
+    <div class="section-head">
+      <div class="section-title-wrap">
+        <span class="section-num">No. 02</span>
+        <h2 class="section-title">Intermediate words</h2>
+      </div>
+      <div class="section-sub">a little harder</div>
+    </div>
+    <div class="word-grid" id="grid-medium"></div>
 
-      <button class="toggle-meaning" id="toggle-meaning-btn">
-        <span>🇺🇿</span> Ko'rsatish
+    <div class="section-head">
+      <div class="section-title-wrap">
+        <span class="section-num">No. 03</span>
+        <h2 class="section-title">Advanced words</h2>
+      </div>
+      <div class="section-sub">leave blank if unsure</div>
+    </div>
+    <div class="word-grid" id="grid-expert"></div>
+
+    <div class="section-head">
+      <div class="section-title-wrap">
+        <span class="section-num">No. 04</span>
+        <h2 class="section-title">Phrases &amp; idioms</h2>
+      </div>
+      <div class="section-sub">in natural speech</div>
+    </div>
+    <div class="word-grid" id="grid-phrases"></div>
+  </div>
+
+  <!-- PAGE 2 — Grammar -->
+  <div class="page" id="page2">
+    <div class="section-head">
+      <div class="section-title-wrap">
+        <span class="section-num">Part 02</span>
+        <h2 class="section-title">Four sentences</h2>
+      </div>
+      <div class="section-sub">pick the one that sounds right</div>
+    </div>
+    <div class="grammar-list" id="grammarList"></div>
+  </div>
+
+  <!-- PAGE 3 — Results -->
+  <div class="page" id="page3">
+    <div class="results">
+      <div class="results-eyebrow">Your placement</div>
+      <h2 class="results-title" id="resLevel"></h2>
+      <div class="results-cefr" id="resCefr"></div>
+      <div class="results-stats">
+        <div class="results-stat">
+          <div class="results-stat-num" id="resVocab"></div>
+          <div class="results-stat-label">Vocab</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-num" id="resGrammar"></div>
+          <div class="results-stat-label">Grammar</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-num" id="resTotal"></div>
+          <div class="results-stat-label">Total</div>
+        </div>
+      </div>
+      <p class="results-lede" id="resLede"></p>
+      <button class="results-cta" type="button" id="resContinue">
+        <span>Enter Quotable</span>
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 7h12M7 1l6 6-6 6"/>
+        </svg>
       </button>
-      <div class="card-meaning hidden" id="card-meaning">
-        <div class="card-translation" id="card-translation"></div>
-        <div class="card-example"     id="card-example"></div>
-      </div>
     </div>
   </div>
+</div>
 
-  <div class="action-row">
-    <button class="btn-action btn-dontknow" id="btn-dontknow">
-      <span class="btn-icon">✕</span> Don't know
+<div class="actbar" id="actbar">
+  <div class="actbar-inner">
+    <div class="counter" id="counter">
+      <span id="counterText">Tap the words you know</span>
+    </div>
+    <button type="button" class="act-btn" id="actBtn">
+      <span id="actLabel">Continue to grammar</span>
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 7h12M7 1l6 6-6 6"/>
+      </svg>
     </button>
-    <button class="btn-action btn-know" id="btn-know">
-      Know it <span class="btn-icon">✓</span>
-    </button>
-  </div>
-  <p class="swipe-tip">← swipe the card or tap a button →</p>
-</div>
-
-
-<!-- ══════════════════════════════════════════
-     SCREEN 3 — Results
-══════════════════════════════════════════ -->
-<div id="screen-results" class="screen">
-
-  <div class="results-top">
-    <div class="results-confetti">🎉</div>
-    <div class="results-label">You know approximately</div>
-    <div id="result-count">0</div>
-    <span class="result-unit">words out of 1,000</span>
-    <br>
-    <span class="level-badge" id="result-badge">—</span>
-  </div>
-
-  <div class="breakdown-card">
-    <div class="breakdown-title">Tier Breakdown</div>
-    <div id="tier-bars"></div>
-  </div>
-
-  <div class="insights-row">
-    <div class="insight-chip chip-strong" id="strong-section">
-      <div class="insight-chip-label">Strong</div>
-      <div class="insight-chip-value" id="strong-tiers">—</div>
-    </div>
-    <div class="insight-chip chip-focus" id="focus-section">
-      <div class="insight-chip-label">Focus on</div>
-      <div class="insight-chip-value" id="weak-tiers">—</div>
-    </div>
-  </div>
-
-  <button class="btn-start" id="goto-words-btn">Start Learning →</button>
-</div>
-
-
-<!-- Fast-swipe modal -->
-<div class="modal-overlay" id="fast-swipe-modal">
-  <div class="modal-box">
-    <div class="modal-icon">⚡</div>
-    <div class="modal-title">Slow down a bit</div>
-    <div class="modal-body">
-      You're swiping really fast! Take a moment to actually read each word — the results will be much more useful.
-    </div>
-    <button class="btn-modal-ok" id="modal-ok-btn">Got it</button>
   </div>
 </div>
-
-<!-- Finishing overlay -->
-<div id="finishing-overlay">
-  <div class="spinner"></div>
-  <div class="finishing-text">Calculating your level…</div>
-</div>
-
 
 <script>
-(function () {
-  'use strict';
+  const CONTENT = JSON.parse(document.getElementById('test-content').textContent);
+  const CSRF = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  const SUBMIT_URL = '{% url "learning:placement-submit" %}';
 
-  // ── Constants ────────────────────────────────────────────────
-  const TOTAL_CARDS  = 30;
-  const INITIAL_DIST = { 1: 8, 2: 8, 3: 6, 4: 5, 5: 3 };
-  const SESSION_ID   = {{ session_id }};
-  const DATA_URL     = "{% url 'learning:onboarding-data' %}";
-  const PROGRESS_URL = "{% url 'learning:onboarding-progress' %}";
-  const COMPLETE_URL = "{% url 'learning:onboarding-complete' %}";
-  const WORDS_URL    = "{% url 'clips:home' %}";
-  const CSRF         = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const state = {
+    page: 1,
+    easy:    new Set(),
+    medium:  new Set(),
+    expert:  new Set(),
+    phrases: new Set(),
+    grammar: {},
+  };
 
-  const TIER_COLORS  = { 1: '#10b981', 2: '#3b82f6', 3: '#8b5cf6', 4: '#f59e0b', 5: '#f43f5e' };
-  const TIER_NAMES   = { 1: 'Core', 2: 'Common', 3: 'Familiar', 4: 'Advanced', 5: 'Expert' };
-
-  // ── State ────────────────────────────────────────────────────
-  let wordPool       = {};
-  let queue          = [];
-  let currentIdx     = 0;
-  let results        = [];
-  let tierCounts     = {};
-  let cardStartMs    = 0;
-  let swipeTimes     = [];
-  let isDragging     = false;
-  let dragStartX     = 0;
-  let currentDragX   = 0;
-  let fastSwipeShown = false;
-
-  // ── Helpers ──────────────────────────────────────────────────
-  function $(id) { return document.getElementById(id); }
-
-  function showScreen(name) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    $('screen-' + name).classList.add('active');
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
-  function posLabel(pos) {
-    return { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb', phr: 'phrase', etc: 'other' }[pos] || pos;
-  }
-
-  async function postJSON(url, body) {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify(body),
-    });
-    return r.json();
-  }
-
-  function setTierColor(tier) {
-    const color = TIER_COLORS[tier] || TIER_COLORS[1];
-    document.documentElement.style.setProperty('--tier', color);
-  }
-
-  // ── Init ─────────────────────────────────────────────────────
-  async function init() {
-    const data = await fetch(DATA_URL).then(r => r.json());
-    if (!data.words || !data.words.length) {
-      alert('No vocabulary words found. Run: python manage.py seed_vocab');
-      return;
-    }
-
-    for (const w of data.words) {
-      if (!wordPool[w.tier]) wordPool[w.tier] = [];
-      wordPool[w.tier].push(w);
-    }
-    for (const t in wordPool) wordPool[t] = shuffle(wordPool[t]);
-
-    const initial = [];
-    for (const [tier, count] of Object.entries(INITIAL_DIST)) {
-      initial.push(...(wordPool[tier] || []).splice(0, count));
-    }
-    queue = shuffle(initial);
-
-    for (let t = 1; t <= 5; t++) {
-      tierCounts[t] = { shown: 0, known: 0, checked_at: 0 };
-    }
-
-    showScreen('assessment');
-    renderCard();
-  }
-
-  // ── Card rendering ────────────────────────────────────────────
-  function renderCard() {
-    if (currentIdx >= TOTAL_CARDS || currentIdx >= queue.length) {
-      finishAssessment();
-      return;
-    }
-
-    const word  = queue[currentIdx];
-    const card  = $('swipe-card');
-    const color = TIER_COLORS[word.tier] || TIER_COLORS[1];
-
-    card.dataset.wordId = word.id;
-    card.dataset.tier   = word.tier;
-
-    // Apply tier color to CSS custom property
-    setTierColor(word.tier);
-
-    $('card-tier-badge').textContent  = 'Tier ' + word.tier;
-    $('card-word').textContent        = word.word;
-    $('card-pos').textContent         = posLabel(word.pos);
-    $('card-translation').textContent = word.uzbek_translation;
-    $('card-example').textContent     = word.example_sentence || '';
-
-    const gif = $('card-gif');
-    if (word.gif_url) { gif.src = word.gif_url; gif.style.display = 'block'; }
-    else              { gif.src = '';           gif.style.display = 'none';  }
-
-    // Reset meaning
-    $('card-meaning').classList.add('hidden');
-    $('toggle-meaning-btn').innerHTML = '<span>🇺🇿</span> Ko\'rsatish';
-
-    // Reset card position
-    card.style.transform = '';
-    card.style.boxShadow = '';
-    card.style.opacity   = '1';
-    card.classList.remove('animate-out', 'go-right', 'go-left');
-
-    $('know-hint').style.opacity     = '0';
-    $('dontknow-hint').style.opacity = '0';
-
-    updateProgress(currentIdx, TOTAL_CARDS);
-    $('progress-tier-label').textContent = TIER_NAMES[word.tier] || ('Tier ' + word.tier);
-
-    cardStartMs = Date.now();
-  }
-
-  function updateProgress(done, total) {
-    $('progress-text').textContent = done + ' / ' + total;
-    $('progress-fill').style.width = Math.round((done / total) * 100) + '%';
-  }
-
-  // ── Swipe & answer ────────────────────────────────────────────
-  function recordAnswer(known) {
-    const card    = $('swipe-card');
-    const wordId  = parseInt(card.dataset.wordId);
-    const tier    = parseInt(card.dataset.tier);
-    const elapsed = Date.now() - cardStartMs;
-
-    swipeTimes.push(elapsed);
-    if (swipeTimes.length > 5) swipeTimes.shift();
-    if (!fastSwipeShown && swipeTimes.length === 5 && swipeTimes.every(t => t < 1000)) {
-      fastSwipeShown = true;
-      $('fast-swipe-modal').classList.add('visible');
-    }
-
-    results.push({ word_id: wordId, known, response_time_ms: elapsed });
-
-    if (!tierCounts[tier]) tierCounts[tier] = { shown: 0, known: 0, checked_at: 0 };
-    tierCounts[tier].shown++;
-    if (known) tierCounts[tier].known++;
-
-    adaptiveAdjust(tier);
-
-    postJSON(PROGRESS_URL, { session_id: SESSION_ID, word_id: wordId, known, response_time_ms: elapsed })
-      .catch(() => {});
-
-    card.classList.add('animate-out', known ? 'go-right' : 'go-left');
-    setTimeout(() => { currentIdx++; renderCard(); }, 340);
-  }
-
-  // ── Adaptive algorithm ────────────────────────────────────────
-  function adaptiveAdjust(tier) {
-    const tc = tierCounts[tier];
-    if (tc.shown > 0 && tc.shown % 4 === 0 && tc.shown !== tc.checked_at) {
-      tc.checked_at = tc.shown;
-      const accuracy  = tc.known / tc.shown;
-      const remaining = TOTAL_CARDS - currentIdx - 1;
-      if (remaining <= 0) return;
-      if (accuracy >= 0.75 && tier < 5) swapInQueue(tier, tier + 1, 2);
-      else if (accuracy < 0.50 && tier > 1) swapInQueue(tier, tier - 1, 2);
-    }
-  }
-
-  function swapInQueue(fromTier, toTier, count) {
-    let swapped = 0;
-    for (let i = currentIdx + 1; i < queue.length && swapped < count; i++) {
-      if (queue[i] && queue[i].tier === fromTier) {
-        const replacement = wordPool[toTier] && wordPool[toTier].shift();
-        if (replacement) {
-          if (!wordPool[fromTier]) wordPool[fromTier] = [];
-          wordPool[fromTier].push(queue[i]);
-          queue[i] = replacement;
-          swapped++;
+  function renderWordGrid(containerId, items, stateSet, valueOf) {
+    const el = document.getElementById(containerId);
+    items.forEach(item => {
+      const value = valueOf(item);
+      const label = typeof item === 'string' ? item : item.text;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'word-pill';
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        if (stateSet.has(value)) {
+          stateSet.delete(value);
+          btn.classList.remove('checked');
+        } else {
+          stateSet.add(value);
+          btn.classList.add('checked');
         }
-      }
-    }
-  }
-
-  // ── Finish ────────────────────────────────────────────────────
-  async function finishAssessment() {
-    $('finishing-overlay').classList.add('visible');
-    try {
-      const data = await postJSON(COMPLETE_URL, { session_id: SESSION_ID, results });
-      if (data.ok) showResults(data);
-      else alert('Something went wrong. Please try again.');
-    } catch (e) {
-      alert('Network error. Please try again.');
-    } finally {
-      $('finishing-overlay').classList.remove('visible');
-    }
-  }
-
-  // ── Results ───────────────────────────────────────────────────
-  function animateCounter(el, target, ms) {
-    const start = performance.now();
-    (function tick(now) {
-      const p    = Math.min((now - start) / ms, 1);
-      const ease = 1 - Math.pow(1 - p, 4); // easeOutQuart
-      el.textContent = Math.round(ease * target);
-      if (p < 1) requestAnimationFrame(tick);
-    })(start);
-  }
-
-  function showResults(data) {
-    // Animated counter
-    animateCounter($('result-count'), data.projected_total, 1400);
-
-    // Level badge with pop animation
-    const badge = $('result-badge');
-    const levelColors = {
-      beginner:           '#6b7280',
-      intermediate:       '#3b82f6',
-      upper_intermediate: '#10b981',
-      advanced:           '#f59e0b',
-    };
-    badge.textContent       = data.level_display;
-    badge.style.background  = levelColors[data.level] || '#6b7280';
-    badge.classList.remove('badge-pop');
-    void badge.offsetWidth; // force reflow to restart animation
-    badge.classList.add('badge-pop');
-
-    // Tier bars with individual colors + stagger
-    const barsEl = $('tier-bars');
-    barsEl.innerHTML = '';
-    for (let t = 1; t <= 5; t++) {
-      const counts = data.tier_breakdown[t] || data.tier_breakdown[String(t)] || { shown: 0, known: 0 };
-      const pct    = counts.shown ? Math.round((counts.known / counts.shown) * 100) : 0;
-      const color  = TIER_COLORS[t];
-      const row    = document.createElement('div');
-      row.className = 'tier-row';
-      row.innerHTML = `
-        <span class="tier-label" style="color:${color}">T${t}</span>
-        <span class="tier-name">${TIER_NAMES[t]}</span>
-        <div class="tier-bar-wrap">
-          <div class="tier-bar" style="background:${color}" data-target="${pct}"></div>
-        </div>
-        <span class="tier-pct">${pct}%</span>
-      `;
-      row.style.transitionDelay = `${(t - 1) * 0.1}s`;
-      barsEl.appendChild(row);
-    }
-
-    // Strong / weak chips
-    if (data.strong_tiers && data.strong_tiers.length) {
-      $('strong-tiers').textContent = data.strong_tiers.map(t => 'T' + t).join(', ');
-    } else {
-      $('strong-section').style.display = 'none';
-    }
-    if (data.weak_tiers && data.weak_tiers.length) {
-      $('weak-tiers').textContent = data.weak_tiers.map(t => 'T' + t).join(', ');
-    } else {
-      $('focus-section').style.display = 'none';
-    }
-
-    showScreen('results');
-
-    // Trigger staggered bar + row animations
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.querySelectorAll('.tier-row').forEach(row => row.classList.add('visible'));
-      document.querySelectorAll('.tier-bar[data-target]').forEach(bar => {
-        bar.style.width = bar.dataset.target + '%';
+        updateCounter();
       });
-    }));
+      el.appendChild(btn);
+    });
   }
 
-  // ── Drag / swipe gestures ─────────────────────────────────────
-  function updateCardDrag(x) {
-    const card    = $('swipe-card');
-    const rot     = x * 0.07;
-    card.style.transform = `translateX(${x}px) rotate(${rot}deg)`;
+  renderWordGrid('grid-easy',    CONTENT.easy,    state.easy,    w => w);
+  renderWordGrid('grid-medium',  CONTENT.medium,  state.medium,  w => w);
+  renderWordGrid('grid-expert',  CONTENT.expert,  state.expert,  w => w);
+  renderWordGrid('grid-phrases', CONTENT.phrases, state.phrases, p => p.id);
 
-    const t       = Math.min(Math.abs(x) / 80, 1);
-    const emerald = `rgba(16,185,129,${t * 0.55})`;
-    const rose    = `rgba(244,63,94,${t * 0.55})`;
+  const gList = document.getElementById('grammarList');
+  CONTENT.grammar.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'gcard';
+    card.dataset.id = g.id;
+    const promptHtml = escapeHtml(g.prompt).replace(/___/g, '<span class="blank"></span>');
+    card.innerHTML = `
+      <div class="gcard-head">
+        <span class="gcard-num">No. 0${i + 1}</span>
+        <span class="gcard-tag">Sentence ${i + 1} of ${CONTENT.grammar.length}</span>
+      </div>
+      <div class="gcard-prompt">${promptHtml}</div>
+      <div class="gopts"></div>
+    `;
+    const optsEl = card.querySelector('.gopts');
+    g.options.forEach((opt, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gopt';
+      b.innerHTML = `<span class="gopt-marker"></span><span>${escapeHtml(opt)}</span>`;
+      b.addEventListener('click', () => {
+        state.grammar[g.id] = idx;
+        optsEl.querySelectorAll('.gopt').forEach(o => o.classList.remove('selected'));
+        b.classList.add('selected');
+        updateCounter();
+      });
+      optsEl.appendChild(b);
+    });
+    gList.appendChild(card);
+  });
 
-    if (x > 20) {
-      card.style.boxShadow             = `0 0 36px ${emerald}`;
-      $('know-hint').style.opacity     = t;
-      $('dontknow-hint').style.opacity = '0';
-    } else if (x < -20) {
-      card.style.boxShadow             = `0 0 36px ${rose}`;
-      $('dontknow-hint').style.opacity = t;
-      $('know-hint').style.opacity     = '0';
+  const pageEls = [
+    document.getElementById('page1'),
+    document.getElementById('page2'),
+    document.getElementById('page3'),
+  ];
+  const pillEls = [
+    document.getElementById('pill1'),
+    document.getElementById('pill2'),
+    document.getElementById('pill3'),
+  ];
+  const actBar = document.getElementById('actbar');
+  const counterText = document.getElementById('counterText');
+  const counter = document.getElementById('counter');
+  const actBtn = document.getElementById('actBtn');
+  const actLabel = document.getElementById('actLabel');
+
+  function showPage(n) {
+    state.page = n;
+    pageEls.forEach((el, i) => el.classList.toggle('visible', (i + 1) === n));
+    pillEls.forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i + 1 < n) el.classList.add('done');
+      if (i + 1 === n) el.classList.add('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (n === 3) {
+      actBar.style.display = 'none';
     } else {
-      card.style.boxShadow             = '';
-      $('know-hint').style.opacity     = '0';
-      $('dontknow-hint').style.opacity = '0';
+      actBar.style.display = '';
+      actLabel.textContent = n === 1 ? 'Continue to grammar' : 'See my level';
+    }
+    updateCounter();
+  }
+
+  function vocabCount() {
+    return state.easy.size + state.medium.size + state.expert.size + state.phrases.size;
+  }
+  function grammarCount() {
+    return Object.keys(state.grammar).length;
+  }
+
+  function updateCounter() {
+    if (state.page === 1) {
+      const n = vocabCount();
+      counterText.innerHTML = n > 0
+        ? `<span class="num">${n}</span> of <span class="num">43</span> words tapped`
+        : 'Tap the words you know';
+      counter.classList.toggle('ready', n > 0);
+      actBtn.disabled = false;
+    } else if (state.page === 2) {
+      const n = grammarCount();
+      counterText.innerHTML = n > 0
+        ? `<span class="num">${n}</span> of <span class="num">4</span> answered`
+        : 'Pick the best option for each';
+      counter.classList.toggle('ready', n > 0);
+      actBtn.disabled = false;
     }
   }
 
-  function snapBack() {
-    const card = $('swipe-card');
-    card.style.transition = 'transform 0.28s ease, box-shadow 0.28s ease';
-    card.style.transform  = '';
-    card.style.boxShadow  = '';
-    $('know-hint').style.opacity     = '0';
-    $('dontknow-hint').style.opacity = '0';
-    setTimeout(() => { card.style.transition = ''; }, 300);
-  }
-
-  function commitDrag() {
-    if      (currentDragX >  80) recordAnswer(true);
-    else if (currentDragX < -80) recordAnswer(false);
-    else snapBack();
-    currentDragX = 0;
-  }
-
-  function initGestures() {
-    const card = $('swipe-card');
-
-    card.addEventListener('touchstart', e => {
-      if ($('fast-swipe-modal').classList.contains('visible')) return;
-      dragStartX = e.touches[0].clientX;
-      isDragging = true;
-    }, { passive: true });
-
-    card.addEventListener('touchmove', e => {
-      if (!isDragging) return;
-      currentDragX = e.touches[0].clientX - dragStartX;
-      updateCardDrag(currentDragX);
-    }, { passive: true });
-
-    card.addEventListener('touchend', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      commitDrag();
-    });
-
-    card.addEventListener('mousedown', e => {
-      if ($('fast-swipe-modal').classList.contains('visible')) return;
-      dragStartX = e.clientX;
-      isDragging = true;
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup',   onMouseUp);
-    });
-  }
-
-  function onMouseMove(e) {
-    if (!isDragging) return;
-    currentDragX = e.clientX - dragStartX;
-    updateCardDrag(currentDragX);
-  }
-
-  function onMouseUp() {
-    if (!isDragging) return;
-    isDragging = false;
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup',   onMouseUp);
-    commitDrag();
-  }
-
-  // ── Event listeners ───────────────────────────────────────────
-  $('start-btn').addEventListener('click', () => {
-    $('card-word').textContent = '…';
-    init();
+  actBtn.addEventListener('click', () => {
+    if (state.page === 1) {
+      showPage(2);
+    } else if (state.page === 2) {
+      submit();
+    }
   });
 
-  $('btn-know').addEventListener('click',     () => recordAnswer(true));
-  $('btn-dontknow').addEventListener('click', () => recordAnswer(false));
+  async function submit() {
+    actBtn.disabled = true;
+    actLabel.textContent = 'Scoring…';
 
-  $('toggle-meaning-btn').addEventListener('click', () => {
-    const meaning = $('card-meaning');
-    const show    = meaning.classList.contains('hidden');
-    meaning.classList.toggle('hidden', !show);
-    $('toggle-meaning-btn').innerHTML = show
-      ? '<span>🙈</span> Yashirish'
-      : '<span>🇺🇿</span> Ko\'rsatish';
+    const payload = {
+      easy:    Array.from(state.easy),
+      medium:  Array.from(state.medium),
+      expert:  Array.from(state.expert),
+      phrases: Array.from(state.phrases),
+      grammar: state.grammar,
+    };
+
+    try {
+      const resp = await fetch(SUBMIT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error('bad response');
+      const body = await resp.json();
+      renderResults(body);
+      showPage(3);
+    } catch (e) {
+      alert('Something went wrong — please try again.');
+      actBtn.disabled = false;
+      actLabel.textContent = 'See my level';
+    }
+  }
+
+  function renderResults(r) {
+    const ledes = {
+      beginner:           "Starting from the ground floor. Expect clear, slow dialogue and everyday words. You'll move fast.",
+      intermediate:       "Solid foundation. We'll lean into natural conversation &mdash; the way people actually talk in shows.",
+      upper_intermediate: "Strong base. Expect nuance, idiom, and full-speed dialogue. You're ready for the good stuff.",
+      advanced:           "Near-fluent. We'll push into register, subtext, and literary language. Let's keep you sharp.",
+    };
+    const titleHtml =
+      r.level === 'advanced'           ? '<em>Advanced</em>' :
+      r.level === 'upper_intermediate' ? 'Upper-<em>Intermediate</em>' :
+      r.level === 'intermediate'       ? '<em>Intermediate</em>' :
+                                         '<em>Beginner</em>';
+    document.getElementById('resLevel').innerHTML = titleHtml;
+    document.getElementById('resCefr').textContent = r.cefr;
+    document.getElementById('resVocab').textContent = r.vocab_raw;
+    document.getElementById('resGrammar').textContent = r.grammar_raw;
+    document.getElementById('resTotal').textContent = `${r.total}/${r.max}`;
+    document.getElementById('resLede').innerHTML = ledes[r.level] || '';
+  }
+
+  document.getElementById('resContinue').addEventListener('click', () => {
+    window.location.href = '/';
   });
 
-  $('modal-ok-btn').addEventListener('click', () => {
-    $('fast-swipe-modal').classList.remove('visible');
-    swipeTimes = [];
-  });
-
-  $('goto-words-btn').addEventListener('click', () => {
-    window.location.href = WORDS_URL;
-  });
-
-  initGestures();
-})();
+  updateCounter();
 </script>
+{% include "learning/_page_tracker.html" with page_name="onboarding" %}
 </body>
 </html>

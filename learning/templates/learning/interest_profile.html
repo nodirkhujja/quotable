@@ -1,0 +1,1309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tell us what you love — Quotable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{{ categories|json_script:"categories-data" }}
+{% csrf_token %}
+<style>
+:root {
+  /* Dark theater base */
+  --bg:          #0D0E14;
+  --bg-soft:     #12131A;
+  --surface:     #17181F;
+  --surface-2:   #20222C;
+  --line:        rgba(255,255,255,0.08);
+  --line-soft:   rgba(255,255,255,0.05);
+  --line-strong: rgba(255,255,255,0.14);
+
+  --ink:         #ECECF1;
+  --ink-soft:    #B4B5C0;
+  --ink-faint:   #8E8F9B;
+  --ink-dim:     #5E6070;
+
+  --accent:      #FF6B35;
+  --accent-hot:  #FF8558;
+  --accent-deep: #E85424;
+  --accent-soft: rgba(255,107,53,0.14);
+  --accent-ring: rgba(255,107,53,0.35);
+  --accent-wash: rgba(255,107,53,0.08);
+  --ready:       #4ADE80;
+  --ready-wash:  rgba(74,222,128,0.14);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 24px 60px -20px rgba(0,0,0,0.7), 0 12px 30px -10px rgba(0,0,0,0.4);
+  --glow-accent: 0 0 40px -4px rgba(255,107,53,0.4);
+
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Legacy alias — some rules below still reference --font-serif */
+  --font-serif:   var(--font-display);
+  --radius:       12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+body {
+  min-height: 100dvh;
+  padding-bottom: 120px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(800px circle at 90% 0%, rgba(255,107,53,0.07), transparent 55%),
+    radial-gradient(600px circle at 10% 100%, rgba(139,92,246,0.05), transparent 60%),
+    var(--bg);
+}
+
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 36px 28px 32px;
+}
+
+/* ── Topbar ───────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.wordmark::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 14px -2px var(--accent-ring);
+}
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.step-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all 0.2s ease;
+}
+.step-dot.done { background: var(--ink-faint); }
+.step-dot.active {
+  background: var(--accent);
+  width: 18px;
+  border-radius: 3px;
+}
+.step-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+/* ── Hero ─────────────────────────────────────────── */
+.hero { margin-bottom: 32px; position: relative; }
+.hero-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.hero-eyebrow-row::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  max-width: 80px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--ink);
+  max-width: 20ch;
+  margin-bottom: 16px;
+}
+.hero-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-ornament { display: none; }  /* retired — editorial touch doesn't fit Netflix mood */
+.lede {
+  font-size: 15.5px;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+.lede strong { color: var(--ink); font-weight: 600; }
+
+/* ── Why-card (editorial pull quote) ──────────────── */
+.why-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 24px;
+  position: relative;
+}
+.why-col { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.why-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.why-sentence {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--ink-faint);
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  font-weight: 400;
+}
+.why-sentence.bright { color: var(--ink); font-weight: 600; font-size: 15px; line-height: 1.45; }
+.why-arrow {
+  color: var(--ink-faint);
+  font-size: 14px;
+  align-self: center;
+  opacity: 0.5;
+}
+.highlight-marker {
+  background: linear-gradient(180deg, transparent 62%, var(--accent-wash) 62%);
+  padding: 0 3px;
+  border-radius: 2px;
+}
+@media (max-width: 560px) {
+  .why-card { grid-template-columns: 1fr; gap: 16px; padding: 20px; }
+  .why-arrow { display: none; }
+  .why-col + .why-col { border-top: 1px solid var(--line-soft); padding-top: 16px; }
+}
+
+/* ── Forever Movie (cinematic hero) ───────────────── */
+.forever-card {
+  margin: 40px 0 0;
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 36px 32px 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.forever-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255,107,53,0.18), transparent 50%),
+    radial-gradient(circle at 10% 100%, rgba(255,107,53,0.10), transparent 50%);
+  pointer-events: none;
+}
+.letterbox-bottom { display: none; }  /* retired: letterbox looked too editorial */
+
+.forever-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 16px;
+  position: relative;
+}
+.forever-eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+.forever-title {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin-bottom: 14px;
+  max-width: 22ch;
+  position: relative;
+  color: var(--ink);
+}
+.forever-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+.forever-lede {
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  max-width: 58ch;
+  margin-bottom: 22px;
+  position: relative;
+}
+.forever-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.forever-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  outline: none;
+  transition: all 0.15s;
+}
+.forever-input::placeholder { color: var(--ink-dim); }
+.forever-input:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--glow-accent);
+}
+.forever-input-status {
+  font-size: 12px;
+  color: var(--reward);
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+.forever-input-status.show { opacity: 1; }
+.forever-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  position: relative;
+}
+.forever-suggest {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.forever-suggest:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.forever-suggest.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 20px -4px var(--accent-ring);
+}
+
+/* ── Section heads (editorial) ────────────────────── */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 52px 0 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.section-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.section-num {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.section-sub {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+}
+
+/* ── Category grid ────────────────────────────────── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.cat-tile {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 16px 14px;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s cubic-bezier(.3,.1,.4,1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 104px;
+  overflow: hidden;
+}
+.cat-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(255,107,53,0.08) 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.cat-tile:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.cat-tile:hover::after { opacity: 1; }
+.cat-tile.selected {
+  border-color: var(--accent);
+  background: linear-gradient(160deg, rgba(255,107,53,0.14), rgba(255,107,53,0.05));
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 24px -8px var(--accent-ring);
+}
+.cat-tile.selected:hover::after { opacity: 0; }
+.cat-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--ink-faint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+}
+.cat-tile.selected .cat-icon { color: var(--accent); }
+.cat-icon svg { width: 100%; height: 100%; }
+.cat-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  position: relative;
+  color: var(--ink);
+}
+.cat-count {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  line-height: 1;
+}
+.cat-tile.selected .cat-count { color: var(--accent); }
+.cat-tile .cat-count:empty { display: none; }
+.cat-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: tickIn 0.22s cubic-bezier(.3,.1,.4,1.4);
+  box-shadow: 0 0 12px -2px var(--accent-ring);
+}
+@keyframes tickIn {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.cat-tile.selected .cat-check { display: inline-flex; }
+.cat-tile.selected .cat-count { display: none; }
+.cat-check svg { width: 11px; height: 11px; }
+
+/* ── Panels ───────────────────────────────────────── */
+.panels {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.empty-state {
+  background: var(--bg-soft);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  text-align: center;
+}
+.empty-main {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.empty-hint {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: slideDown 0.22s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.panel-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-soft);
+  display: inline-flex;
+}
+.panel-icon svg { width: 100%; height: 100%; }
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.panel-tally {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.panel-tally.ready { color: var(--ready); }
+.panel-body { padding: 16px 18px 18px; }
+.panel-sub {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-soft);
+  transition: all 0.12s;
+  user-select: none;
+}
+.preset input { display: none; }
+.preset-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-faint);
+  transition: all 0.12s;
+}
+.preset:hover {
+  border-color: var(--ink-faint);
+  color: var(--ink);
+}
+.preset.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 16px -4px var(--accent-ring);
+}
+.preset.checked .preset-dot {
+  background: #fff;
+  border-color: #fff;
+}
+
+.custom-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.custom-input {
+  flex: 1;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: all 0.15s;
+}
+.custom-input::placeholder { color: var(--ink-dim); }
+.custom-input:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.add-btn {
+  appearance: none;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.add-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+.add-btn:not(:disabled):hover { background: var(--accent-hot); box-shadow: 0 0 20px -4px var(--accent-ring); }
+.add-btn svg { width: 11px; height: 11px; }
+
+.custom-hint {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+.custom-hint kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--ink-soft);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255,107,53,0.3);
+  color: var(--accent-hot);
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: chipIn 0.18s ease-out;
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.chip.removing { opacity: 0; transform: scale(0.92); transition: all 0.16s; }
+.chip-rm {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 3px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--accent-hot);
+  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+.chip-rm:hover { opacity: 1; background: rgba(255,107,53,0.2); }
+.chip-rm svg { width: 9px; height: 9px; }
+
+/* ── Sticky submit zone ───────────────────────────── */
+.submit-zone {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13,14,20,0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--line);
+  z-index: 50;
+}
+.submit-inner {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.counter-icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  transition: all 0.22s;
+}
+.counter.ready .counter-icon {
+  color: var(--ready);
+}
+.counter-icon .dot,
+.counter-icon .check {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.counter-icon .dot { fill: currentColor; }
+.counter-icon .check { opacity: 0; transform: scale(0.6); }
+.counter.ready .counter-icon .dot   { opacity: 0; transform: scale(0.6); }
+.counter.ready .counter-icon .check { opacity: 1; transform: scale(1); }
+.counter-icon.pulse {
+  animation: pulseIcon 0.4s ease-out;
+}
+@keyframes pulseIcon {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+.counter-text .num {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.counter.ready .counter-text { color: var(--ink); }
+
+.submit-btn {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  height: 46px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.submit-btn:disabled { cursor: not-allowed; }
+.submit-btn.ready {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: var(--glow-accent);
+}
+.submit-btn.ready:hover { background: var(--accent-hot); transform: translateY(-1px); box-shadow: var(--shadow-md), 0 0 32px -4px var(--accent-ring); }
+.submit-btn svg { width: 12px; height: 12px; transition: transform 0.18s; }
+.submit-btn.ready:hover svg { transform: translateX(2px); }
+
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .wrap { padding: 28px 20px 24px; }
+  .topbar { margin-bottom: 32px; }
+  .hero-title { font-size: 36px; }
+  .section-head { margin: 32px 0 14px; }
+  .cat-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
+  .forever-card { padding: 22px 20px 20px; }
+  .submit-inner { padding: 14px 20px; flex-wrap: wrap; }
+  .submit-btn { flex: 1; justify-content: center; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="wordmark">Quotable</div>
+    <div class="stepper">
+      <div class="step-dots">
+        <span class="step-dot done"></span>
+        <span class="step-dot active"></span>
+        <span class="step-dot"></span>
+      </div>
+      <span class="step-label">Step 2 of 3</span>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow-row">
+      <span class="eyebrow">Personalize your learning</span>
+    </div>
+    <h1 class="hero-title">Tell us what you <em>actually</em> love.</h1>
+    <div class="hero-ornament">&sdot; &sdot; &sdot;</div>
+    <p class="lede">
+      Your quizzes, examples, and practice sentences will be built around what you already care about &mdash;
+      not generic textbook scenes. <strong>Better context means the words stick.</strong>
+    </p>
+
+    <div class="why-card" aria-hidden="true">
+      <div class="why-col">
+        <div class="why-label">Generic</div>
+        <div class="why-sentence">The boy kicked the ball into the net.</div>
+      </div>
+      <div class="why-arrow">&rarr;</div>
+      <div class="why-col">
+        <div class="why-label">Built for you</div>
+        <div class="why-sentence bright"><span class="highlight-marker">Messi</span> scored an unbelievable goal from outside the box.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forever Movie -->
+  <div class="forever-card">
+    <div class="letterbox-bottom"></div>
+    <div class="forever-eyebrow">Start here</div>
+    <h2 class="forever-title">
+      One movie or show you watch <em>over and over</em>?
+    </h2>
+    <p class="forever-lede">
+      The one where you already know every scene by heart. We'll build examples from its world &mdash; characters, places, jokes. Because you already feel the story in your bones.
+    </p>
+    <div class="forever-input-row">
+      <input type="text" id="foreverInput" class="forever-input"
+             placeholder="e.g. Friends, Harry Potter, The Office&hellip;"
+             maxlength="80"
+             value="{{ forever_movie|default:'' }}">
+      <span class="forever-input-status" id="foreverStatus"></span>
+    </div>
+    <div class="forever-chips">
+      <button type="button" class="forever-suggest" data-value="Friends">Friends</button>
+      <button type="button" class="forever-suggest" data-value="Harry Potter">Harry Potter</button>
+      <button type="button" class="forever-suggest" data-value="The Office">The Office</button>
+      <button type="button" class="forever-suggest" data-value="Breaking Bad">Breaking Bad</button>
+      <button type="button" class="forever-suggest" data-value="Titanic">Titanic</button>
+    </div>
+  </div>
+
+  <!-- Section 1: Categories -->
+  <div class="section-head">
+    <div class="section-title-wrap">
+      <span class="section-num">No. 01</span>
+      <h2 class="section-title">Pick a few categories</h2>
+    </div>
+    <div class="section-sub">Choose as many as you like</div>
+  </div>
+
+  <div class="cat-grid" id="catGrid"></div>
+
+  <!-- Section 2: Details -->
+  <div class="section-head">
+    <div class="section-title-wrap">
+      <span class="section-num">No. 02</span>
+      <h2 class="section-title">Add what you love</h2>
+    </div>
+    <div class="section-sub" id="section2Sub">Unlocks as you pick categories</div>
+  </div>
+
+  <div class="panels" id="panels">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-main">Pick a category above and we'll ask about the specifics.</div>
+      <div class="empty-hint">Barcelona? Taylor Swift? Sushi? We're listening.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sticky submit -->
+<div class="submit-zone">
+  <div class="submit-inner">
+    <div class="counter" id="counter">
+      <span class="counter-icon" id="counterIcon">
+        <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
+        <svg class="check" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 7.5l3 3 7-7"/>
+        </svg>
+      </span>
+      <span class="counter-text" id="counterText">Pick at least one thing to continue</span>
+    </div>
+    <button type="button" class="submit-btn" id="submitBtn" disabled>
+      <span>Continue</span>
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 7h12M7 1l6 6-6 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const CATS = JSON.parse(document.getElementById('categories-data').textContent);
+  const CSRF = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  const SAVE_URL = '{% url "learning:interests-save" %}';
+
+  const PLACEHOLDERS = {
+    football: 'Lamine Yamal',
+    music: 'Taylor Swift',
+    movies: 'Interstellar',
+    food: 'Plov',
+    gaming: 'Elden Ring',
+    travel: 'Samarkand',
+    tech: 'ChatGPT',
+    books: 'Harry Potter',
+    fashion: 'Nike Jordans',
+  };
+
+  // Minimal line icons per category — 24x24 viewbox, 1.6px stroke
+  const ICONS = {
+    football: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v4l-3.5 2.5L10 14h4l1.5-4.5L12 7"/><path d="M3.5 10l3 .5M20.5 10l-3 .5M6 19l2-2.5M18 19l-2-2.5"/></svg>',
+    music:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="16" r="2.2"/></svg>',
+    food:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2v9M5 3v5M9 3v5M15 3c-1.5 0-3 2-3 5s1.5 5 3 5v8"/></svg>',
+    gaming:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12a4 4 0 0 1 4 4v2a4 4 0 0 1-4 4h-1l-2-3H9l-2 3H6a4 4 0 0 1-4-4v-2a4 4 0 0 1 4-4z"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="15.5" cy="12" r="0.8" fill="currentColor"/><circle cx="17" cy="13.5" r="0.8" fill="currentColor"/></svg>',
+    travel:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16.5l-9-5.5V4a1.5 1.5 0 0 0-3 0v7l-6 3.5V16l6-1.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L12 18v-3.5l9 1.5z"/></svg>',
+    tech:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="0.5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg>',
+    books:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H12v18H6.5A2.5 2.5 0 0 1 4 17.5v-13z"/><path d="M20 4.5A2.5 2.5 0 0 0 17.5 2H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5v-13z"/></svg>',
+    fashion:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-4 4 3 3 2-2v13h10V11l2 2 3-3-4-4-4 2-4-2z"/></svg>',
+  };
+
+  function renderIcon(key, emojiFallback) {
+    return ICONS[key] || `<span style="font-size:20px;line-height:1;">${emojiFallback || ''}</span>`;
+  }
+
+  // State per category
+  const state = {};
+  CATS.forEach(c => {
+    const presetSet = new Set(c.presets);
+    const selected = c.selected_labels || [];
+    const picked = selected.length > 0;
+    const presets = new Set(selected.filter(l => presetSet.has(l)));
+    const customs = selected.filter(l => !presetSet.has(l));
+    state[c.key] = { picked, presets, customs };
+  });
+
+  // ── Render category tiles ──
+  const catGrid = document.getElementById('catGrid');
+  CATS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cat-tile' + (state[c.key].picked ? ' selected' : '');
+    btn.setAttribute('aria-pressed', state[c.key].picked ? 'true' : 'false');
+    btn.dataset.key = c.key;
+    btn.innerHTML = `
+      <span class="cat-icon">${renderIcon(c.key, c.emoji)}</span>
+      <span class="cat-label">${c.label}</span>
+      <span class="cat-count" data-count></span>
+      <span class="cat-check">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 7.5l3 3 7-7"/>
+        </svg>
+      </span>
+    `;
+    btn.addEventListener('click', () => toggleCategory(c.key));
+    catGrid.appendChild(btn);
+  });
+
+  function toggleCategory(key) {
+    const s = state[key];
+    s.picked = !s.picked;
+    const tile = catGrid.querySelector(`[data-key="${key}"]`);
+    tile.classList.toggle('selected', s.picked);
+    tile.setAttribute('aria-pressed', s.picked ? 'true' : 'false');
+    renderPanels();
+    updateAll();
+  }
+
+  // ── Panels ──
+  const panelsEl = document.getElementById('panels');
+  const emptyStateEl = document.getElementById('emptyState');
+
+  function countItems(key) {
+    const s = state[key];
+    return s.presets.size + s.customs.length;
+  }
+
+  function renderPanels() {
+    const pickedKeys = CATS.filter(c => state[c.key].picked).map(c => c.key);
+    const hasAny = pickedKeys.length > 0;
+
+    emptyStateEl.style.display = hasAny ? 'none' : '';
+
+    // Remove panels no longer picked
+    Array.from(panelsEl.querySelectorAll('.panel')).forEach(p => {
+      if (!pickedKeys.includes(p.dataset.key)) p.remove();
+    });
+
+    // Build or re-insert in order
+    pickedKeys.forEach(key => {
+      let panel = panelsEl.querySelector(`.panel[data-key="${key}"]`);
+      if (!panel) {
+        panel = buildPanel(key);
+      }
+      panelsEl.appendChild(panel);
+    });
+  }
+
+  function buildPanel(key) {
+    const cat = CATS.find(c => c.key === key);
+    const s = state[key];
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.dataset.key = key;
+    panel.innerHTML = `
+      <div class="panel-head">
+        <span class="panel-icon">${renderIcon(cat.key, cat.emoji)}</span>
+        <span class="panel-title">${cat.label}</span>
+        <span class="panel-tally" data-tally></span>
+      </div>
+      <div class="panel-body">
+        <div class="panel-sub">Pick any that apply, and add your own below.</div>
+        <div class="presets" data-presets></div>
+        <div class="custom-row">
+          <input type="text" class="custom-input" maxlength="40"
+                 placeholder="Add your own &mdash; e.g. ${PLACEHOLDERS[key] || 'your favorite'}">
+          <button type="button" class="add-btn" disabled>
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M7 2v10M2 7h10"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="custom-hint">Press <kbd>Enter</kbd> to add. No wrong answers here.</div>
+        <div class="chips" data-chips></div>
+      </div>
+    `;
+
+    const presetsEl = panel.querySelector('[data-presets]');
+    cat.presets.forEach((label, i) => {
+      const id = `preset-${key}-${i}`;
+      const isChecked = s.presets.has(label);
+      const pill = document.createElement('label');
+      pill.className = 'preset' + (isChecked ? ' checked' : '');
+      pill.setAttribute('for', id);
+      pill.innerHTML = `
+        <input type="checkbox" id="${id}" ${isChecked ? 'checked' : ''}>
+        <span class="preset-dot"></span>
+        <span>${label}</span>
+      `;
+      const input = pill.querySelector('input');
+      input.addEventListener('change', () => {
+        if (input.checked) s.presets.add(label);
+        else s.presets.delete(label);
+        pill.classList.toggle('checked', input.checked);
+        updateAll();
+      });
+      presetsEl.appendChild(pill);
+    });
+
+    const input = panel.querySelector('.custom-input');
+    const addBtn = panel.querySelector('.add-btn');
+    const chipsEl = panel.querySelector('[data-chips]');
+
+    const tryAdd = () => {
+      const val = input.value.trim();
+      if (!val || val.length > 40) return;
+      const lower = val.toLowerCase();
+      const presetLower = cat.presets.map(p => p.toLowerCase());
+      if (presetLower.includes(lower) || s.customs.some(c => c.toLowerCase() === lower)) {
+        input.value = '';
+        addBtn.disabled = true;
+        return;
+      }
+      s.customs.push(val);
+      addChip(chipsEl, key, val);
+      input.value = '';
+      addBtn.disabled = true;
+      updateAll();
+    };
+
+    input.addEventListener('input', () => {
+      addBtn.disabled = !input.value.trim();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        tryAdd();
+      }
+    });
+    addBtn.addEventListener('click', tryAdd);
+
+    s.customs.forEach(label => addChip(chipsEl, key, label));
+
+    return panel;
+  }
+
+  function addChip(container, key, label) {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.dataset.label = label;
+    chip.innerHTML = `
+      <span>${escapeHtml(label)}</span>
+      <button type="button" class="chip-rm" aria-label="Remove ${escapeHtml(label)}">
+        <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M1 1l8 8M9 1l-8 8"/>
+        </svg>
+      </button>
+    `;
+    chip.querySelector('.chip-rm').addEventListener('click', () => {
+      chip.classList.add('removing');
+      setTimeout(() => {
+        const s = state[key];
+        s.customs = s.customs.filter(c => c !== label);
+        chip.remove();
+        updateAll();
+      }, 160);
+    });
+    container.appendChild(chip);
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ── Forever movie ──
+  const foreverInput = document.getElementById('foreverInput');
+  const foreverStatus = document.getElementById('foreverStatus');
+  const foreverSuggestBtns = document.querySelectorAll('.forever-suggest');
+
+  function getForeverMovie() {
+    return (foreverInput.value || '').trim();
+  }
+  function updateForeverStatus() {
+    const v = getForeverMovie();
+    if (v) {
+      foreverStatus.textContent = '\u2713 Saved';
+      foreverStatus.classList.add('show');
+    } else {
+      foreverStatus.classList.remove('show');
+    }
+    foreverSuggestBtns.forEach(b => {
+      b.classList.toggle('active', b.dataset.value.toLowerCase() === v.toLowerCase());
+    });
+  }
+  foreverSuggestBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      foreverInput.value = btn.dataset.value;
+      updateForeverStatus();
+      updateAll();
+      foreverInput.focus();
+    });
+  });
+  foreverInput.addEventListener('input', () => {
+    updateForeverStatus();
+    updateAll();
+  });
+
+  // ── Update counters, tiles, panels, submit ──
+  function updateAll() {
+    let totalItems = 0;
+    let totalCats = 0;
+
+    const foreverFilled = !!getForeverMovie();
+
+    CATS.forEach(c => {
+      const s = state[c.key];
+      const n = countItems(c.key);
+
+      const tile = catGrid.querySelector(`[data-key="${c.key}"]`);
+      const countEl = tile.querySelector('[data-count]');
+      countEl.textContent = n > 0 ? n : '';
+
+      if (s.picked && n > 0) {
+        totalItems += n;
+        totalCats += 1;
+      }
+
+      const panel = panelsEl.querySelector(`.panel[data-key="${c.key}"]`);
+      if (panel) {
+        const tally = panel.querySelector('[data-tally]');
+        if (n > 0) {
+          tally.textContent = `${n} picked`;
+          tally.classList.add('ready');
+        } else {
+          tally.textContent = 'nothing picked yet';
+          tally.classList.remove('ready');
+        }
+      }
+    });
+
+    const counter = document.getElementById('counter');
+    const counterText = document.getElementById('counterText');
+    const counterIcon = document.getElementById('counterIcon');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const effectiveItems = totalItems + (foreverFilled ? 1 : 0);
+    const effectiveCats = totalCats + (foreverFilled ? 1 : 0);
+
+    if (effectiveItems >= 1) {
+      counter.classList.add('ready');
+      counterText.innerHTML = `<span class="num">${effectiveItems}</span> item${effectiveItems !== 1 ? 's' : ''} across <span class="num">${effectiveCats}</span> categor${effectiveCats !== 1 ? 'ies' : 'y'}`;
+      submitBtn.disabled = false;
+      submitBtn.classList.add('ready');
+    } else {
+      counter.classList.remove('ready');
+      counterText.textContent = 'Pick at least one thing to continue';
+      submitBtn.disabled = true;
+      submitBtn.classList.remove('ready');
+    }
+
+    counterIcon.classList.remove('pulse');
+    void counterIcon.offsetWidth;
+    counterIcon.classList.add('pulse');
+
+    const sub = document.getElementById('section2Sub');
+    if (totalCats === 0) {
+      sub.textContent = 'Unlocks as you pick categories';
+    } else {
+      sub.textContent = `${totalCats} categor${totalCats !== 1 ? 'ies' : 'y'} to personalize`;
+    }
+  }
+
+  // ── Submit ──
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const payload = {};
+    const forever = getForeverMovie();
+    if (forever) payload.forever_movie = [forever];
+    CATS.forEach(c => {
+      const s = state[c.key];
+      if (!s.picked) return;
+      const items = [...s.presets, ...s.customs];
+      if (items.length > 0) payload[c.key] = items;
+    });
+    if (Object.keys(payload).length === 0) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.classList.remove('ready');
+    btn.querySelector('span').textContent = 'Saving\u2026';
+
+    try {
+      const resp = await fetch(SAVE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        window.location.href = '/';
+      } else {
+        const body = await resp.json().catch(() => ({}));
+        alert(body.error || 'Something went wrong \u2014 try again.');
+        btn.disabled = false;
+        btn.classList.add('ready');
+        btn.querySelector('span').textContent = 'Continue';
+      }
+    } catch (e) {
+      alert('Network error \u2014 try again.');
+      btn.disabled = false;
+      btn.classList.add('ready');
+      btn.querySelector('span').textContent = 'Continue';
+    }
+  });
+
+  // ── Initial render ──
+  renderPanels();
+  updateForeverStatus();
+  updateAll();
+</script>
+</body>
+</html>

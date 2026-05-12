@@ -7,42 +7,60 @@
     <title>Review — Quotable</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    {% include "learning/_tokens.html" %}
     <style>
         :root {
-            --bg-base: #0d0d0d;
-            --bg-elevated: #161616;
-            --bg-card: #1a1a1a;
-            --border-subtle: #2a2a2a;
-            --border-focus: #3a3a3a;
-            --text-primary: #ffffff;
-            --text-secondary: #a8a8a8;
-            --text-tertiary: #6b6b6b;
-            --accent: #10b981;
-            --accent-hover: #34d399;
-            --accent-dim: rgba(16,185,129,0.12);
-            --accent-glow: rgba(16,185,129,0.25);
-            --red: #ef4444;
-            --red-dim: rgba(239,68,68,0.12);
-            --indigo: #6366f1;
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+            --bg-base:       #0D0E14;
+            --bg-elevated:   #12131A;
+            --bg-card:       #17181F;
+            --bg-raised:     #20222C;
+            --border-subtle: rgba(255,255,255,0.08);
+            --border-focus:  rgba(255,255,255,0.14);
+            --text-primary:   #ECECF1;
+            --text-secondary: #B4B5C0;
+            --text-tertiary:  #8E8F9B;
+            /* Semantic correct/wrong for the cloze exercise */
+            --correct:     #4ADE80;
+            --correct-dim: rgba(74,222,128,0.12);
+            --red:     #ef4444;
+            --red-dim: rgba(239,68,68,0.14);
+            --brand:   #FF6B35;
+            --indigo:  #8B5CF6;
+            --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
+            --font-display: 'Space Grotesk', 'Inter', sans-serif;
+            --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+            /* Aliases for shared includes (e.g. users/_account_menu.html) */
+            --accent:      var(--brand);
+            --accent-hot:  #FF8558;
+            --accent-dim:  rgba(255,107,53,0.14);
+            --accent-ring: rgba(255,107,53,0.35);
+            --accent-glow: rgba(255,107,53,0.35);
+            --bg-3:        var(--bg-card);
+            --bg-4:        var(--bg-raised);
+            --border:      var(--border-subtle);
+            --border-2:    var(--border-focus);
+            --text:        var(--text-primary);
+            --text-2:      var(--text-secondary);
+            --text-3:      var(--text-tertiary);
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background: var(--bg-base);
+            background: var(--app-bg);
             color: var(--text-primary);
-            font-family: 'DM Sans', -apple-system, sans-serif;
+            font-family: var(--font-sans);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             min-height: 100vh;
+            background-attachment: fixed;
         }
 
         /* ── NAV ── */
         .nav {
             position: sticky; top: 0; z-index: 100; height: 56px;
             display: flex; align-items: center; padding: 0 24px;
-            background: rgba(13,13,13,0.92); backdrop-filter: blur(20px);
+            background: rgba(13,14,20,0.88); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-subtle);
         }
         .nav-back {
@@ -73,7 +91,7 @@
             background: var(--border-subtle); transition: all 0.3s;
         }
         .rv-dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
-        .rv-dot.correct { background: var(--accent); }
+        .rv-dot.correct { background: var(--correct); }
         .rv-dot.wrong { background: var(--red); }
 
         /* ── CARD ── */
@@ -143,7 +161,7 @@
             outline: none; transition: border-color 0.2s;
         }
         .rv-input:focus { border-color: var(--accent); }
-        .rv-input.correct { border-color: var(--accent); background: rgba(16,185,129,0.06); }
+        .rv-input.correct { border-color: var(--correct); background: rgba(74,222,128,0.06); }
         .rv-input.wrong { border-color: var(--red); background: rgba(239,68,68,0.06); }
         .rv-input::placeholder { color: var(--text-tertiary); }
 
@@ -170,7 +188,7 @@
             display: none;
         }
         .rv-feedback.correct {
-            display: block; background: var(--accent-dim); color: var(--accent);
+            display: block; background: var(--correct-dim); color: var(--correct);
         }
         .rv-feedback.wrong {
             display: block; background: var(--red-dim); color: var(--red);
@@ -183,7 +201,7 @@
         .rv-word-info.visible { display: block; }
         .rv-word-info .word-tag {
             display: inline-block; padding: 3px 10px; border-radius: 20px;
-            background: rgba(99,102,241,0.12); color: var(--indigo);
+            background: rgba(139,92,246,0.12); color: var(--indigo);
             font-size: 12px; font-weight: 600; margin-top: 6px;
         }
 
@@ -220,16 +238,17 @@
             text-align: center; padding: 40px 20px; display: none;
         }
         .rv-summary.visible { display: block; }
-        .rv-summary h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .rv-summary h2 { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
         .rv-summary .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
 
         .rv-stats {
             display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;
         }
         .rv-stat-val {
-            font-size: 28px; font-weight: 700; display: block;
+            font-family: var(--font-display);
+            font-size: 30px; font-weight: 700; letter-spacing: -0.02em; display: block;
         }
-        .rv-stat-val.green { color: var(--accent); }
+        .rv-stat-val.green { color: var(--correct); }
         .rv-stat-label {
             font-size: 12px; color: var(--text-tertiary); margin-top: 2px;
         }
@@ -263,7 +282,7 @@
         .rv-ctrl-btn:hover { border-color: var(--accent); color: var(--text-primary); }
         .rv-ctrl-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
         .rv-ctrl-btn kbd {
-            font-family: 'DM Sans', sans-serif; font-size: 10px;
+            font-family: var(--font-sans); font-size: 10px;
             padding: 1px 5px; border-radius: 3px;
             background: var(--border-subtle); color: var(--text-tertiary);
         }
@@ -277,6 +296,8 @@
     </style>
 </head>
 <body>
+{% include "learning/_coins_hud.html" %}
+
 
 <nav class="nav">
     <a href="{% url 'learning:practice' %}" class="nav-back">
@@ -289,6 +310,7 @@
         Review <span id="navCounter"></span>
     </div>
     <div class="nav-spacer"></div>
+    {% include "users/_account_menu.html" %}
 </nav>
 
 {% if not words %}
@@ -366,7 +388,7 @@
     <div class="rv-stats" id="summaryStats"></div>
     <div class="rv-summary-btns">
         <button class="rv-summary-btn" onclick="location.reload()">Review again</button>
-        <a href="{% url 'learning:practice' %}" class="rv-summary-btn primary">Practice hub</a>
+        <a href="{% url 'learning:practice' %}" class="rv-summary-btn primary">Back to Practice</a>
     </div>
 </div>
 
@@ -776,5 +798,6 @@
 </script>
 {% endif %}
 
+{% include "learning/_page_tracker.html" with page_name="review" %}
 </body>
 </html>

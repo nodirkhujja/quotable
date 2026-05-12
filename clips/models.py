@@ -1,4 +1,8 @@
+import os
 import subprocess
+import tempfile
+import threading
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.files import File
@@ -65,6 +69,7 @@ class Episode(models.Model):
 
         if is_new_video and self.video_file:
             self.update_video_duration()
+            threading.Thread(target=generate_scene_blocks, args=(self,), daemon=True).start()
 
     def update_video_duration(self):
         try:
@@ -79,6 +84,55 @@ def generate_thumbnail(video_path, timestamp, output_path):
     command = ["ffmpeg", "-ss", str(timestamp), "-i", video_path, "-vframes", "1", "-q:v", "2", "-y", output_path]
     subprocess.run(command, check=True)
     return output_path
+
+
+def generate_scene_blocks(episode, interval=30):
+    """Bucket transcript into 30-second windows, extract a thumbnail per block.
+
+    Called in a background thread from Episode.save() when a new video is
+    uploaded — keeps the admin request fast while thumbnails generate quietly.
+    """
+    if not episode.video_file:
+        return
+
+    # Avoid circular import (SceneBlock is defined later in this file, but
+    # Transcript lives here too, so just import it at call-time).
+    video_path = episode.video_file.path
+
+    lines = list(Transcript.objects.filter(episode=episode).order_by("start_time").values("start_time"))
+    if not lines:
+        return
+
+    # Delete stale blocks for this episode before rebuilding.
+    SceneBlock.objects.filter(episode=episode).delete()
+
+    populated = set()
+    for line in lines:
+        populated.add(int(line["start_time"]) // interval)
+
+    for bucket in sorted(populated):
+        b_start = Decimal(str(bucket * interval))
+        b_end = Decimal(str((bucket + 1) * interval))
+        mid = float(b_start + b_end) / 2.0
+
+        block = SceneBlock.objects.create(
+            source=episode.source,
+            episode=episode,
+            start_time=b_start,
+            end_time=b_end,
+        )
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        tmp.close()
+        try:
+            generate_thumbnail(video_path, mid, tmp.name)
+            with open(tmp.name, "rb") as f:
+                block.thumbnail.save(f"scene_{block.id}.jpg", File(f), save=True)
+        except Exception as e:
+            print(f"[scene_blocks] thumbnail failed for block {block.id}: {e}")
+        finally:
+            if os.path.exists(tmp.name):
+                os.unlink(tmp.name)
 
 
 class Quote(models.Model):
@@ -196,3 +250,165 @@ class WatchHistory(models.Model):
     @property
     def remaining_sec(self):
         return max(self.duration_sec - self.position_sec, 0)
+
+
+# ─────────────────────────────────────────────────────
+# REELS — short curated clips (30-120s) for shadowing
+# Entertainment-first, vocab-rich, the daily-return loop.
+# ─────────────────────────────────────────────────────
+
+
+class Reel(models.Model):
+    """A curated short clip (30s–2min) from an existing Source.
+
+    Designed for the home-page Reels section: bite-sized comedy
+    or memorable scenes that contain key vocabulary, optimized for
+    shadowing practice and daily return.
+
+    Curated by admin in Django admin (start/end picker over an
+    existing Source's video). Gets a thumbnail snapshot at
+    `poster_frame` and links to the transcript lines it covers.
+    """
+
+    source = models.ForeignKey(
+        Source,
+        on_delete=models.CASCADE,
+        related_name="reels",
+    )
+    episode = models.ForeignKey(
+        "Episode",
+        on_delete=models.CASCADE,
+        related_name="reels",
+        null=True,
+        blank=True,
+        help_text="For TV shows: which episode this reel comes from",
+    )
+
+    title = models.CharField(max_length=140, help_text="Short headline (e.g. 'Joey's audition')")
+    description = models.TextField(blank=True, help_text="1-2 lines of setup shown under the reel")
+
+    # Time bounds within the source/episode video
+    start_time = models.FloatField(
+        validators=[MinValueValidator(0.0)], help_text="Start time in source video (seconds)"
+    )
+    end_time = models.FloatField(validators=[MinValueValidator(0.0)], help_text="End time in source video (seconds)")
+    poster_frame = models.FloatField(
+        null=True, blank=True, help_text="Timestamp to snapshot for the thumbnail (default: midpoint)"
+    )
+    thumbnail = models.ImageField(
+        upload_to="reel_thumbnails/", null=True, blank=True, help_text="Auto-generated; can be overridden"
+    )
+
+    # Curation metadata
+    CEFR_CHOICES = [
+        ("A1", "A1 — Beginner"),
+        ("A2", "A2 — Elementary"),
+        ("B1", "B1 — Intermediate"),
+        ("B2", "B2 — Upper-Intermediate"),
+        ("C1", "C1 — Advanced"),
+        ("C2", "C2 — Mastery"),
+    ]
+    cefr_level = models.CharField(
+        max_length=2, choices=CEFR_CHOICES, default="B1", help_text="Difficulty band — drives feed personalization"
+    )
+    comedy_score = models.PositiveSmallIntegerField(default=5, help_text="1-10: how funny / re-watchable")
+
+    is_published = models.BooleanField(default=False, help_text="Show in the public Reels feed")
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    # Engagement counters (denormalized for feed sort)
+    view_count = models.PositiveIntegerField(default=0)
+    save_count = models.PositiveIntegerField(default=0, help_text="Users who saved a word from this reel")
+    shadow_count = models.PositiveIntegerField(default=0, help_text="Users who shadowed at least one line")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-published_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["is_published", "-published_at"]),
+            models.Index(fields=["cefr_level", "is_published"]),
+        ]
+
+    def __str__(self):
+        return f"{self.title} · {self.source.title} · {self.duration_sec}s"
+
+    @property
+    def duration_sec(self):
+        return max(0, round(self.end_time - self.start_time))
+
+    @property
+    def video_url(self):
+        """Resolve which video file to play (episode > source)."""
+        if self.episode and self.episode.video_file:
+            return self.episode.video_file.url
+        if self.source.video_file:
+            return self.source.video_file.url
+        return None
+
+
+class ReelLine(models.Model):
+    """Links a Reel to the Transcript lines it contains.
+
+    Lets us highlight target vocabulary in subtitles, mark which
+    lines are good shadowing targets, and identify punchlines for
+    a future "highlight reel" mode.
+    """
+
+    reel = models.ForeignKey(
+        Reel,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    transcript = models.ForeignKey(
+        "Transcript",
+        on_delete=models.CASCADE,
+        related_name="reel_appearances",
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Display order within the reel")
+    is_shadow_target = models.BooleanField(default=False, help_text="Marked for shadowing practice")
+    is_punchline = models.BooleanField(default=False, help_text="Comedy beat — used by future highlight-reel mode")
+    target_words = models.JSONField(default=list, blank=True, help_text="List of important words this line teaches")
+
+    class Meta:
+        ordering = ["order"]
+        unique_together = [("reel", "transcript")]
+
+    def __str__(self):
+        return f"{self.reel.title} · line {self.order}"
+
+
+class ReelView(models.Model):
+    """Per-user per-reel engagement record.
+
+    Drives feed personalization: don't show finished reels,
+    track which words/sounds the learner engaged with.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reel_views",
+    )
+    reel = models.ForeignKey(
+        Reel,
+        on_delete=models.CASCADE,
+        related_name="user_views",
+    )
+    started_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    completed = models.BooleanField(default=False, help_text="Watched ≥80% of the reel duration")
+    shadowed_lines = models.PositiveIntegerField(default=0)
+    saved_words = models.PositiveIntegerField(default=0)
+    liked = models.BooleanField(default=False)
+    bookmarked = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = [("user", "reel")]
+        indexes = [
+            models.Index(fields=["user", "-last_seen_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} ⇒ {self.reel.title}"

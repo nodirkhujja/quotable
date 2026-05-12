@@ -1,0 +1,1192 @@
+{% load static %}
+<style>
+/* CSS vars scoped to .dl-shell so they don't leak when this partial
+   is injected into another page (e.g. the notebook overlay). */
+.dl-shell {
+    --bg: #0a0a0c;
+    --bg-elevated: #131318;
+    --text: #f4f4f5;
+    --text-2: #a1a1aa;
+    --text-3: #6b7280;
+    --green: #22c55e;
+    --amber: #fbbf24;
+    --amber-soft: rgba(251, 191, 36, 0.10);
+    --indigo: #6366f1;
+    --indigo-soft: rgba(99, 102, 241, 0.12);
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 18px 22px 80px;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+}
+
+/* ── Topbar: back link + small stage marker ─────────────────── */
+.dl-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 22px;
+}
+.dl-back {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px 7px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    transition: background .15s, color .15s;
+}
+.dl-back:hover { background: var(--bg-elevated); color: var(--text); }
+.dl-back svg { width: 14px; height: 14px; }
+.dl-stage {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: var(--text-3);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+}
+.dl-stage-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+}
+.dl-stage[data-stage="inbox"] .dl-stage-dot { background: transparent; border: 1.5px solid rgba(255,255,255,0.22); }
+.dl-stage[data-stage="learning"] .dl-stage-dot { background: #FFA884; box-shadow: 0 0 0 2px rgba(255,107,53,0.18); }
+.dl-stage[data-stage="mastered"] .dl-stage-dot { background: #4ADE80; box-shadow: 0 0 0 2px rgba(74,222,128,0.18); }
+
+/* ── Hero: word + audio ─────────────────────────────────────── */
+.dl-hero {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.dl-word {
+    font-size: clamp(34px, 5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    margin: 0;
+    line-height: 1.05;
+    color: var(--text);
+}
+.dl-audio {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: color .15s, border-color .15s, transform .12s;
+    align-self: center;
+}
+.dl-audio:hover { color: var(--text); border-color: var(--border-strong); }
+.dl-audio:active { transform: scale(0.94); }
+.dl-audio svg { width: 16px; height: 16px; }
+.dl-pos {
+    font-size: 13px; color: var(--text-3);
+    font-style: italic;
+    align-self: center;
+}
+.dl-trans {
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(251, 191, 36, 0.92);
+    letter-spacing: -0.005em;
+    margin: 0 0 28px;
+    line-height: 1.35;
+}
+
+/* ── Two-column body ── */
+.dl-body {
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    gap: 36px;
+    align-items: start;
+}
+.dl-right { grid-column: 2; grid-row: 1; }
+.dl-left  { grid-column: 1; grid-row: 1; }
+@media (max-width: 880px) {
+    .dl-body { display: block; }
+    .dl-right { margin-bottom: 24px; }
+    .dl-shell { padding: 14px 14px 60px; }
+    .dl-trans { font-size: 19px; margin-bottom: 22px; }
+}
+
+/* ── Left column: word essentials ───────────────────────────── */
+/* Three-act rhythm — uniform 36px between definition / examples / mnemonic.
+   The brain encodes a three-chunk page structurally; a continuous wall
+   encodes as one blur. Same content, half the felt density. */
+.dl-section {
+    margin-bottom: 36px;
+}
+.dl-section:last-child { margin-bottom: 0; }
+.dl-section-kicker {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 8px;
+}
+/* Definition is the centerpiece of the left column. Lifted typography
+   so it reads as the abstract anchor, not body text. */
+.dl-def {
+    font-size: 17.5px;
+    font-weight: 450;
+    color: rgba(244, 244, 245, 0.94);
+    line-height: 1.55;
+    margin: 0;
+    max-width: 62ch;
+    letter-spacing: -0.005em;
+}
+/* Nuance — the post-em-dash clause. Quieter color creates a two-beat
+   read: literal meaning → (pause) → the part where the meaning actually
+   lives. JS at init time wraps the post-dash text in this span. */
+.dl-def-nuance {
+    color: rgba(244, 244, 245, 0.72);
+    font-weight: 400;
+}
+
+/* Mnemonic — the closer. A warm tinted card + open-quote glyph lifts
+   it out of "another paragraph" territory and into "the page's punchline."
+   Peak-End rule: what the user sees last is what they remember. */
+.dl-mnemonic {
+    position: relative;
+    background: rgba(251, 191, 36, 0.045);
+    border: 1px solid rgba(251, 191, 36, 0.16);
+    border-radius: 10px;
+    padding: 16px 20px 18px;
+}
+.dl-mnemonic.is-yours {
+    background: rgba(74, 222, 128, 0.04);
+    border-color: rgba(74, 222, 128, 0.20);
+}
+.dl-mnemonic-body {
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(244, 244, 245, 0.86);
+    font-style: italic;
+    margin: 0;
+    letter-spacing: -0.002em;
+}
+.dl-mnemonic.is-yours .dl-mnemonic-body { color: rgba(187, 247, 208, 0.92); }
+/* Open-quote glyph — small typographic flourish that signals "this is
+   the teacher speaking." Uses Georgia for an editorial feel. */
+.dl-mnemonic-body::before {
+    content: "\201C";
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.4em;
+    color: rgba(251, 191, 36, 0.7);
+    line-height: 0;
+    font-style: normal;
+    font-weight: 600;
+    margin-right: 4px;
+    vertical-align: -0.15em;
+}
+.dl-mnemonic.is-yours .dl-mnemonic-body::before {
+    color: rgba(74, 222, 128, 0.7);
+}
+
+/* Examples — feature first one, demote the others. Vocabulary research
+   (Nation, Schmitt) consistently finds that ONE memorable encounter
+   beats THREE forgettable ones for retention. Promote the first example
+   to a pull-quote feel; the other two become quieter supporting evidence.
+   The eye lands on one without splitting attention three ways. */
+.dl-examples {
+    list-style: none;
+    padding: 0 0 0 16px;
+    margin: 0;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+.dl-examples li {
+    padding: 0;
+    position: relative;
+    line-height: 1.55;
+}
+
+/* Feature example — italic pull-quote, larger and lifted.
+   A 1px hairline below separates "here's the moment" from
+   "here are two more, in case you need them." */
+.dl-examples li:first-child .dl-ex-en {
+    font-size: 17px;
+    font-style: italic;
+    font-weight: 450;
+    color: rgba(244, 244, 245, 0.95);
+    letter-spacing: -0.005em;
+    line-height: 1.5;
+}
+.dl-examples li:first-child .dl-ex-uz {
+    font-size: 13.5px;
+    margin-top: 7px;
+    color: rgba(244, 244, 245, 0.55);
+}
+.dl-examples li:first-child:not(:only-child) {
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Supporting examples — quieter, smaller, denser. They're evidence,
+   not headliners. Still readable, just visibly secondary. */
+.dl-examples li:not(:first-child) .dl-ex-en {
+    font-size: 14px;
+    color: rgba(244, 244, 245, 0.65);
+    letter-spacing: -0.003em;
+}
+.dl-examples li:not(:first-child) .dl-ex-uz {
+    font-size: 12px;
+    color: rgba(244, 244, 245, 0.42);
+    margin-top: 3px;
+}
+
+/* Default style for any example that's used outside the feature/supporting
+   pattern (e.g. if there's only one example). */
+.dl-ex-en {
+    display: block;
+    font-size: 15px;
+    color: rgba(244, 244, 245, 0.86);
+    letter-spacing: -0.003em;
+}
+.dl-ex-uz {
+    display: block;
+    font-size: 13px;
+    color: var(--text-3);
+    margin-top: 4px;
+    line-height: 1.55;
+}
+.dl-examples mark {
+    background: none;
+    color: var(--text);
+    font-weight: 600;
+    border-bottom: 1.5px solid var(--amber);
+    padding-bottom: 1px;
+}
+
+.dl-meet-kicker { margin-bottom: 10px; }
+
+/* ── Right column: video + shadow ─── */
+.dl-right {
+    position: sticky;
+    top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+@media (max-width: 880px) {
+    .dl-right { position: static; }
+}
+
+.dl-video-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+        0 24px 60px -20px rgba(0,0,0,0.70),
+        0 12px 30px -10px rgba(0,0,0,0.40);
+}
+.dl-video {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.dl-video-empty {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-3);
+    font-size: 13px;
+    text-align: center;
+    padding: 16px;
+}
+.dl-sub-overlay {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 18px 14px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 500;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    letter-spacing: -0.005em;
+    transition: opacity .25s ease;
+}
+.dl-sub-overlay.hidden,
+.dl-sub-overlay.is-disabled { display: none; }
+.dl-sub-overlay mark {
+    background: none;
+    color: var(--amber);
+    font-weight: 700;
+    border-bottom: 1.5px solid var(--amber);
+    padding: 0 1px;
+}
+
+/* Shadow controls card — under the video. */
+.dl-shadow {
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow:
+        0 1px 2px rgba(0,0,0,0.30),
+        0 2px 6px rgba(0,0,0,0.18);
+}
+.dl-shadow-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 10px;
+}
+.dl-shadow-controls {
+    display: flex; gap: 8px; flex-wrap: wrap;
+}
+.dl-btn {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: color .15s, border-color .15s, background .15s;
+    white-space: nowrap;
+}
+.dl-btn:hover { color: var(--text); border-color: var(--border-strong); }
+.dl-btn.is-on {
+    color: #fff;
+    background: var(--indigo-soft);
+    border-color: rgba(99, 102, 241, 0.45);
+}
+.dl-btn.is-off {
+    color: var(--text-3);
+    opacity: 0.65;
+}
+.dl-btn svg { width: 14px; height: 14px; }
+
+/* ── Shadow morphing button ── */
+.dl-shadow-rec {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dl-shadow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 20px;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.30);
+    border-radius: 12px;
+    color: rgba(248, 113, 113, 0.95);
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    transition: background .2s, border-color .2s, color .2s, transform .1s;
+    position: relative;
+    overflow: hidden;
+}
+.dl-shadow-btn:hover {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.55);
+    color: #fff;
+}
+.dl-shadow-btn:active { transform: scale(0.992); }
+.dl-shadow-icon {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+    transition: background .2s;
+}
+.dl-shadow-label {
+    font-weight: 600;
+    transition: opacity .15s;
+}
+.dl-shadow-timer {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.78);
+    font-variant-numeric: tabular-nums;
+    min-width: 38px;
+    text-align: right;
+    opacity: 0;
+    transition: opacity .15s;
+}
+
+.dl-shadow-rec[data-state="recording"] .dl-shadow-btn {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.7);
+    color: #fff;
+}
+.dl-shadow-rec[data-state="recording"] .dl-shadow-icon {
+    background: #ef4444;
+    animation: dlShadowPulse 1.1s ease-in-out infinite;
+}
+.dl-shadow-rec[data-state="recording"] .dl-shadow-timer { opacity: 1; }
+@keyframes dlShadowPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+    50%      { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+}
+
+.dl-shadow-rec[data-state="compare-actor"] .dl-shadow-btn {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.65);
+    color: var(--amber);
+}
+.dl-shadow-rec[data-state="compare-actor"] .dl-shadow-btn:hover {
+    color: #fef3c7;
+    background: rgba(245, 158, 11, 0.22);
+}
+.dl-shadow-rec[data-state="compare-actor"] .dl-shadow-timer { opacity: 1; }
+
+.dl-shadow-rec[data-state="compare-you"] .dl-shadow-btn {
+    background: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.65);
+    color: #c7d2fe;
+}
+.dl-shadow-rec[data-state="compare-you"] .dl-shadow-btn:hover {
+    color: #fff;
+    background: rgba(99, 102, 241, 0.22);
+}
+.dl-shadow-rec[data-state="compare-you"] .dl-shadow-timer { opacity: 1; }
+
+.dl-shadow-rec[data-state="compare-actor"] .dl-shadow-icon,
+.dl-shadow-rec[data-state="compare-you"] .dl-shadow-icon {
+    width: 0; height: 0;
+    border-radius: 0;
+    background: transparent;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 9px solid currentColor;
+    margin-left: 2px;
+}
+
+/* Followup row + buttons */
+.dl-rec-followup {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 2px;
+}
+.dl-rec-followup[hidden] { display: none; }
+.dl-followup-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.003em;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s, transform .1s;
+    white-space: nowrap;
+}
+.dl-followup-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.02);
+}
+.dl-followup-btn:active { transform: scale(0.98); }
+.dl-followup-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+.dl-followup-btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+.dl-shell #dlHearYou:hover { border-color: rgba(99, 102, 241, 0.45); color: #c7d2fe; }
+.dl-shell #dlCompare:hover { border-color: rgba(245, 158, 11, 0.45); color: var(--amber); }
+.dl-shell #dlHearYou.is-on {
+    color: #c7d2fe;
+    border-color: rgba(99, 102, 241, 0.65);
+    background: rgba(99, 102, 241, 0.14);
+}
+.dl-shell #dlCompare.is-on {
+    color: var(--amber);
+    border-color: rgba(245, 158, 11, 0.65);
+    background: rgba(245, 158, 11, 0.14);
+}
+
+.dl-shadow-error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: rgba(252, 165, 165, 0.95);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* ── Bottom action bar ── */
+.dl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 36px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
+}
+.dl-action-btn {
+    flex: 1;
+    min-width: 220px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 12px;
+    transition: border-color .15s, background .15s, transform .1s;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+}
+.dl-action-btn:hover {
+    border-color: rgba(255, 107, 53, 0.5);
+    background: rgba(255, 107, 53, 0.04);
+    transform: translateY(-1px);
+}
+.dl-action-btn .dl-action-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255, 107, 53, 0.14);
+    color: #FFA884;
+    flex-shrink: 0;
+}
+.dl-action-btn .dl-action-icon svg { width: 14px; height: 14px; }
+.dl-action-text { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.dl-action-title { font-weight: 600; color: var(--text); }
+.dl-action-sub   { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+</style>
+
+<div class="dl-shell">
+
+    <div class="dl-topbar">
+        <a href="{% url 'learning:word_note_list' %}" class="dl-back" data-dl-close="1" aria-label="Back to notebook">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Notebook
+        </a>
+        <span class="dl-stage" data-stage="{{ note.stage|default:'inbox' }}">
+            <span class="dl-stage-dot" aria-hidden="true"></span>
+            {{ note.stage|default:'inbox' }}
+        </span>
+    </div>
+
+    <div class="dl-hero">
+        <h1 class="dl-word" id="dlWord">{{ note.word }}</h1>
+        <button class="dl-audio" type="button" id="dlAudio" title="Listen" aria-label="Pronounce {{ note.word }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+        </button>
+        {% if note.pos and note.pos != 'etc' %}
+        <span class="dl-pos">{{ note.get_pos_display|lower }}</span>
+        {% endif %}
+    </div>
+
+    {% if note.translation %}
+    <p class="dl-trans" lang="uz">{{ note.translation }}</p>
+    {% endif %}
+
+    <div class="dl-body">
+        {% comment %}RIGHT — video + shadow controls. The video IS the encounter; first in DOM so mobile leads with the scene.{% endcomment %}
+        <aside class="dl-right">
+            <div class="dl-video-frame" id="dlVideoFrame">
+                {% if note.video_url %}
+                <video class="dl-video" id="dlVideo" playsinline preload="metadata"
+                       data-start="{{ note.video_start }}" data-end="{{ note.video_end }}"
+                       data-slow-start="{{ note.slow_start }}" data-slow-end="{{ note.slow_end }}">
+                    <source src="{{ note.video_url }}#t={{ note.video_start }},{{ note.video_end }}" type="video/mp4">
+                </video>
+                {% if note.context_text %}
+                <div class="dl-sub-overlay is-disabled" id="dlSub" data-word="{{ note.word }}">{{ note.context_text }}</div>
+                {% endif %}
+                {% else %}
+                <div class="dl-video-empty">No clip on file for this word yet.</div>
+                {% endif %}
+            </div>
+
+            {% if note.video_url %}
+            <div class="dl-shadow">
+                <div class="dl-shadow-title">Shadow this line</div>
+                <div class="dl-shadow-controls">
+                    <button class="dl-btn" type="button" id="dlReplay" title="Replay the segment">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        Replay
+                    </button>
+                    <button class="dl-btn" type="button" id="dlLoop" title="Loop the segment">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9"/>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                            <polyline points="7 23 3 19 7 15"/>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                        Loop
+                    </button>
+                    <button class="dl-btn" type="button" id="dlSlow" title="Half-speed playback">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <polyline points="12 7 12 12 15 14"/>
+                        </svg>
+                        Slow
+                    </button>
+                    <button class="dl-btn" type="button" id="dlSubsToggle" title="Hide subtitles" aria-pressed="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="6" width="18" height="14" rx="2"/>
+                            <line x1="7" y1="13" x2="11" y2="13"/>
+                            <line x1="13" y1="13" x2="17" y2="13"/>
+                            <line x1="7" y1="17" x2="13" y2="17"/>
+                        </svg>
+                        Subs
+                    </button>
+                </div>
+
+                <div class="dl-shadow-rec" data-state="idle">
+                    <button type="button" id="dlShadow" class="dl-shadow-btn">
+                        <span class="dl-shadow-icon" aria-hidden="true"></span>
+                        <span class="dl-shadow-label">Shadow this line</span>
+                        <span class="dl-shadow-timer" id="dlShadowTimer"></span>
+                    </button>
+                    <div class="dl-rec-followup" hidden>
+                        <button type="button" id="dlHearYou" class="dl-followup-btn" title="Listen to your recording">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,3 20,12 6,21"/></svg>
+                            Hear yourself
+                        </button>
+                        <button type="button" id="dlCompare" class="dl-followup-btn" title="Hear yours, then the actor">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="17 1 21 5 17 9"/>
+                                <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                                <polyline points="7 23 3 19 7 15"/>
+                                <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                            </svg>
+                            Compare
+                        </button>
+                    </div>
+                    <div class="dl-shadow-error" hidden></div>
+                </div>
+            </div>
+            {% endif %}
+        </aside>
+
+        <div class="dl-left">
+            {% if note.lexicon_description or note.definition and note.definition != 'not found' and note.definition != 'Definition not found' %}
+            <section class="dl-section">
+                <p class="dl-def">{% if note.lexicon_description %}{{ note.lexicon_description }}{% else %}{{ note.definition }}{% endif %}</p>
+            </section>
+            {% endif %}
+
+            {% if note.usage_examples %}
+            <section class="dl-section">
+                <ul class="dl-examples" id="dlExamples">
+                    {% for ex in note.usage_examples %}
+                    <li>
+                        {% if ex.en %}
+                        <span class="dl-ex-en" data-word="{{ note.word }}">{{ ex.en }}</span>
+                        {% if ex.uz %}<span class="dl-ex-uz" lang="uz">{{ ex.uz }}</span>{% endif %}
+                        {% else %}
+                        <span class="dl-ex-en" data-word="{{ note.word }}">{{ ex }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endif %}
+
+            {% if note.tavsif or note.personal_note %}
+            <section class="dl-section">
+                <div class="dl-mnemonic{% if note.personal_note and not note.tavsif %} is-yours{% endif %}">
+                    <p class="dl-mnemonic-body">{% if note.tavsif %}{{ note.tavsif }}{% else %}{{ note.personal_note }}{% endif %}</p>
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dl-actions">
+        <a class="dl-action-btn" href="{% url 'learning:word_note_list' %}?battle={{ note.id }}">
+            <span class="dl-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </span>
+            <span class="dl-action-text">
+                <span class="dl-action-title">Challenge</span>
+                <span class="dl-action-sub">Listen, spell, speak, context</span>
+            </span>
+        </a>
+        <a class="dl-action-btn" href="{% url 'learning:own-the-word' %}?id={{ note.id }}">
+            <span class="dl-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v6"/>
+                    <path d="M5.5 9.5l3 3"/>
+                    <path d="M18.5 9.5l-3 3"/>
+                    <circle cx="12" cy="16" r="6"/>
+                </svg>
+            </span>
+            <span class="dl-action-text">
+                <span class="dl-action-title">Own the Word</span>
+                <span class="dl-action-sub">90-second focused ritual</span>
+            </span>
+        </a>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    // Word audio (TTS) — server-side endpoint at /learning/tts/. Lazy-load.
+    const audioBtn = document.getElementById('dlAudio');
+    let cachedTts = null;
+    if (audioBtn) {
+        audioBtn.addEventListener('click', async () => {
+            const word = document.getElementById('dlWord')?.textContent?.trim();
+            if (!word) return;
+            try {
+                if (!cachedTts) {
+                    const r = await fetch('/learning/tts/?word=' + encodeURIComponent(word));
+                    if (!r.ok) return;
+                    const blob = await r.blob();
+                    cachedTts = new Audio(URL.createObjectURL(blob));
+                }
+                cachedTts.currentTime = 0;
+                cachedTts.play().catch(() => {});
+            } catch {}
+        });
+    }
+
+    // Highlight the headword inside example list + sub overlay.
+    function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function markPhrase(el) {
+        const word = (el.dataset.word || '').trim();
+        const text = el.textContent || '';
+        if (!word || !text) return;
+        const pattern = escRe(word).replace(/\s+/g, '\\s+');
+        const m = new RegExp(pattern, 'i').exec(text);
+        if (!m) return;
+        const before = text.slice(0, m.index);
+        const hit = m[0];
+        const after = text.slice(m.index + hit.length);
+        el.textContent = '';
+        if (before) el.appendChild(document.createTextNode(before));
+        const mk = document.createElement('mark');
+        mk.textContent = hit;
+        el.appendChild(mk);
+        if (after) el.appendChild(document.createTextNode(after));
+    }
+    document.querySelectorAll('.dl-ex-en[data-word], .dl-sub-overlay[data-word]').forEach(markPhrase);
+
+    // Split the definition on the first em-dash so the post-dash clause
+    // reads as a quieter "nuance" beat. AI definitions often follow the
+    // pattern "literal — nuance"; the nuance is the highest-value half
+    // for a learner but visually competes with the literal half. Splitting
+    // gives the eye a two-stage read: meaning → (pause) → why it matters.
+    document.querySelectorAll('.dl-def').forEach((p) => {
+        const text = p.textContent || '';
+        // Match em-dash, en-dash, or " - " surrounded by spaces.
+        const m = text.match(/^([^—–]+?)\s*[—–]\s+(.+)$/);
+        if (!m) return;
+        const literal = m[1].trim();
+        const nuance = m[2].trim();
+        if (!literal || !nuance) return;
+        p.textContent = literal + ' ';
+        const span = document.createElement('span');
+        span.className = 'dl-def-nuance';
+        span.textContent = '— ' + nuance;
+        p.appendChild(span);
+    });
+
+    // Video clamp + replay/loop/slow/subs toggles.
+    const video = document.getElementById('dlVideo');
+    const sub = document.getElementById('dlSub');
+    if (!video) return;
+
+    const start = parseFloat(video.dataset.start || '0');
+    const end = parseFloat(video.dataset.end || '0');
+    const slowStart = parseFloat(video.dataset.slowStart || start);
+    const slowEnd = parseFloat(video.dataset.slowEnd || end);
+
+    let isLoop = false;
+    let isSlow = false;
+    // Subs are HIDDEN on mount. The first time the segment ends naturally,
+    // they fade in — listening-first pedagogy. Once revealed (or the user
+    // toggles), this flag prevents re-overriding their preference.
+    let initialReveal = false;
+
+    function clampToSegment() {
+        if (end > 0 && (video.currentTime < start || video.currentTime > end)) {
+            video.currentTime = start;
+        }
+    }
+    video.addEventListener('loadedmetadata', clampToSegment);
+
+    video.addEventListener('timeupdate', () => {
+        if (isSlow && video.currentTime >= slowStart && video.currentTime <= slowEnd) {
+            if (video.playbackRate !== 0.55) video.playbackRate = 0.55;
+        } else {
+            if (video.playbackRate !== 1) video.playbackRate = 1;
+        }
+        if (end > 0 && video.currentTime >= end) {
+            // First natural segment-end → reveal subs (listening-first done).
+            if (!initialReveal && sub) {
+                initialReveal = true;
+                sub.classList.remove('is-disabled');
+                const sb = document.getElementById('dlSubsToggle');
+                if (sb) {
+                    sb.setAttribute('aria-pressed', 'true');
+                    sb.classList.remove('is-off');
+                    sb.title = 'Hide subtitles';
+                }
+            }
+            if (isLoop) {
+                video.currentTime = start;
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+                video.currentTime = end;
+            }
+        }
+    });
+
+    // ─── Initial autoplay: try sound + subs-off, gracefully fall back. ───
+    // When this partial is injected via the notebook overlay, the user's
+    // tap is the active gesture → unmuted play() succeeds in every browser.
+    // When loaded directly (refresh / share link), there's no gesture so
+    // unmuted play rejects → fall back to muted + subs-on (original behavior).
+    (function tryAutoplay() {
+        video.muted = false;
+        const p = video.play();
+        if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+                // Browser blocked autoplay-with-sound. Fall back gracefully.
+                video.muted = true;
+                if (sub) sub.classList.remove('is-disabled');
+                initialReveal = true; // already visible — don't re-reveal at end
+                video.play().catch(() => {});
+            });
+        }
+    })();
+
+    function playSegment() {
+        video.muted = false;
+        video.currentTime = start;
+        video.play().catch(() => {});
+    }
+    document.getElementById('dlReplay')?.addEventListener('click', playSegment);
+    document.getElementById('dlLoop')?.addEventListener('click', (e) => {
+        isLoop = !isLoop;
+        e.currentTarget.classList.toggle('is-on', isLoop);
+        if (isLoop && video.paused) {
+            video.currentTime = start;
+            video.play().catch(() => {});
+        }
+    });
+    document.getElementById('dlSlow')?.addEventListener('click', (e) => {
+        isSlow = !isSlow;
+        e.currentTarget.classList.toggle('is-on', isSlow);
+        if (!isSlow) video.playbackRate = 1;
+    });
+
+    // Subs toggle — flips .is-disabled. Once user has toggled (either way),
+    // the auto-reveal at segment-end no longer fires (initialReveal=true).
+    const subsBtn = document.getElementById('dlSubsToggle');
+    if (subsBtn && sub) {
+        subsBtn.addEventListener('click', () => {
+            initialReveal = true;
+            const willHide = !sub.classList.contains('is-disabled');
+            sub.classList.toggle('is-disabled', willHide);
+            subsBtn.classList.toggle('is-off', willHide);
+            subsBtn.setAttribute('aria-pressed', willHide ? 'false' : 'true');
+            subsBtn.title = willHide ? 'Show subtitles' : 'Hide subtitles';
+        });
+    }
+
+    // ─── Shadow + Compare: morphing button + manual followup ───
+    const recWrap   = document.querySelector('.dl-shadow-rec');
+    const recBtn    = document.getElementById('dlShadow');
+    const recLbl    = recBtn?.querySelector('.dl-shadow-label');
+    const recTmr    = document.getElementById('dlShadowTimer');
+    const recErr    = recWrap?.querySelector('.dl-shadow-error');
+    const followup  = recWrap?.querySelector('.dl-rec-followup');
+    const hearYouBtn = document.getElementById('dlHearYou');
+    const compareBtn = document.getElementById('dlCompare');
+
+    if (recWrap && recBtn && navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
+        let state = 'idle';
+        let mediaRec = null;
+        let stream = null;
+        let chunks = [];
+        let blobUrl = null;
+        let audioEl = null;
+        let timerId = null;
+        let stamp = 0;
+        let videoWatcher = null;
+        let savedMuted = video.muted;
+        let savedSlow = false;
+        let savedLoop = false;
+        let activeFollowup = null;
+
+        function freezeVideoToggles() {
+            savedMuted = video.muted;
+            savedSlow = isSlow;
+            savedLoop = isLoop;
+        }
+        function suspendVideoToggles() {
+            isSlow = false;
+            isLoop = false;
+            video.playbackRate = 1;
+        }
+        function restoreVideoToggles() {
+            isSlow = savedSlow;
+            isLoop = savedLoop;
+            video.muted = savedMuted;
+            if (!isSlow) video.playbackRate = 1;
+            document.getElementById('dlSlow')?.classList.toggle('is-on', isSlow);
+            document.getElementById('dlLoop')?.classList.toggle('is-on', isLoop);
+        }
+
+        function setState(next) {
+            state = next;
+            recWrap.dataset.state = (next === 'recording') ? 'recording' : 'idle';
+            if (next === 'recording') {
+                recLbl.textContent = 'Recording';
+            } else {
+                recLbl.textContent = blobUrl ? 'Shadow again' : 'Shadow this line';
+                recTmr.textContent = '';
+            }
+            if (followup) {
+                followup.hidden = !blobUrl || (next === 'recording');
+            }
+            if (hearYouBtn) hearYouBtn.classList.toggle('is-on',
+                activeFollowup === 'you' && next === 'compare-you');
+            if (compareBtn) compareBtn.classList.toggle('is-on',
+                activeFollowup === 'compare' && (next === 'compare-actor' || next === 'compare-you'));
+        }
+        function idleSettled() { setState(blobUrl ? 'idle-with-rec' : 'idle'); }
+        function showErr(msg) { if (recErr) { recErr.textContent = msg; recErr.hidden = false; } }
+        function clearErr() { if (recErr) { recErr.hidden = true; recErr.textContent = ''; } }
+        function fmt(secs) {
+            const m = Math.floor(secs / 60);
+            const s = Math.floor(secs % 60).toString().padStart(2, '0');
+            return m + ':' + s;
+        }
+        function startTimer(getSecs) {
+            stamp = Date.now();
+            recTmr.textContent = '0:00';
+            const fn = getSecs || (() => (Date.now() - stamp) / 1000);
+            timerId = setInterval(() => { recTmr.textContent = fmt(fn()); }, 150);
+        }
+        function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+        function releaseStream() {
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        }
+        function clearAudio() {
+            if (audioEl) { audioEl.pause(); audioEl.onended = null; audioEl = null; }
+            if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+            chunks = [];
+        }
+        function clearVideoWatcher() {
+            if (videoWatcher) {
+                video.removeEventListener('timeupdate', videoWatcher);
+                videoWatcher = null;
+            }
+        }
+
+        async function startRecording() {
+            clearErr();
+            clearAudio();
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch {
+                showErr("Mic permission denied. Allow it in your browser settings to shadow.");
+                idleSettled();
+                return;
+            }
+            try {
+                mediaRec = new MediaRecorder(stream);
+            } catch {
+                showErr("Recording isn't supported on this browser.");
+                releaseStream();
+                idleSettled();
+                return;
+            }
+            mediaRec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+            mediaRec.onstop = onMicStop;
+
+            freezeVideoToggles();
+            suspendVideoToggles();
+            video.muted = true;
+            video.currentTime = start;
+            video.play().catch(() => {});
+
+            videoWatcher = () => {
+                if (end > 0 && video.currentTime >= end - 0.02) {
+                    finishRecording();
+                }
+            };
+            video.addEventListener('timeupdate', videoWatcher);
+
+            mediaRec.start();
+            startTimer();
+            setState('recording');
+        }
+
+        let abortAfterStop = false;
+        function finishRecording() {
+            clearVideoWatcher();
+            try { video.pause(); } catch {}
+            if (mediaRec && mediaRec.state === 'recording') {
+                try { mediaRec.stop(); } catch {}
+            }
+        }
+        function abortRecording() {
+            abortAfterStop = true;
+            finishRecording();
+        }
+
+        function onMicStop() {
+            stopTimer();
+            releaseStream();
+            if (abortAfterStop) {
+                abortAfterStop = false;
+                clearAudio();
+                restoreVideoToggles();
+                idleSettled();
+                return;
+            }
+            const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+            if (blob.size === 0) {
+                restoreVideoToggles();
+                showErr("Nothing captured. Try again — closer to the mic.");
+                idleSettled();
+                return;
+            }
+            blobUrl = URL.createObjectURL(blob);
+            audioEl = new Audio(blobUrl);
+            restoreVideoToggles();
+            idleSettled();
+        }
+
+        function playYou(onEnd) {
+            if (!audioEl) { endCompare(); return; }
+            setState('compare-you');
+            audioEl.currentTime = 0;
+            startTimer(() => audioEl.currentTime);
+            audioEl.onended = onEnd || (() => endCompare());
+            audioEl.play().catch(() => endCompare(true));
+        }
+
+        function playActor(onEnd) {
+            setState('compare-actor');
+            suspendVideoToggles();
+            video.muted = false;
+            video.currentTime = start;
+            startTimer(() => video.currentTime - start);
+            video.play().catch(() => endCompare(true));
+
+            videoWatcher = () => {
+                if (end > 0 && video.currentTime >= end - 0.02) {
+                    clearVideoWatcher();
+                    try { video.pause(); } catch {}
+                    stopTimer();
+                    (onEnd || (() => endCompare()))();
+                }
+            };
+            video.addEventListener('timeupdate', videoWatcher);
+        }
+
+        function endCompare(wasError = false) {
+            clearVideoWatcher();
+            stopTimer();
+            if (audioEl) { try { audioEl.pause(); } catch {} audioEl.onended = null; }
+            restoreVideoToggles();
+            activeFollowup = null;
+            if (wasError) showErr("Couldn't play that back. Try again.");
+            idleSettled();
+        }
+
+        recBtn.addEventListener('click', () => {
+            if (state === 'recording') {
+                abortRecording();
+                return;
+            }
+            if (state === 'compare-actor' || state === 'compare-you') {
+                endCompare();
+            }
+            startRecording();
+        });
+
+        hearYouBtn?.addEventListener('click', () => {
+            if (!audioEl) return;
+            if (state === 'compare-you' && activeFollowup === 'you') {
+                endCompare();
+                return;
+            }
+            if (state === 'compare-actor' || state === 'compare-you') {
+                endCompare();
+            }
+            activeFollowup = 'you';
+            playYou();
+        });
+        compareBtn?.addEventListener('click', () => {
+            if (!audioEl) return;
+            if ((state === 'compare-actor' || state === 'compare-you')
+                && activeFollowup === 'compare') {
+                endCompare();
+                return;
+            }
+            if (state === 'compare-actor' || state === 'compare-you') {
+                endCompare();
+            }
+            activeFollowup = 'compare';
+            // You first, Actor last (Roediger testing effect; peak-end on the model).
+            playYou(() => playActor());
+        });
+
+        window.addEventListener('pagehide', () => {
+            try { abortRecording(); } catch {}
+            stopTimer();
+            clearAudio();
+            releaseStream();
+            clearVideoWatcher();
+            restoreVideoToggles();
+        });
+    } else if (recWrap) {
+        recWrap.style.display = 'none';
+    }
+})();
+</script>

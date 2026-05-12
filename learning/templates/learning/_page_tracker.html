@@ -1,0 +1,46 @@
+<!-- Page visit tracker -->
+<script>
+(function(){
+    if (!document.cookie.includes('csrftoken')) return;
+    const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+    if (!CSRF) return;
+
+    const PAGE = '{{ page_name }}';
+    const PATH = location.pathname;
+    const SOURCE_ID = typeof _HISTORY_SOURCE_ID !== 'undefined' ? _HISTORY_SOURCE_ID : '';
+    const REF = document.referrer ? new URL(document.referrer).pathname : '';
+    const startTime = Date.now();
+    let visitId = null;
+    let flushed = false;
+
+    // Record page open
+    fetch('/learning/page/log/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ page: PAGE, path: PATH, source_id: SOURCE_ID || null, referrer: REF }),
+    })
+    .then(r => r.json())
+    .then(d => { if (d.visit_id) visitId = d.visit_id; })
+    .catch(() => {});
+
+    // Update duration on leave via fetch with keepalive
+    function flush() {
+        if (!visitId || flushed) return;
+        flushed = true;
+        const dur = Math.round((Date.now() - startTime) / 1000);
+        if (dur < 2) return;
+        fetch('/learning/page/log/' + visitId + '/', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ duration_sec: dur }),
+            keepalive: true,
+        }).catch(() => {});
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { flush(); }
+        else { flushed = false; }  // allow re-flush if user returns & leaves again
+    });
+    window.addEventListener('pagehide', flush);
+})();
+</script>

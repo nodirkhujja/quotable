@@ -1,13 +1,14 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import models
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
-from .models import Episode, Quote, Source, WatchHistory
+from .models import Episode, Quote, Reel, ReelView, Source, WatchHistory
 
 
 class QuoteDetailView(DetailView):
@@ -75,24 +76,6 @@ _LEVEL_DISPLAY = {
 }
 
 
-def _motivational_line(streak, total_words, mastered):
-    if total_words == 0:
-        return "Pick a scene you love. Save 5 words. That's your first step."
-    if streak == 0:
-        return "Find one show. Discover 5 words. Do it just for today."
-    if streak == 1:
-        return "Great start. Watch 10 minutes today and save 3 words you hear."
-    if streak == 3:
-        return "3 days in. Watch one scene and grab the words that stick with you."
-    if streak >= 7:
-        return f"{streak} days strong. One scene today — find 3 new words you've never saved."
-    if mastered >= 10:
-        return "Watch 10 minutes today. The words you save now are yours forever."
-    if mastered > 0:
-        return "One show. Five words. That's all it takes to keep moving forward."
-    return "Discover 5 words in your next scene and enjoy the story even more."
-
-
 def home_view(request):
     query = request.GET.get("q", "").strip()
 
@@ -117,18 +100,6 @@ def home_view(request):
             user_level = row
             user_level_display = _LEVEL_DISPLAY.get(row, row)
 
-    # Word stats + motivational line
-    streak = total_words = mastered_words = 0
-    motivational_line = ""
-    if request.user.is_authenticated:
-        from learning.models import WordNote
-
-        streak = request.user.streak_days
-        qs = WordNote.objects.filter(user=request.user)
-        total_words = qs.count()
-        mastered_words = qs.filter(stage="mastered").count()
-        motivational_line = _motivational_line(streak, total_words, mastered_words)
-
     # Continue Watching — last non-complete entry (≥60 s in, <90 % through)
     last_watched = None
     if request.user.is_authenticated:
@@ -141,22 +112,265 @@ def home_view(request):
         if candidate and not candidate.is_complete:
             last_watched = candidate
 
+    # Comprehension % per source
+    comprehension_map = {}
+    if request.user.is_authenticated:
+        from vocab.models import LineVocab, VocabMastery
+
+        total_by_source = dict(
+            LineVocab.objects.values("source_id").annotate(cnt=Count("id")).values_list("source_id", "cnt")
+        )
+        if total_by_source:
+            known_by_source = dict(
+                VocabMastery.objects.filter(user=request.user, p_known__gt=0.5)
+                .values("vocab__source_id")
+                .annotate(cnt=Count("id"))
+                .values_list("vocab__source_id", "cnt")
+            )
+            for src_id, total in total_by_source.items():
+                known = known_by_source.get(src_id, 0)
+                comprehension_map[src_id] = round(known / max(total, 1) * 100)
+
+    # Enrich source objects with comprehension pct (avoids template filter gymnastics)
+    movies_list = list(movies)
+    for src in movies_list:
+        src.comprehension_pct = comprehension_map.get(src.id, 0)
+    tv_list = list(tv_shows)
+    for src in tv_list:
+        src.comprehension_pct = comprehension_map.get(src.id, 0)
+
+    # Reels — published, sorted by published date (newest first).
+    # For now: just show all published. Phase 2 will personalize by
+    # the user's learning-stage words.
+    reels = (
+        Reel.objects.filter(is_published=True)
+        .select_related("source", "episode")
+        .order_by("-published_at", "-created_at")[:12]
+    )
+
     context = {
-        "movies": movies,
-        "tv_shows": tv_shows,
+        "movies": movies_list,
+        "tv_shows": tv_list,
+        "reels": reels,
         "query": query,
         "total_sources": Source.objects.count(),
         "user_level": user_level,
         "user_level_display": user_level_display,
         "last_watched": last_watched,
-        "motivational_line": motivational_line,
-        "streak": streak,
-        "total_words": total_words,
     }
 
     return render(request, "clips/home.html", context)
 
 
+# ─── REELS — feed + viewer ───────────────────────────────────────────
+
+
+def reels_feed(request):
+    """GET /reels/ — vertical TikTok-style feed of all published reels.
+
+    Hands the front-end the full per-reel payload (lines, target words,
+    user engagement state) so the inline shadow drill can run without
+    a round-trip.
+    """
+    reels = list(
+        Reel.objects.filter(is_published=True)
+        .select_related("source", "episode")
+        .prefetch_related("lines__transcript")
+        .order_by("-published_at", "-created_at")
+    )
+
+    rv_by_reel = {}
+    if request.user.is_authenticated and reels:
+        rv_by_reel = {
+            rv.reel_id: rv
+            for rv in ReelView.objects.filter(
+                user=request.user,
+                reel__in=reels,
+            )
+        }
+
+    # Pre-fetch Uzbek translations for every transcript covered by these
+    # reels so the drill's meaning anchor doesn't need a round-trip.
+    from vocab.models import LineTranslation, LineVocab
+
+    transcript_ids = {ln.transcript_id for r in reels for ln in r.lines.all()}
+    translation_by_tid = dict(
+        LineTranslation.objects.filter(transcript_id__in=transcript_ids).values_list("transcript_id", "translation")
+    )
+
+    # Pre-fetch vocab cards (LineVocab) for every transcript these reels
+    # cover. We pick the entry whose `english` matches `reel.title` so
+    # the side panel shows the vocab the reel actually teaches.
+    target_tids = {
+        next(
+            (ln.transcript_id for ln in r.lines.all() if ln.is_shadow_target),
+            r.lines.all()[0].transcript_id if r.lines.all() else None,
+        )
+        for r in reels
+    }
+    target_tids.discard(None)
+    vocab_by_tid = {}
+    for lv in LineVocab.objects.filter(transcript_id__in=target_tids):
+        vocab_by_tid.setdefault(lv.transcript_id, []).append(lv)
+
+    # Pre-fetch which (transcript_id, word) pairs the user has already
+    # saved to their notebook — used to render the vocab Save button as
+    # already-saved on subsequent visits to the same reel.
+    saved_pairs = set()
+    if request.user.is_authenticated and target_tids:
+        from vocab.models import WordNote
+
+        for note in WordNote.objects.filter(
+            user=request.user,
+            transcript_id__in=target_tids,
+        ).only("transcript_id", "word"):
+            saved_pairs.add((note.transcript_id, (note.word or "").strip().lower()))
+
+    def _vocab_for_reel(r):
+        """Return the LineVocab card whose english matches reel.title.
+
+        Falls back to the first vocab on the target line if no exact
+        match (which still lets the side panel populate something).
+        """
+        target_tid = next(
+            (ln.transcript_id for ln in r.lines.all() if ln.is_shadow_target),
+            None,
+        )
+        if not target_tid and r.lines.all():
+            target_tid = r.lines.all()[0].transcript_id
+        candidates = vocab_by_tid.get(target_tid, [])
+        if not candidates:
+            return None
+        title_norm = (r.title or "").strip().lower()
+        match = next(
+            (lv for lv in candidates if lv.english.strip().lower() == title_norm),
+            candidates[0],
+        )
+        return {
+            "english": match.english,
+            "uzbek": match.translation,
+            "kind": match.kind,
+            "level": match.level,
+            "category": match.category,
+            "description": match.description,
+            "tavsif": match.tavsif,
+            "pattern": match.pattern,
+            "example": match.example,
+            "translated_examples": match.translated_examples or [],
+            "collocations": match.collocations or [],
+            "saved": (target_tid, match.english.strip().lower()) in saved_pairs,
+        }
+
+    reels_data = []
+    for r in reels:
+        rv = rv_by_reel.get(r.id)
+        lines = []
+        for ln in r.lines.all():
+            tr = ln.transcript
+            lines.append(
+                {
+                    "id": ln.id,
+                    "transcript_id": tr.id,
+                    "start_time": float(tr.start_time or 0),
+                    "end_time": float(tr.end_time or 0),
+                    "text": tr.text or "",
+                    "translation": translation_by_tid.get(tr.id, ""),
+                    "is_shadow_target": ln.is_shadow_target,
+                    "is_punchline": ln.is_punchline,
+                    "target_words": ln.target_words or [],
+                }
+            )
+        reels_data.append(
+            {
+                "id": r.id,
+                "title": r.title,
+                "description": r.description,
+                "source_id": r.source_id,
+                "source_title": r.source.title,
+                "episode_id": r.episode_id,
+                "episode_label": (f"S{r.episode.season:02d}E{r.episode.episode_number:02d}" if r.episode else ""),
+                "duration_sec": r.duration_sec,
+                "start_time": r.start_time,
+                "end_time": r.end_time,
+                "thumbnail_url": r.thumbnail.url if r.thumbnail else "",
+                "video_url": r.video_url or "",
+                "cefr_level": r.cefr_level,
+                "liked": bool(rv and rv.liked),
+                "bookmarked": bool(rv and rv.bookmarked),
+                "lines": lines,
+                "vocab": _vocab_for_reel(r),
+            }
+        )
+    # Tutor-mode personalization: warm greeting + name. The greeting strip
+    # appears briefly on landing so the student feels seen before content.
+    user = request.user
+    first_name = ""
+    if user.is_authenticated:
+        first_name = (user.first_name or user.username or "").split()[0] if (user.first_name or user.username) else ""
+    from django.utils import timezone as _tz
+
+    hour = _tz.localtime().hour
+    if 5 <= hour < 12:
+        greeting = "Good morning"
+    elif 12 <= hour < 17:
+        greeting = "Welcome back"
+    elif 17 <= hour < 22:
+        greeting = "Good evening"
+    else:
+        greeting = "Welcome back"
+
+    return render(
+        request,
+        "clips/reels_feed.html",
+        {
+            "reels": reels,
+            "reels_json": json.dumps(reels_data),
+            "first_name": first_name,
+            "greeting": greeting,
+        },
+    )
+
+
+@require_POST
+@login_required
+def reel_track(request, reel_id):
+    """POST /reels/<id>/track/ — record a view + engagement events.
+
+    Body (JSON):
+      event: "view" | "complete" | "shadow" | "save" | "like" | "bookmark"
+    """
+    reel = get_object_or_404(Reel, id=reel_id, is_published=True)
+    try:
+        data = json.loads(request.body or "{}")
+    except Exception:
+        data = {}
+    event = data.get("event", "view")
+
+    rv, created = ReelView.objects.get_or_create(user=request.user, reel=reel)
+    if event == "view" and created:
+        Reel.objects.filter(pk=reel.pk).update(view_count=models.F("view_count") + 1)
+    elif event == "complete" and not rv.completed:
+        rv.completed = True
+        rv.save(update_fields=["completed", "last_seen_at"])
+    elif event == "shadow":
+        rv.shadowed_lines += 1
+        rv.save(update_fields=["shadowed_lines", "last_seen_at"])
+        Reel.objects.filter(pk=reel.pk).update(shadow_count=models.F("shadow_count") + 1)
+    elif event == "save":
+        rv.saved_words += 1
+        rv.save(update_fields=["saved_words", "last_seen_at"])
+        Reel.objects.filter(pk=reel.pk).update(save_count=models.F("save_count") + 1)
+    elif event == "like":
+        rv.liked = not rv.liked
+        rv.save(update_fields=["liked", "last_seen_at"])
+    elif event == "bookmark":
+        rv.bookmarked = not rv.bookmarked
+        rv.save(update_fields=["bookmarked", "last_seen_at"])
+
+    return JsonResponse({"ok": True, "liked": rv.liked, "bookmarked": rv.bookmarked})
+
+
+@login_required
 def watch_source(request, source_id):
     source = get_object_or_404(Source, id=source_id)
     query = request.GET.get("search", "")
@@ -245,60 +459,6 @@ def watch_source(request, source_id):
             for sb in source.scene_blocks.filter(episode=None).order_by("start_time")
         ]
 
-    # Saved words count + list for the counter badge and CC highlights
-    saved_words_count = 0
-    saved_words_list = []
-    if request.user.is_authenticated:
-        from learning.models import WordNote
-
-        saved_words_qs = WordNote.objects.filter(user=request.user)
-        saved_words_count = saved_words_qs.count()
-        saved_words_list = list(saved_words_qs.values_list("word", flat=True))
-
-    # Core words set for gold highlight
-    from learning.models import CoreWord, SuggestedWord
-
-    core_words = list(CoreWord.objects.values_list("word", flat=True))
-
-    # Suggested words for this source — keyed by word for fast lookup
-    from learning.models import WordCache
-
-    suggested_qs = SuggestedWord.objects.filter(source=source).select_related("transcript", "episode")
-
-    # Pre-load definitions from WordCache for all suggested words
-    all_suggested_words = set(sw.word.lower() for sw in suggested_qs)
-    word_definitions = dict(WordCache.objects.filter(word__in=all_suggested_words).values_list("word", "definition"))
-
-    suggested_words_map = {}
-    vocab_words_list = []
-    for sw in suggested_qs:
-        w = sw.word.lower()
-        level = sw.level or SuggestedWord.LEVEL_BEGINNER
-        ep_key = f"S{sw.season}E{sw.episode_number}" if sw.season else "movie"
-
-        vocab_words_list.append(
-            {
-                "word": sw.word,
-                "translation": sw.translation,
-                "definition": word_definitions.get(w, ""),
-                "level": level,
-                "ep_key": ep_key,
-                "start": float(sw.start_time),
-                "end": float(sw.end_time),
-                "transcript_id": sw.transcript_id,
-            }
-        )
-
-        if w not in suggested_words_map:
-            suggested_words_map[w] = {
-                "word": sw.word,
-                "translation": sw.translation,
-                "is_phrase": " " in sw.word,
-                "level": level,
-                "ep_key": ep_key,
-                "transcript_id": sw.transcript_id,
-            }
-
     return render(
         request,
         "clips/watch_source.html",
@@ -309,17 +469,42 @@ def watch_source(request, source_id):
             "transcript_json": json.dumps(transcript_data),
             "scene_blocks_json": json.dumps(scene_blocks_data),
             "episode_titles_json": json.dumps(episode_titles),
-            "core_words_json": json.dumps(core_words),
-            "saved_words_json": json.dumps(saved_words_list),
-            "suggested_words_json": json.dumps(suggested_words_map),
-            "vocab_words_json": json.dumps(vocab_words_list),
             "query": query,
             "first_episode_id": first_episode_id,
-            "saved_words_count": saved_words_count,
         },
     )
 
 
+def episode_data(request, episode_id):
+    """GET /clips/episode/<id>/data/ — transcript lines + scene blocks for one episode.
+
+    Used by the watch page to lazy-load non-first episodes on demand instead
+    of embedding all 26 episodes' worth of JSON on page load.
+    """
+    episode = get_object_or_404(Episode, id=episode_id)
+    transcript_lines = [
+        {
+            "id": t.id,
+            "text": t.text,
+            "start": float(t.start_time),
+            "end": float(t.end_time),
+        }
+        for t in episode.transcripts.order_by("start_time")
+    ]
+    scene_blocks = [
+        {
+            "id": sb.id,
+            "start": float(sb.start_time),
+            "end": float(sb.end_time),
+            "label": sb.label,
+            "thumbnail": sb.thumbnail.url if sb.thumbnail else None,
+        }
+        for sb in episode.scene_blocks.order_by("start_time")
+    ]
+    return JsonResponse({"transcript": transcript_lines, "scene_blocks": scene_blocks})
+
+
+@login_required
 def ui_test(request):
     """Quick UI preview without data"""
     return render(

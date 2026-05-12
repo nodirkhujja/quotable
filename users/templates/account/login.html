@@ -1,0 +1,572 @@
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — Quotable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Dark theater base */
+  --bg:         #0D0E14;
+  --surface:    #17181F;
+  --surface-2:  #20222C;
+  --line:       rgba(255,255,255,0.08);
+  --line-strong:rgba(255,255,255,0.14);
+
+  /* Ink */
+  --ink:        #ECECF1;
+  --ink-soft:   #B4B5C0;
+  --ink-faint:  #8E8F9B;
+  --ink-dim:    #5E6070;
+
+  /* Accents */
+  --accent:     #FF6B35;
+  --accent-hot: #FF8558;
+  --accent-deep:#E85424;
+  --accent-soft:rgba(255,107,53,0.14);
+  --accent-ring:rgba(255,107,53,0.35);
+  --reward:     #4ADE80;
+  --reward-soft:rgba(74,222,128,0.14);
+
+  /* Shadows + glow */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 24px 60px -20px rgba(0,0,0,0.7), 0 12px 30px -10px rgba(0,0,0,0.4);
+  --glow-accent: 0 0 40px -4px rgba(255,107,53,0.4);
+
+  /* Fonts */
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(1000px circle at 50% -10%, rgba(255,107,53,0.10), transparent 55%),
+    radial-gradient(700px  circle at 15% 105%, rgba(139,92,246,0.06), transparent 60%),
+    var(--bg);
+}
+
+.page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* ── Top bar ───────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.wordmark-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 14px -2px var(--accent-ring);
+}
+.topbar-meta {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  padding: 56px 0 16px;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255,107,53,0.22);
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 24px;
+}
+.hero-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 6.5vw, 72px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 20px;
+  text-wrap: balance;
+}
+.hero-title .accent {
+  color: var(--accent);
+}
+.hero-lede {
+  font-size: 17px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  max-width: 52ch;
+  margin: 0 auto 36px;
+}
+.hero-lede strong { color: var(--ink); font-weight: 600; }
+
+/* ── Google CTA ────────────────────────────────────── */
+.gbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 28px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--shadow-md), var(--glow-accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  min-width: 260px;
+  position: relative;
+}
+.gbtn:hover {
+  background: var(--accent-hot);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 60px -4px rgba(255,107,53,0.55);
+}
+.gbtn:active { transform: translateY(0); }
+.gbtn[data-state="loading"] { background: var(--accent-deep); pointer-events: none; }
+.gbtn[data-state="loading"] .gbtn-label { opacity: 0.6; }
+.gbtn[data-state="loading"] .gbtn-spinner { opacity: 1; }
+.gbtn-spinner {
+  position: absolute;
+  right: 22px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  animation: gsi-spin 0.8s linear infinite;
+  transition: opacity 0.2s;
+}
+@keyframes gsi-spin { to { transform: rotate(360deg); } }
+.gbtn-sub {
+  display: block;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+/* ── Source marquee ────────────────────────────────── */
+.marquee {
+  margin: 12px -32px 0;
+  padding: 24px 0;
+  overflow: hidden;
+  position: relative;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(to right, var(--bg), transparent 5%, transparent 95%, var(--bg)),
+    var(--surface);
+}
+.marquee::before, .marquee::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 80px;
+  pointer-events: none;
+  z-index: 2;
+}
+.marquee::before { left: 0;  background: linear-gradient(to right, var(--bg), transparent); }
+.marquee::after  { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
+.marquee-track {
+  display: inline-flex;
+  gap: 18px;
+  animation: marquee 48s linear infinite;
+  will-change: transform;
+  padding: 0 18px;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  transition: transform 0.25s ease, border-color 0.2s;
+}
+.chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+}
+.chip-poster {
+  width: 48px;
+  height: 68px;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+.chip-poster-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.chip-poster-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: rgba(255,255,255,0.85);
+  background: linear-gradient(160deg, currentColor, rgba(0,0,0,0.2));
+}
+.chip-poster-ted {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e62b1e;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.chip-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.chip-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip-sub {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* ── Features (4 highlight chips) ──────────────────── */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+.feature-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255,107,53,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.feature-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.feature-desc {
+  font-size: 13px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+/* ── Errors ────────────────────────────────────────── */
+.errors {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  background: rgba(255,107,53,0.08);
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 10px;
+  color: var(--accent-hot);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-dim);
+  padding-top: 16px;
+}
+.footer a {
+  color: var(--ink-faint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer a:hover { color: var(--ink-soft); }
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page { padding: 24px 20px 40px; gap: 28px; }
+  .hero { padding: 32px 0 8px; }
+  .hero-title { font-size: 40px; }
+  .hero-lede { font-size: 15.5px; }
+  .marquee { margin: 0 -20px; }
+  .gbtn { width: 100%; min-width: 0; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="wordmark">
+      <span class="wordmark-dot"></span>
+      <span>Quotable</span>
+    </div>
+    <div class="topbar-meta">For Uzbek learners</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow">Start for free</div>
+    <h1 class="hero-title">
+      Learn English from the shows you <span class="accent">can't stop watching</span>.
+    </h1>
+    <p class="hero-lede">
+      Friends, Breaking Bad, TED Talks &mdash; every clip is a lesson. We turn what you're already binging into vocabulary you'll actually keep. <strong>Ten minutes. One habit.</strong>
+    </p>
+
+    {% if form.errors or form.non_field_errors %}
+      <div class="errors">
+        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+        {% for field in form %}{% for err in field.errors %}{{ err }}{% endfor %}{% endfor %}
+      </div>
+    {% endif %}
+
+    <a href="{% provider_login_url 'google' process='login' %}"
+       id="googleBtn"
+       class="gbtn"
+       data-state="idle"
+       aria-label="Continue with Google">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.74 3.28-8.09Z" opacity="0"/>
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.76c-.99.66-2.25 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.53H2.17v2.84A11 11 0 0 0 12 23Z"/>
+        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.17a11 11 0 0 0 0 9.88l3.67-2.84Z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.17 7.06l3.67 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/>
+      </svg>
+      <span class="gbtn-label">Continue with Google</span>
+      <span class="gbtn-spinner" aria-hidden="true"></span>
+    </a>
+    <span class="gbtn-sub">No password. No email setup. Takes 5 seconds.</span>
+  </div>
+
+  <!-- Marquee -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track" id="marqueeTrack"></div>
+  </div>
+
+  <!-- Features -->
+  <ul class="features">
+    <li class="feature">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="14" rx="3"/>
+          <path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feature-name">Watch, don't study</div>
+        <div class="feature-desc">Real clips, real dialogue. Every word comes with context.</div>
+      </div>
+    </li>
+    <li class="feature">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+          <circle cx="12" cy="12" r="5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feature-name">Built for Uzbek</div>
+        <div class="feature-desc">Every word explained in Uzbek, with feeling &mdash; not just translation.</div>
+      </div>
+    </li>
+    <li class="feature">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 3-6.7"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feature-name">Words that stick</div>
+        <div class="feature-desc">Smart review catches what you're about to forget. 3&times; retention.</div>
+      </div>
+    </li>
+    <li class="feature">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 9v6M11 6v12M15 8v8M19 11v2M3 12h1"/>
+        </svg>
+      </div>
+      <div>
+        <div class="feature-name">Speak the way they do</div>
+        <div class="feature-desc">Shadow the actors. Your accent improves every rep.</div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Footer -->
+  <div class="footer">
+    By continuing you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+  </div>
+</div>
+
+<script>
+  // ── Source marquee (duplicated for seamless loop) ──
+  const SOURCES = [
+    { title: "Friends",          sub: "1994 — SITCOM",    kind: "SITCOM",    tint: "#ff6b35", img: "https://image.tmdb.org/t/p/w185/2koX1xLkpTQM4IZebYvKysFW1Nh.jpg" },
+    { title: "Breaking Bad",     sub: "2008 — DRAMA",     kind: "DRAMA",     tint: "#2d7a4e", img: "https://image.tmdb.org/t/p/w185/ggFHVNu6YYI5L9pCfOacjizRGt.jpg" },
+    { title: "Prison Break",     sub: "2005 — DRAMA",     kind: "DRAMA",     tint: "#5a3424", img: "https://image.tmdb.org/t/p/w185/wnmNPaLvhnMeOqnWlhNkYCZxtda.jpg" },
+    { title: "Forrest Gump",     sub: "1994 — MOVIE",     kind: "MOVIE",     tint: "#8a6632", img: "https://image.tmdb.org/t/p/w185/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg" },
+    { title: "Zathura",          sub: "2005 — ADVENTURE", kind: "ADVENTURE", tint: "#3b4a7a", img: "https://image.tmdb.org/t/p/w185/gDb5BW2NLqZ9cvg9nyzkZVvmgze.jpg" },
+    { title: "Big Hero 6",       sub: "2014 — ANIMATION", kind: "ANIMATION", tint: "#c94b2a", img: "https://image.tmdb.org/t/p/w185/2mxS4wUimwlLmI1xp6QW6NSU361.jpg" },
+    { title: "Moana",            sub: "2016 — ANIMATION", kind: "ANIMATION", tint: "#2e6f8a", img: "https://image.tmdb.org/t/p/w185/4JeejGugONWpJkbf8LsWQMJO9Uq.jpg" },
+    { title: "Do schools kill creativity?", sub: "Ken Robinson — TED", kind: "TED", tint: "#b02a1f", img: "" },
+    { title: "How great leaders inspire action", sub: "Simon Sinek — TED", kind: "TED", tint: "#2f4c8a", img: "" },
+    { title: "The power of vulnerability", sub: "Brené Brown — TED",     kind: "TED", tint: "#8b3566", img: "" },
+  ];
+
+  const track = document.getElementById('marqueeTrack');
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function initialsOf(title) {
+    const words = title.replace(/[——]/g,' ').split(/\s+/).filter(Boolean);
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + (words[1][0] || '')).toUpperCase();
+  }
+  function buildChip(s) {
+    const el = document.createElement('div');
+    el.className = 'chip';
+    const isTed = s.kind === 'TED';
+    const fallbackStyle = isTed ? '' : `color:${s.tint};`;
+    const imgHtml = !isTed && s.img
+      ? `<img class="chip-poster-img" src="${escHtml(s.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+      : '';
+    const posterHtml = isTed
+      ? `<span class="chip-poster-ted">TED</span>`
+      : `${imgHtml}<span class="chip-poster-fallback" style="${fallbackStyle}">${escHtml(initialsOf(s.title))}</span>`;
+    el.innerHTML = `
+      <div class="chip-poster">${posterHtml}</div>
+      <div class="chip-title-wrap">
+        <span class="chip-title">${escHtml(s.title)}</span>
+        <span class="chip-sub">${escHtml(s.sub || s.kind)}</span>
+      </div>
+    `;
+    return el;
+  }
+  [...SOURCES, ...SOURCES].forEach(s => track.appendChild(buildChip(s)));
+
+  // ── Google button loading state ──
+  const btn = document.getElementById('googleBtn');
+  btn.addEventListener('click', () => {
+    btn.setAttribute('data-state', 'loading');
+    const label = btn.querySelector('.gbtn-label');
+    if (label) label.textContent = 'Connecting…';
+  });
+</script>
+</body>
+</html>

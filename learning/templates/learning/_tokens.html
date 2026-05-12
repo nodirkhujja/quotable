@@ -1,0 +1,164 @@
+{% comment %}
+  Design tokens — the single source of truth for the visual system.
+  Include in <head> of any learning page:  {% include "learning/_tokens.html" %}
+
+  Naming is semantic, not literal. Use --surface-2, not --bg-card.
+  Use --text-2, not --text-secondary. Stay disciplined.
+{% endcomment %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    /* ── Surface (depth layers) ── */
+    --surface-0: #0D0E14;       /* page background (dark theater) */
+    --surface-1: #12131A;       /* elevated panel */
+    --surface-2: #17181F;       /* card */
+    --surface-3: #20222C;       /* card hover / nested */
+    --surface-glass: rgba(13,14,20,0.88);
+
+    /* Canonical app background — the rich gradient stack used by every
+       learning surface (home, watch, grammar, notebook, practice,
+       progress, review, etc). Always reference via var(--app-bg) so the
+       visual feel is identical across the whole app.
+       Reels feed deliberately overrides to pure #000 — that's a video
+       theater, not a content surface. */
+    --app-bg:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,0,0,0.10), rgba(0,0,0,0.85) 70%),
+        linear-gradient(180deg, rgba(0,0,0,0.40), rgba(10,10,10,0.95) 60%),
+        var(--surface-0);
+
+    /* ── Borders / strokes ── */
+    --border-1: rgba(255,255,255,0.05);
+    --border-2: rgba(255,255,255,0.08);
+    --border-3: rgba(255,255,255,0.14);
+
+    /* ── Text ── */
+    --text-1: #ECECF1;          /* primary */
+    --text-2: #B4B5C0;          /* secondary */
+    --text-3: #8E8F9B;          /* tertiary / placeholder */
+    --text-4: #5E6070;          /* disabled / muted */
+
+    /* ── Brand & semantics ── */
+    --brand: #ff6b35;           /* primary accent (orange) */
+    --brand-hot: #FF8558;
+    --brand-deep: #E85424;
+    --brand-soft: rgba(255,107,53,0.14);
+    --brand-wash: rgba(255,107,53,0.08);
+    --brand-ring: rgba(255,107,53,0.35);
+    --indigo: #6366f1;
+    --purple: #a855f7;
+    --emerald: #4ADE80;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+
+    /* Soft tints (12% alpha) for backgrounds */
+    --indigo-soft: rgba(99,102,241,0.12);
+    --purple-soft: rgba(168,85,247,0.12);
+    --emerald-soft: rgba(74,222,128,0.12);
+    --amber-soft: rgba(245,158,11,0.12);
+    --red-soft: rgba(239,68,68,0.12);
+    --blue-soft: rgba(59,130,246,0.12);
+
+    /* Borders (28% alpha) */
+    --indigo-line: rgba(99,102,241,0.28);
+    --purple-line: rgba(168,85,247,0.30);
+    --emerald-line: rgba(74,222,128,0.28);
+    --amber-line: rgba(245,158,11,0.32);
+    --red-line: rgba(239,68,68,0.32);
+    --blue-line: rgba(59,130,246,0.28);
+
+    /* ── Spacing scale (only these values, no arbitrary px) ── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    /* ── Radius ── */
+    --radius-1: 6px;
+    --radius-2: 10px;
+    --radius-3: 14px;
+    --radius-4: 20px;
+    --radius-pill: 999px;
+
+    /* ── Type scale ── */
+    --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+    --text-xs:   11px;
+    --text-sm:   13px;
+    --text-base: 15px;
+    --text-md:   17px;
+    --text-lg:   22px;
+    --text-xl:   28px;
+    --text-2xl:  40px;
+
+    /* ── Motion (one easing, three speeds) ── */
+    --ease:        cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --motion-fast: 120ms;
+    --motion-base: 200ms;
+    --motion-slow: 400ms;
+
+    /* ── Elevation (shadows) ── */
+    --shadow-1: 0 1px 2px rgba(0,0,0,0.30), 0 2px 4px rgba(0,0,0,0.20);
+    --shadow-2: 0 8px 24px -8px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
+    --shadow-3: 0 24px 60px -20px rgba(0,0,0,0.70), 0 12px 30px -10px rgba(0,0,0,0.40);
+    --shadow-glow: 0 0 40px -4px var(--brand-ring);
+
+    /* ── Legacy aliases (back-compat for pages not yet migrated) ── */
+    --bg:          var(--surface-0);
+    --bg-soft:     var(--surface-1);
+    --surface:     var(--surface-2);
+    --ink:         var(--text-1);
+    --ink-soft:    var(--text-2);
+    --ink-faint:   var(--text-3);
+    --ink-dim:     var(--text-4);
+    --line:        var(--border-2);
+    --line-soft:   var(--border-1);
+    --line-strong: var(--border-3);
+    --accent:      var(--brand);
+    --accent-hot:  var(--brand-hot);
+    --accent-deep: var(--brand-deep);
+    --accent-soft: var(--brand-soft);
+    --accent-ring: var(--brand-ring);
+    --accent-wash: var(--brand-wash);
+    --reward:      var(--emerald);
+    --reward-soft: var(--emerald-soft);
+    --glow-accent: var(--shadow-glow);
+    --font-serif:  var(--font-display);
+}
+
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Skeleton loader utility ── */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface-1) 0%,
+        var(--surface-3) 50%,
+        var(--surface-1) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-2);
+    color: transparent !important;
+    user-select: none;
+    pointer-events: none;
+}
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+</style>

@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 
+from learning.models import FavoriteQuote
+
 # IMPORT the models from your learning app
-from learning.models import FavoriteQuote, WordNote
+from vocab.models import WordNote
 
 from .models import User
 

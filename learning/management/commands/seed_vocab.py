@@ -8,7 +8,7 @@ Safe to run multiple times — uses update_or_create on the word field.
 
 from django.core.management.base import BaseCommand
 
-from learning.models import VocabWord
+from vocab.models import VocabWord
 
 # fmt: off
 WORDS = [

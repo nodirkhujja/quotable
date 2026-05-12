@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Collection — Quotable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    {% include "learning/_tokens.html" %}
+    <style>
+        :root {
+            --bg-base: #0D0E14;
+            --bg-elevated: #12131A;
+            --bg-card: #17181F;
+            --border: rgba(255,255,255,0.08);
+            --text: #ECECF1;
+            --text-secondary: #B4B5C0;
+            --text-tertiary: #8E8F9B;
+            --purple: #a855f7;
+            --green: #4ADE80;
+            --red: #ef4444;
+            --amber: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-base);
+            color: var(--text);
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        .nav {
+            position: sticky; top: 0; z-index: 100; height: 56px;
+            display: flex; align-items: center; padding: 0 24px;
+            background: rgba(13,14,20,0.88); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav a {
+            font-size: 13px; font-weight: 500; color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .nav-title {
+            flex: 1; text-align: center; font-size: 14px; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .nav-title span { color: var(--green); }
+        .container { max-width: 560px; margin: 0 auto; padding: 28px 18px; }
+
+        /* ── Hero: total mastered number ── */
+        .hero {
+            text-align: center;
+            padding: 28px 20px 24px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(74,222,128,0.14), rgba(168,85,247,0.08));
+            border: 1px solid rgba(74,222,128,0.22);
+            margin-bottom: 24px;
+        }
+        .hero-trophy { font-size: 40px; line-height: 1; filter: drop-shadow(0 0 16px rgba(74,222,128,0.5)); }
+        .hero-number {
+            font-size: 64px; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--green);
+            line-height: 1; margin-top: 8px;
+            letter-spacing: -0.04em;
+        }
+        .hero-label {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.6px;
+            margin-top: 6px;
+        }
+        .hero-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+
+        /* ── Source group ── */
+        .source-group {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 18px 14px;
+            margin-bottom: 16px;
+        }
+        .source-head {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 14px;
+        }
+        .source-thumb {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            background: var(--bg-elevated);
+            background-size: cover; background-position: center;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+        .source-meta { flex: 1; min-width: 0; }
+        .source-title {
+            font-size: 15px; font-weight: 700;
+            color: var(--text);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .source-stats {
+            font-size: 12px; color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+        .source-pct {
+            font-size: 16px; font-weight: 800;
+            color: var(--green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .source-bar {
+            height: 5px; background: var(--border);
+            border-radius: 3px; overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .source-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--green), var(--purple));
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+
+        /* ── Word card grid ── */
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+        .word-card {
+            padding: 12px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: transform 0.1s, border-color 0.15s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .word-card:active { transform: scale(0.97); }
+        .word-card.mastered {
+            border-color: rgba(74,222,128,0.35);
+            background: linear-gradient(135deg, rgba(74,222,128,0.08), var(--bg-elevated));
+        }
+        .word-card.mastered::after {
+            content: '★';
+            position: absolute; top: 6px; right: 8px;
+            font-size: 11px; color: var(--green);
+        }
+        .word-en {
+            font-size: 13px; font-weight: 700;
+            color: var(--text);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .word-uz {
+            font-size: 11px; color: var(--text-tertiary);
+            margin-top: 4px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ── Empty state ── */
+        .empty {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-tertiary);
+        }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+        .empty-sub { font-size: 13px; line-height: 1.5; }
+
+        /* ── Next up section ── */
+        .next-up-card {
+            margin-top: 8px;
+            padding: 18px 18px 16px;
+            background: var(--bg-card);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 16px;
+        }
+        .next-up-title {
+            font-size: 11px; font-weight: 700;
+            color: var(--amber);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+        .next-up-sub {
+            font-size: 12px; color: var(--text-tertiary);
+            margin-bottom: 14px;
+        }
+        .next-up-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .next-up-pill {
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 0;
+        }
+        .next-up-word {
+            font-size: 12px; font-weight: 600;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .next-up-pct {
+            font-size: 10px; color: var(--amber);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .cta {
+            display: block; margin: 28px auto 0;
+            padding: 14px 32px;
+            background: var(--purple);
+            color: #fff;
+            border: none; border-radius: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px; font-weight: 700;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            width: fit-content;
+            transition: transform 0.1s;
+        }
+        .cta:active { transform: scale(0.97); }
+
+        /* Fade up each source group */
+        .source-group { animation: fadeUp 0.5s ease both; }
+        .source-group:nth-child(2) { animation-delay: 0.08s; }
+        .source-group:nth-child(3) { animation-delay: 0.16s; }
+        .source-group:nth-child(4) { animation-delay: 0.24s; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+{% include "learning/_coins_hud.html" %}
+
+
+<div class="nav">
+    <a href="{% url 'learning:word-notebook' %}">← Back</a>
+    <div class="nav-title">Your <span>Collection</span></div>
+    <div style="width:50px;"></div>
+</div>
+
+<div class="container">
+
+    <!-- Hero: total mastered -->
+    <div class="hero">
+        <div class="hero-trophy">🏆</div>
+        <div class="hero-number">{{ total_mastered }}</div>
+        <div class="hero-label">word{{ total_mastered|pluralize }} mastered</div>
+        {% if total_tracked > 0 %}
+            <div class="hero-sub">
+                {{ overall_pct }}% of {{ total_tracked }} tracked words
+            </div>
+        {% else %}
+            <div class="hero-sub">Practice to start building your collection</div>
+        {% endif %}
+    </div>
+
+    {% if source_groups %}
+        {% for g in source_groups %}
+            <div class="source-group">
+                <div class="source-head">
+                    <div class="source-thumb" {% if g.source.thumbnail %}style="background-image:url('{{ g.source.thumbnail.url }}');"{% endif %}></div>
+                    <div class="source-meta">
+                        <div class="source-title">{{ g.source.title }}</div>
+                        <div class="source-stats">{{ g.mastered_count }} / {{ g.total }} mastered</div>
+                    </div>
+                    <div class="source-pct">{{ g.pct }}%</div>
+                </div>
+                <div class="source-bar">
+                    <div class="source-bar-fill" style="width: {{ g.pct }}%;"></div>
+                </div>
+                <div class="word-grid">
+                    {% for m in g.masteries %}
+                        <div class="word-card {% if m.level == 'mastered' %}mastered{% endif %}"
+                             title="{{ m.vocab.english }} — {{ m.vocab.translation }}">
+                            <div class="word-en">{{ m.vocab.english }}</div>
+                            <div class="word-uz">{{ m.vocab.translation }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">
+            <div class="empty-icon">📚</div>
+            <div class="empty-title">No mastered words yet</div>
+            <div class="empty-sub">
+                Practice in the quiz to level up words.<br>
+                Words appear here when they reach "strong" or "mastered."
+            </div>
+        </div>
+    {% endif %}
+
+    {% if next_up %}
+        <div class="next-up-card">
+            <div class="next-up-title">⚡ Almost there</div>
+            <div class="next-up-sub">Closest to the next level — practice these to unlock them:</div>
+            <div class="next-up-grid">
+                {% for m in next_up %}
+                    <div class="next-up-pill">
+                        <div class="next-up-word">{{ m.vocab.english }}</div>
+                        <div class="next-up-pct">{% widthratio m.p_known 1 100 %}%</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <a href="{% url 'learning:quiz' %}" class="cta">Practice now →</a>
+
+</div>
+
+</body>
+</html>

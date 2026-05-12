@@ -1,0 +1,485 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connector Quiz — Quotable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#0D0E14;--bg2:#12131A;--bg3:#17181F;--bg4:#20222C;
+            --border:rgba(255,255,255,0.08);--t1:#ECECF1;--t2:#B4B5C0;--t3:#8E8F9B;
+            --blue:#3b82f6;--blue-d:rgba(59,130,246,.12);
+            --green:#4ADE80;--green-d:rgba(74,222,128,.15);
+            --red:#ef4444;--red-d:rgba(239,68,68,.12);
+            --amber:#f59e0b;--amber-d:rgba(245,158,11,.12);
+            --purple:#a855f7;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+        a{color:var(--blue);text-decoration:none}
+
+        .nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;
+             border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:50}
+        .nav-left{display:flex;align-items:center;gap:12px}
+        .nav a.back{color:var(--t2);font-size:14px}
+        .nav .title{font-size:16px;font-weight:700}
+        .nav .title em{color:var(--blue);font-style:normal}
+        .nav .counter{font-size:13px;color:var(--t3);font-weight:500}
+
+        /* HUB */
+        .hub{max-width:500px;margin:0 auto;padding:24px 16px}
+        .hub h2{font-size:24px;font-weight:800;margin-bottom:4px}
+        .hub>p{color:var(--t2);font-size:14px;margin-bottom:20px}
+        .hub-progress{color:var(--blue);font-size:13px;font-weight:600;margin-bottom:20px}
+        .wc{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg3);
+            border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all .15s;
+            border-left:3px solid var(--blue)}
+        .wc:hover{background:var(--bg4)}
+        .wc.done{border-left-color:var(--green)}
+        .wc-word{font-weight:700;font-size:16px;flex:1}
+        .wc-uz{color:var(--t3);font-size:13px;flex-shrink:0;margin-right:8px}
+        .wc-score{font-size:12px;color:var(--t3);font-weight:600;min-width:30px;text-align:right}
+        .wc-check{color:var(--green);font-size:16px;flex-shrink:0;width:20px;text-align:center}
+
+        /* PRACTICE */
+        .practice{max-width:500px;margin:0 auto;padding:24px 16px 80px;animation:fadeUp .25s ease}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+        .p-word{font-size:28px;font-weight:800;color:var(--blue);margin-bottom:2px}
+        .p-uz-word{font-size:15px;color:var(--t3);font-style:italic;margin-bottom:20px}
+
+        /* Progress bar */
+        .p-bar{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+        .p-bar-label{font-size:13px;color:var(--t3);font-weight:600;white-space:nowrap}
+        .p-bar-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+        .p-bar-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
+
+        /* Uzbek prompt */
+        .uz-prompt{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+                   padding:16px;margin-bottom:20px;text-align:center}
+        .uz-prompt-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+                         color:var(--blue);margin-bottom:8px}
+        .uz-prompt-text{font-size:18px;font-weight:600;line-height:1.6;color:var(--t1)}
+
+        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+        /* Check button */
+        .check-row{display:flex;justify-content:center;gap:10px}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:14px 28px;border-radius:10px;
+             font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+        .btn-blue{background:var(--blue);color:#fff}
+        .btn-blue:hover{filter:brightness(1.1);transform:translateY(-1px)}
+        .btn-blue:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+        .btn-outline{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+        .btn-outline:hover{background:var(--blue-d)}
+
+        /* Type input */
+        .type-area{margin-bottom:16px}
+        .type-input{width:100%;padding:14px 16px;border-radius:12px;font-size:16px;font-weight:500;
+                    font-family:inherit;background:var(--bg3);border:2px solid var(--border);
+                    color:var(--t1);outline:none;transition:border-color .2s}
+        .type-input:focus{border-color:var(--blue)}
+        .type-input.correct{border-color:var(--green);background:var(--green-d);color:var(--green)}
+        .type-input.wrong{border-color:var(--red);background:var(--red-d);color:var(--red);animation:shake .4s ease}
+        .type-input::placeholder{color:var(--t3)}
+
+        /* Correct answer reveal */
+        .correct-answer{text-align:center;padding:12px;margin-top:12px;font-size:15px;
+                        color:var(--green);font-weight:600;animation:fadeUp .2s ease}
+
+        /* Results */
+        .results{max-width:400px;margin:0 auto;padding:60px 16px;text-align:center;animation:fadeUp .3s ease}
+        .results-score{font-size:64px;font-weight:800;margin-bottom:4px}
+        .results-label{font-size:14px;color:var(--t3);margin-bottom:16px}
+        .results-msg{font-size:18px;font-weight:600;margin-bottom:24px}
+        .results-bar{display:flex;gap:4px;justify-content:center;margin-bottom:24px}
+        .results-dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+        .results-dot.hit{background:var(--green)}
+        .results-dot.miss{background:var(--red)}
+        .results-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+        @media(max-width:480px){
+            .p-word{font-size:24px}
+            .uz-prompt-text{font-size:16px}
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SFX_CORRECT = '{% static "sounds/correct3.mp3" %}';
+function playCorrect(){try{new Audio(SFX_CORRECT).play()}catch(e){}}
+
+// ── Answer normalization & contraction handling ──
+const norm=s=>s.toLowerCase().replace(/\[.*?\]/g,'').replace(/[.,!?;:'"…\-]+/g,'').replace(/\s+/g,' ').trim();
+const CONTRACTIONS={
+    "i'm":"i am","i'll":"i will","i'd":"i would","i've":"i have",
+    "he's":"he is","she's":"she is","it's":"it is","that's":"that is",
+    "we're":"we are","they're":"they are","you're":"you are",
+    "we'll":"we will","they'll":"they will","you'll":"you will","it'll":"it will",
+    "he'll":"he will","she'll":"she will",
+    "we'd":"we would","they'd":"they would","you'd":"you would","he'd":"he would","she'd":"she would",
+    "we've":"we have","they've":"they have","you've":"you have",
+    "don't":"do not","doesn't":"does not","didn't":"did not",
+    "isn't":"is not","aren't":"are not","wasn't":"was not","weren't":"were not",
+    "won't":"will not","wouldn't":"would not","couldn't":"could not","shouldn't":"should not",
+    "can't":"cannot","haven't":"have not","hasn't":"has not","hadn't":"had not",
+    "let's":"let us","there's":"there is","here's":"here is","who's":"who is","what's":"what is",
+};
+function expandAll(s){
+    let r=s;
+    for(const[k,v] of Object.entries(CONTRACTIONS)) r=r.replace(new RegExp(k.replace("'","'?"),'g'),v);
+    return r;
+}
+function answersMatch(user,answer){
+    const u=norm(user), a=norm(answer);
+    // Also compare with brackets stripped (user can type with or without placeholder words)
+    const aStrip=answer.toLowerCase().replace(/\[.*?\]/g,'').replace(/[.,!?;:'"…\-]+/g,'').replace(/\s+/g,' ').trim();
+    return u===a || u===aStrip || expandAll(u)===expandAll(a) || expandAll(u)===expandAll(aStrip);
+}
+let _wrongCtx=null;
+function playWrong(){
+    try{
+        if(!_wrongCtx)_wrongCtx=new(window.AudioContext||window.webkitAudioContext)();
+        const c=_wrongCtx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+        o.type='triangle';o.frequency.setValueAtTime(180,t);o.frequency.linearRampToValueAtTime(100,t+.25);
+        g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);
+        o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.3);
+    }catch(e){}
+}
+function playComplete(){
+    try{
+        const c=new(window.AudioContext||window.webkitAudioContext)(),t=c.currentTime;
+        [523.25,659.25,783.99].forEach((f,i)=>{
+            const o=c.createOscillator(),g=c.createGain();
+            o.type='sine';o.frequency.value=f;
+            g.gain.setValueAtTime(.08,t+i*.12);g.gain.exponentialRampToValueAtTime(.001,t+i*.12+.4);
+            o.connect(g);g.connect(c.destination);o.start(t+i*.12);o.stop(t+i*.12+.5);
+        });
+    }catch(e){}
+}
+
+/* ── DATA: 19 connectors, 5 sentences each ── */
+const W=[
+{word:"because",uz:"chunki",sentences:[
+  {en:"I stayed home because it was raining.",uz:"Men uyda qoldim, chunki yomg'ir yog'di."},
+  {en:"She left because he lied.",uz:"U ketdi, chunki u yolg'on gapirdi."},
+  {en:"I'm crying because I'm happy.",uz:"Yig'layapman, chunki baxtliman."},
+  {en:"I'll call you because I need help.",uz:"Qo'ng'iroq qilaman, chunki yordam kerak."},
+  {en:"I didn't go because nobody invited me.",uz:"Bormadim, chunki hech kim taklif qilmadi."}
+]},
+{word:"so",uz:"shuning uchun",sentences:[
+  {en:"I was tired, so I went home.",uz:"Charchadim, shuning uchun uyga ketdim."},
+  {en:"Nobody came, so I left.",uz:"Hech kim kelmadi, shuning uchun ketdim."},
+  {en:"It'll rain, so take an umbrella.",uz:"Yomg'ir yog'adi, shuning uchun soyabon oling."},
+  {en:"I'm tired, so I'm going home.",uz:"Charchadim, shuning uchun uyga ketyapman."},
+  {en:"Nobody came, so we didn't start.",uz:"Hech kim kelmadi, shuning uchun boshlamadik."}
+]},
+{word:"but",uz:"lekin",sentences:[
+  {en:"I'm tired, but I'm still working.",uz:"Charchadim, lekin hali ishlayapman."},
+  {en:"She studied, but she failed.",uz:"U o'qidi, lekin yiqildi."},
+  {en:"I'll come, but I'll be late.",uz:"Kelaman, lekin kech bo'laman."},
+  {en:"He tried hard, but he failed.",uz:"U harakat qildi, lekin uddalay olmadi."},
+  {en:"She's only 19, but she runs a company.",uz:"U atigi 19 yoshda, lekin kompaniya boshqaradi."}
+]},
+{word:"that",uz:"...gan / ...ki",sentences:[
+  {en:"The food that she cooks is amazing.",uz:"U tayyorlaydigan ovqat ajoyib."},
+  {en:"She said that she was leaving.",uz:"U ketayotganini aytdi."},
+  {en:"It's important that you understand.",uz:"Tushunishingiz muhim."},
+  {en:"The book that I bought was great.",uz:"Men sotib olgan kitob ajoyib edi."},
+  {en:"I know that you are right.",uz:"Haq ekanligingni bilaman."}
+]},
+{word:"which",uz:"qaysi / bu esa",sentences:[
+  {en:"His car, which is brand new, broke down.",uz:"Uning mashinasi, yangi bo'lishiga qaramay, buzildi."},
+  {en:"He passed the exam, which surprised everyone.",uz:"Imtihondan o'tdi — bu hammani hayratga soldi."},
+  {en:"My phone, which I bought last month, cracked.",uz:"O'tgan oy olgan telefonim sinib ketdi."},
+  {en:"The food, which nobody touched, went cold.",uz:"Hech kim tegmagan ovqat sovib qoldi."},
+  {en:"The dress which fits best is the blue one.",uz:"Eng mos ko'ylak — ko'k rangdagisi."}
+]},
+{word:"who",uz:"...gan odam / kim",sentences:[
+  {en:"The man who is talking is my boss.",uz:"Gapirayotgan odam mening boshlig'im."},
+  {en:"The girl who helped me was kind.",uz:"Menga yordam bergan qiz mehribon edi."},
+  {en:"People who work hard succeed.",uz:"Qattiq ishlaydigan odamlar muvaffaq bo'ladi."},
+  {en:"Anyone who wants to come is welcome.",uz:"Kim kelishni xohlasa — marhamat."},
+  {en:"The man who called me is my brother.",uz:"Menga qo'ng'iroq qilgan odam mening akam."}
+]},
+{word:"whose",uz:"kimning",sentences:[
+  {en:"The woman whose bag was stolen went to police.",uz:"Sumkasi o'g'irlangan ayol politsiyaga bordi."},
+  {en:"I met a girl whose father is a doctor.",uz:"Otasi shifokor bo'lgan qizni uchratdim."},
+  {en:"The guy whose car broke down called me.",uz:"Mashinasi buzilgan yigit menga qo'ng'iroq qildi."},
+  {en:"The house whose roof leaks needs repair.",uz:"Tomi oqayotgan uy ta'mirga muhtoj."},
+  {en:"Whose phone is this?",uz:"Bu kimning telefoni?"}
+]},
+{word:"whom",uz:"kimni / kimga",sentences:[
+  {en:"The friend whom she trusted lied.",uz:"Ishongan do'sti yolg'on gapirdi."},
+  {en:"The teacher to whom I wrote didn't reply.",uz:"Yozgan o'qituvchim javob bermadi."},
+  {en:"The person whom I met was kind.",uz:"Uchrashgan odamim mehribon edi."},
+  {en:"The doctor whom we called arrived quickly.",uz:"Chaqirgan shifokorimiz tez keldi."},
+  {en:"The man whom I helped thanked me.",uz:"Yordam bergan odamim rahmat aytdi."}
+]},
+{word:"where",uz:"qayerda",sentences:[
+  {en:"The place where we met is gone.",uz:"Uchrashgan joyimiz yo'q bo'lib ketdi."},
+  {en:"This is the city where I live now.",uz:"Bu men hozir yashaydigan shahar."},
+  {en:"The hotel where we'll stay looks nice.",uz:"Turadigan mehmonxonamiz chiroyli ko'rinadi."},
+  {en:"The house where I was born is still there.",uz:"Men tug'ilgan uy hali ham bor."},
+  {en:"I know a place where we can eat.",uz:"Ovqat yeyish mumkin bo'lgan joyni bilaman."}
+]},
+{word:"when",uz:"qachon / ...gan payt",sentences:[
+  {en:"I remember the day when we met.",uz:"Uchrashgan kunimizni eslayman."},
+  {en:"I love it when it rains.",uz:"Yomg'ir yog'ganda yaxshi ko'raman."},
+  {en:"The moment when you see it, you'll understand.",uz:"Ko'rgan zahoting, tushunasan."},
+  {en:"Call me when you arrive.",uz:"Kelganingda menga qo'ng'iroq qil."},
+  {en:"I was happy when I heard the news.",uz:"Xabarni eshitganimda xursand bo'ldim."}
+]},
+{word:"although",uz:"garchi...bo'lsa ham",sentences:[
+  {en:"Although I'm tired, I'm still working.",uz:"Charchagan bo'lsam ham, ishlayapman."},
+  {en:"Although it rained, we had fun.",uz:"Yomg'ir yog'sa ham, zavqlandik."},
+  {en:"Although it will be hard, I'll try.",uz:"Qiyin bo'lsa ham, harakat qilaman."},
+  {en:"She's happy although she has problems.",uz:"Muammolari bo'lsa ham, baxtli."},
+  {en:"Although he was tired, he kept going.",uz:"Charchagan bo'lsa ham, davom etdi."}
+]},
+{word:"even though",uz:"hatto...bo'lsa ham",sentences:[
+  {en:"She smiled even though she was crying.",uz:"Yig'layotgan bo'lsa ham, tabassum qildi."},
+  {en:"I'm going even though I'm scared.",uz:"Qo'rqsam ham, ketyapman."},
+  {en:"Even though I begged him, he said no.",uz:"Yolvorsam ham, yo'q dedi."},
+  {en:"She forgave him even though he lied.",uz:"Yolg'on gapirsa ham, kechirdi."},
+  {en:"He won even though nobody believed in him.",uz:"Hech kim ishonmasa ham, g'alaba qozondi."}
+]},
+{word:"if",uz:"agar",sentences:[
+  {en:"If you heat water, it boils.",uz:"Suvni qizdirsangiz, qaynaydi."},
+  {en:"If it rains, I'll stay home.",uz:"Yomg'ir yog'sa, uyda qolaman."},
+  {en:"If I were rich, I would travel.",uz:"Boy bo'lganimda, sayohat qilardim."},
+  {en:"If I had known, I would have helped.",uz:"Bilganimda, yordam bergan bo'lardim."},
+  {en:"If you study, you will pass.",uz:"O'qisang, o'tasan."}
+]},
+{word:"unless",uz:"agar...masa",sentences:[
+  {en:"I'll go unless it rains.",uz:"Yomg'ir yog'masa, boraman."},
+  {en:"Unless you hurry, you'll miss the bus.",uz:"Shoshilmasangiz, avtobusni qoldirasiz."},
+  {en:"I eat everything unless it's spicy.",uz:"Achchiq bo'lmasa, hammasini yeyman."},
+  {en:"I won't tell anyone unless you ask.",uz:"So'ramasangiz, hech kimga aytmayman."},
+  {en:"Unless you try, you'll never know.",uz:"Harakat qilmasangiz, hech qachon bilmaysiz."}
+]},
+{word:"as long as",uz:"...ekan / shart bilan",sentences:[
+  {en:"You can stay as long as you're quiet.",uz:"Jim bo'lsang, qolishing mumkin."},
+  {en:"I'll support you as long as you try.",uz:"Harakat qilsang, qo'llab-quvvatlayman."},
+  {en:"Any job is fine as long as it pays well.",uz:"Yaxshi to'lasa, har qanday ish yaxshi."},
+  {en:"I'm happy as long as you're happy.",uz:"Sen baxtli bo'lsang, men ham baxtliman."},
+  {en:"You can borrow it as long as you return it.",uz:"Qaytarsang, olishing mumkin."}
+]},
+{word:"what",uz:"...gan narsa / nima",sentences:[
+  {en:"What she said hurt me.",uz:"Uning aytgani meni ranjitdi."},
+  {en:"Tell me what you want.",uz:"Nimani xohlayotganingni ayt."},
+  {en:"I don't understand what happened.",uz:"Nima bo'lganini tushunmayapman."},
+  {en:"What matters most is your effort.",uz:"Eng muhimi — sizning harakatingiz."},
+  {en:"I saw what you did.",uz:"Nima qilganingni ko'rdim."}
+]},
+{word:"however",uz:"biroq",sentences:[
+  {en:"He failed. However, he tried again.",uz:"U yiqildi. Biroq, yana harakat qildi."},
+  {en:"I'm busy. However, I'll make time for you.",uz:"Bandman. Biroq, siz uchun vaqt ajrataman."},
+  {en:"It will be hard. However, it's worth it.",uz:"Qiyin bo'ladi. Biroq, bunga arziydi."},
+  {en:"The food was bad. However, the service was great.",uz:"Ovqat yomon edi. Biroq, xizmat ajoyib edi."},
+  {en:"He was tired. However, he kept going.",uz:"Charchagan edi. Biroq, davom etdi."}
+]},
+{word:"therefore",uz:"shuning uchun / demak",sentences:[
+  {en:"He lied. Therefore, I don't trust him.",uz:"U yolg'on gapirdi. Shuning uchun, ishonmayman."},
+  {en:"She studied hard. Therefore, she passed.",uz:"U qattiq o'qidi. Shuning uchun, o'tdi."},
+  {en:"He broke the rules. Therefore, he was removed.",uz:"U qoidalarni buzdi. Shuning uchun, chetlatildi."},
+  {en:"The data is insufficient. Therefore, we cannot proceed.",uz:"Ma'lumot yetarli emas. Shuning uchun, davom eta olmaymiz."},
+  {en:"It rained heavily. Therefore, the match was canceled.",uz:"Kuchli yomg'ir yog'di. Shuning uchun, o'yin bekor qilindi."}
+]},
+{word:"meanwhile",uz:"shu paytda",sentences:[
+  {en:"I was cooking. Meanwhile, he cleaned the house.",uz:"Men ovqat pishirdim. Shu paytda u tozaladi."},
+  {en:"She's studying. Meanwhile, her brother is playing.",uz:"U o'qiyapti. Shu paytda ukasi o'ynayapti."},
+  {en:"The police searched. Meanwhile, the thief escaped.",uz:"Politsiya qidirdi. Shu paytda o'g'ri qochdi."},
+  {en:"I'll cook. Meanwhile, you set the table.",uz:"Men ovqat tayyorlayman. Shu paytda siz dasturxon yozing."},
+  {en:"He was sleeping. Meanwhile, the phone was ringing.",uz:"U uxlayotgan edi. Shu paytda telefon jiringlar edi."}
+]}
+];
+
+/* ── STATE ── */
+const app=document.getElementById('app');
+const CSRF='{{ csrf_token }}';
+let S={screen:'hub',wordIdx:0,sentIdx:0,placed:[],results:[],answerStart:0};
+function getMastery(){return JSON.parse(localStorage.getItem('conn_q')||'{}');}
+function saveMastery(m){localStorage.setItem('conn_q',JSON.stringify(m));}
+function _logToServer(word, sentIdx, sentence, correct, timems) {
+    fetch('/learning/grammar/log/', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body:JSON.stringify({
+            unit_id: 100 + S.wordIdx,
+            unit_title: 'Connector: ' + word,
+            results:[{index:sentIdx, sentence:sentence, correct:correct, attempts:1, time_ms:timems}]
+        })
+    }).catch(()=>{});
+}
+
+function render(){
+    if(S.screen==='hub')renderHub();
+    else if(S.screen==='practice')renderPractice();
+    else renderResults();
+}
+
+function renderHub(){
+    const m=getMastery();
+    const done=Object.values(m).filter(v=>v>=5).length;
+    let html=`<div class="nav"><div class="nav-left">
+        <a class="back" href="{% url 'learning:quiz' %}">&#8592; Quiz</a>
+        <span class="title"><em>Connectors</em></span></div></div>
+    <div class="hub">
+        <h2>Connector Quiz</h2>
+        <p>Read the Uzbek sentence, build it in English.</p>
+        <div class="hub-progress">${done} / ${W.length} completed</div>`;
+    W.forEach((w,i)=>{
+        const sc=m[w.word]||0;
+        const isDone=sc>=5;
+        html+=`<div class="wc${isDone?' done':''}" onclick="startWord(${i})">
+            <div class="wc-word">${w.word}</div>
+            <div class="wc-uz">${w.uz}</div>
+            <div class="wc-score">${sc}/5</div>
+            <div class="wc-check">${isDone?'&#10003;':''}</div></div>`;
+    });
+    html+=`</div>`;
+    app.innerHTML=html;
+}
+
+function startWord(i){
+    S.screen='practice';S.wordIdx=i;S.sentIdx=0;S.results=[];
+    render();window.scrollTo(0,0);
+}
+
+
+function renderPractice(){
+    const w=W[S.wordIdx];
+    const sent=w.sentences[S.sentIdx];
+
+    app.innerHTML=`<div class="nav"><div class="nav-left">
+        <a class="back" href="#" onclick="event.preventDefault();goHub()">&#8592; Back</a>
+        <span class="title">${w.word}</span></div>
+        <span class="counter">${S.sentIdx+1} / ${w.sentences.length}</span></div>
+    <div class="practice">
+        <div class="p-word">${w.word}</div>
+        <div class="p-uz-word">${w.uz}</div>
+        <div class="p-bar">
+            <div class="p-bar-label">${S.sentIdx+1}/${w.sentences.length}</div>
+            <div class="p-bar-track"><div class="p-bar-fill" style="width:${(S.sentIdx/w.sentences.length)*100}%"></div></div>
+        </div>
+        <div class="uz-prompt">
+            <div class="uz-prompt-label">Translate to English</div>
+            <div class="uz-prompt-text">${sent.uz}</div>
+        </div>
+        <div class="type-area">
+            <input class="type-input" id="typeInput" type="text" placeholder="Type in English..."
+                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                   onkeydown="if(event.key==='Enter')checkTypeAnswer()">
+            <div class="check-row" style="margin-top:12px">
+                <button class="btn btn-blue" id="checkBtn" onclick="checkTypeAnswer()">Check &#10003;</button>
+            </div>
+        </div>
+        <div id="correctReveal"></div>
+    </div>`;
+
+    S.answerStart=Date.now();
+    setTimeout(()=>{const inp=document.getElementById('typeInput');if(inp)inp.focus();},200);
+}
+
+
+function checkTypeAnswer(){
+    const inp=document.getElementById('typeInput');
+    if(!inp)return;
+    const raw=inp.value.trim();
+    if(!raw)return;
+
+    const btn=document.getElementById('checkBtn');
+    btn.disabled=true;
+    inp.disabled=true;
+
+    const w=W[S.wordIdx];
+    const sent=w.sentences[S.sentIdx];
+    const correctAnswer=sent.en;
+
+    const isCorrect=answersMatch(raw,correctAnswer);
+    const timems=Date.now()-S.answerStart;
+
+    // Log to server
+    _logToServer(w.word, S.sentIdx, correctAnswer, isCorrect, timems);
+
+    if(isCorrect){
+        playCorrect();
+        inp.classList.add('correct');
+        S.results.push(true);
+
+        const m=getMastery();
+        m[w.word]=Math.min((m[w.word]||0)+1,5);
+        saveMastery(m);
+
+        setTimeout(nextSentence,1200);
+    } else {
+        playWrong();
+        inp.classList.add('wrong');
+        S.results.push(false);
+
+        document.getElementById('correctReveal').innerHTML=
+            `<div class="correct-answer">&#10003; ${correctAnswer}</div>`;
+
+        setTimeout(nextSentence,2500);
+    }
+}
+
+function nextSentence(){
+    S.sentIdx++;
+    if(S.sentIdx>=W[S.wordIdx].sentences.length){
+        S.screen='results';
+        render();
+    } else {
+        renderPractice();
+        window.scrollTo(0,0);
+    }
+}
+
+function goHub(){S.screen='hub';render();}
+
+function renderResults(){
+    playComplete();
+    const w=W[S.wordIdx];
+    const correct=S.results.filter(r=>r).length;
+    const total=S.results.length;
+    const pct=Math.round((correct/total)*100);
+    let msg='';
+    if(pct===100)msg='Perfect! &#127775;';
+    else if(pct>=80)msg='Great job!';
+    else if(pct>=60)msg='Good, keep going!';
+    else msg='Try again!';
+
+    const hasNext=S.wordIdx+1<W.length;
+
+    let html=`<div class="nav"><div class="nav-left">
+        <a class="back" href="#" onclick="event.preventDefault();goHub()">&#8592; Back</a>
+        <span class="title"><em>${w.word}</em></span></div></div>
+    <div class="results">
+        <div class="results-score" style="color:${pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)'}">${pct}%</div>
+        <div class="results-label">${correct}/${total} correct</div>
+        <div class="results-msg">${msg}</div>
+        <div class="results-bar">`;
+    S.results.forEach(r=>{
+        html+=`<div class="results-dot ${r?'hit':'miss'}"></div>`;
+    });
+    html+=`</div>
+        <div class="results-btns">
+            <button class="btn btn-blue" onclick="startWord(${S.wordIdx})">Retry &#8635;</button>
+            ${hasNext?`<button class="btn btn-outline" onclick="startWord(${S.wordIdx+1})">Next: ${W[S.wordIdx+1].word} &#8594;</button>`:''}
+            <button class="btn btn-outline" onclick="goHub()">All words</button>
+        </div>
+    </div>`;
+    app.innerHTML=html;
+}
+
+render();
+</script>
+{% include "learning/_page_tracker.html" with page_name="connector_quiz" %}
+</body>
+</html>

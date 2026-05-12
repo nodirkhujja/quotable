@@ -1,0 +1,442 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ready to Watch</title>
+<style>
+:root {
+    --bg: #0a0a0c;
+    --bg-elevated: #131318;
+    --text: #f4f4f5;
+    --text-2: #a1a1aa;
+    --text-3: #6b7280;
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.12);
+    --indigo: #6366f1;
+    --border: rgba(255,255,255,0.08);
+}
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+.rtw-shell {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px 16px 60px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+}
+
+/* Topbar — quiet brand line + a real "Back" link */
+.rtw-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 18px;
+    color: var(--text-3);
+    font-size: 13px;
+}
+.rtw-topbar a {
+    color: var(--text-2);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    transition: background .15s;
+}
+.rtw-topbar a:hover { background: var(--bg-elevated); }
+
+/* Counter pill */
+.rtw-counter {
+    text-align: center;
+    color: var(--text-3);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+/* Video frame */
+.rtw-video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.40);
+}
+.rtw-video {
+    width: 100%; height: 100%;
+    display: block;
+    object-fit: contain;
+    background: #000;
+}
+/* "tap to start" overlay — autoplay sometimes blocked */
+.rtw-tap-start {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    color: white;
+    font-size: 14px;
+    background: rgba(0,0,0,0.55);
+    cursor: pointer;
+    z-index: 2;
+}
+.rtw-tap-start.shown { display: flex; }
+.rtw-tap-start::before {
+    content: '▶';
+    margin-right: 8px;
+    font-size: 22px;
+}
+
+.rtw-episode {
+    margin-top: 10px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+/* REVEAL phase */
+.rtw-reveal-block {
+    display: none;
+    margin-top: 18px;
+}
+.rtw-reveal-block.shown { display: block; }
+
+.rtw-transcript {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    line-height: 1.7;
+    font-size: 17px;
+    text-align: center;
+    color: var(--text);
+}
+.rtw-word-known {
+    color: var(--green);
+    font-weight: 600;
+}
+.rtw-word-unknown {
+    color: var(--text-3);
+}
+
+/* THE BIG NUMBER — quiet but unmistakable */
+.rtw-coverage {
+    text-align: center;
+    margin-top: 24px;
+}
+.rtw-coverage-num {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.rtw-coverage-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    margin-top: 8px;
+}
+.rtw-coverage-detail {
+    display: block;
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 6px;
+}
+
+/* Next-scene CTA */
+.rtw-next-btn {
+    display: block; width: 100%;
+    padding: 16px;
+    margin-top: 22px;
+    border: none; border-radius: 12px;
+    background: var(--green);
+    color: #0a0a0c;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform .12s, background .15s;
+}
+.rtw-next-btn:hover { background: #16a34a; }
+.rtw-next-btn:active { transform: scale(0.98); }
+
+/* Loading + empty + complete states */
+.rtw-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-2);
+}
+.rtw-state-headline {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+}
+.rtw-state-sub {
+    font-size: 14px;
+    color: var(--text-3);
+    line-height: 1.5;
+}
+.rtw-state .rtw-coverage-num {
+    font-size: 44px;
+    margin-bottom: 4px;
+}
+
+/* Honest disclosure footer for the test page */
+.rtw-test-footer {
+    margin-top: auto;
+    padding: 22px 0 4px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.55;
+}
+</style>
+</head>
+<body>
+<div class="rtw-shell">
+    <div class="rtw-topbar">
+        <span>Ready to Watch · TEST</span>
+        <a href="{% url 'learning:word_note_list' %}">← Back</a>
+    </div>
+
+    <div id="rtw-loading" class="rtw-state">
+        <div class="rtw-state-headline">Finding scenes you can understand…</div>
+        <div class="rtw-state-sub">One moment.</div>
+    </div>
+
+    <div id="rtw-empty" class="rtw-state" style="display:none;">
+        <div class="rtw-state-headline" id="rtw-empty-headline">Almost there.</div>
+        <div class="rtw-state-sub" id="rtw-empty-sub"></div>
+    </div>
+
+    <div id="rtw-watching" style="display:none;">
+        <div class="rtw-counter">
+            <span id="rtw-counter-current">1</span> / <span id="rtw-counter-total">5</span>
+        </div>
+        <div class="rtw-video-wrap">
+            <video id="rtw-video" class="rtw-video" playsinline preload="auto"></video>
+            <div id="rtw-tap-start" class="rtw-tap-start">tap to start with sound</div>
+        </div>
+        <div id="rtw-episode" class="rtw-episode"></div>
+
+        <div id="rtw-reveal-block" class="rtw-reveal-block">
+            <div id="rtw-transcript" class="rtw-transcript"></div>
+            <div class="rtw-coverage">
+                <span class="rtw-coverage-num" id="rtw-cov-num">0</span><span class="rtw-coverage-num" style="font-size:32px;">%</span>
+                <span class="rtw-coverage-label">understood</span>
+                <span class="rtw-coverage-detail" id="rtw-cov-detail"></span>
+            </div>
+            <button type="button" class="rtw-next-btn" id="rtw-next-btn">Next scene →</button>
+        </div>
+    </div>
+
+    <div id="rtw-complete" class="rtw-state" style="display:none;">
+        <div class="rtw-coverage-num">✓</div>
+        <div class="rtw-state-headline" id="rtw-complete-headline">Done for now.</div>
+        <div class="rtw-state-sub" id="rtw-complete-sub"></div>
+        <a href="{% url 'learning:word_note_list' %}" class="rtw-next-btn" style="display:inline-block;width:auto;margin-top:24px;text-decoration:none;text-align:center;padding:14px 28px;">Back to your words</a>
+    </div>
+
+    <div class="rtw-test-footer">test · /learning/ready-to-watch/</div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+
+    // State
+    let scenes = [];
+    let totalReady = 0;
+    let nextUnlock = null;
+    let idx = 0;
+    let phase = "loading"; // loading | watching | reveal | complete | empty
+
+    // Tokenize identically to the backend so the highlight matches the
+    // coverage calc (lowercase, strip apostrophes).
+    function tokenize(text) {
+        const raw = (text || "").toLowerCase().match(/[a-z']+/g) || [];
+        return raw.map(w => w.replace(/'/g, ""));
+    }
+
+    function escHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s == null ? "" : String(s);
+        return div.innerHTML;
+    }
+
+    // Render the transcript with known tokens highlighted green.
+    // Splits on whitespace to preserve punctuation visually.
+    function renderTranscript(text, knownSet) {
+        const parts = (text || "").split(/(\s+)/);
+        const out = parts.map(part => {
+            if (/^\s+$/.test(part)) return part;
+            // Strip punctuation for matching, keep it for display
+            const bare = part.toLowerCase().replace(/[^a-z']/g, "").replace(/'/g, "");
+            const cls = bare && knownSet.has(bare) ? "rtw-word-known" : "rtw-word-unknown";
+            return `<span class="${cls}">${escHtml(part)}</span>`;
+        }).join("");
+        return out;
+    }
+
+    function show(elId) {
+        ["rtw-loading", "rtw-empty", "rtw-watching", "rtw-complete"].forEach(id => {
+            const el = $(id);
+            if (el) el.style.display = (id === elId) ? "" : "none";
+        });
+    }
+
+    function startScene(i) {
+        if (i >= scenes.length) {
+            phase = "complete";
+            $("rtw-complete-headline").textContent =
+                `${scenes.length} scene${scenes.length === 1 ? "" : "s"} watched.`;
+            const remaining = Math.max(0, totalReady - scenes.length);
+            $("rtw-complete-sub").textContent = remaining > 0
+                ? `${remaining} more ready when you come back.`
+                : "Come back tomorrow for fresh scenes.";
+            show("rtw-complete");
+            return;
+        }
+        idx = i;
+        const sc = scenes[idx];
+        phase = "watching";
+        show("rtw-watching");
+
+        $("rtw-counter-current").textContent = String(idx + 1);
+        $("rtw-counter-total").textContent = String(scenes.length);
+        $("rtw-episode").textContent = sc.season != null && sc.episode_number != null
+            ? `${sc.episode_title} · S${sc.season}E${String(sc.episode_number).padStart(2, "0")}`
+            : (sc.episode_title || "");
+
+        // Hide the reveal block at start of each scene
+        $("rtw-reveal-block").classList.remove("shown");
+
+        // Wire video — clip from clip_start to clip_end, then auto-stop
+        const v = $("rtw-video");
+        const tap = $("rtw-tap-start");
+        tap.classList.remove("shown");
+        v.src = sc.video_url;
+        v.muted = false;
+
+        const onLoaded = () => {
+            try { v.currentTime = sc.clip_start || 0; } catch {}
+            const p = v.play();
+            if (p && p.catch) p.catch(() => {
+                // Autoplay blocked — show tap-to-start overlay
+                tap.classList.add("shown");
+                tap.onclick = () => {
+                    tap.classList.remove("shown");
+                    try { v.currentTime = sc.clip_start || 0; } catch {}
+                    v.play().catch(() => {});
+                };
+            });
+        };
+        v.removeEventListener("loadedmetadata", v._rtwOnLoaded || (() => {}));
+        v._rtwOnLoaded = onLoaded;
+        v.addEventListener("loadedmetadata", onLoaded, { once: true });
+
+        // Stop at clip_end + reveal
+        const onTimeUpdate = () => {
+            if (sc.clip_end && v.currentTime >= sc.clip_end - 0.05) {
+                try { v.pause(); } catch {}
+                v.removeEventListener("timeupdate", onTimeUpdate);
+                showReveal(sc);
+            }
+        };
+        v.removeEventListener("timeupdate", v._rtwOnTimeUpdate || (() => {}));
+        v._rtwOnTimeUpdate = onTimeUpdate;
+        v.addEventListener("timeupdate", onTimeUpdate);
+
+        // If video ends naturally before timeupdate fires final tick:
+        v.onended = () => showReveal(sc);
+
+        v.load();
+    }
+
+    function showReveal(sc) {
+        if (phase === "reveal") return;
+        phase = "reveal";
+
+        // Build known-set from the scene's known_word_lower array
+        const knownSet = new Set(sc.known_word_lower || []);
+        $("rtw-transcript").innerHTML = renderTranscript(sc.transcript_text, knownSet);
+
+        // Animate the percentage from 0 → coverage_percent
+        const target = sc.coverage_percent || 0;
+        const numEl = $("rtw-cov-num");
+        const t0 = Date.now();
+        const dur = 700;
+        function tick() {
+            const p = Math.min(1, (Date.now() - t0) / dur);
+            const eased = 1 - Math.pow(1 - p, 3);
+            numEl.textContent = Math.round(target * eased);
+            if (p < 1) requestAnimationFrame(tick);
+        }
+        tick();
+
+        $("rtw-cov-detail").textContent = `${sc.known_words} of ${sc.total_words} words`;
+        $("rtw-reveal-block").classList.add("shown");
+    }
+
+    $("rtw-next-btn").addEventListener("click", () => startScene(idx + 1));
+
+    // Bootstrap
+    fetch("/learning/ready-to-watch/data/", {
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" },
+    })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.ok) {
+                $("rtw-loading").style.display = "none";
+                $("rtw-empty-headline").textContent = "Couldn't load scenes.";
+                $("rtw-empty-sub").textContent = "Try again in a moment.";
+                show("rtw-empty");
+                return;
+            }
+            scenes = data.scenes || [];
+            totalReady = data.total_ready || 0;
+            nextUnlock = data.next_unlock || null;
+
+            if (scenes.length === 0) {
+                $("rtw-empty-headline").textContent = nextUnlock
+                    ? `${nextUnlock.words_needed} words to go.`
+                    : "No scenes ready yet.";
+                $("rtw-empty-sub").textContent = nextUnlock
+                    ? `Your closest scene is at ${nextUnlock.current_coverage}% coverage. Save a few more words and check back.`
+                    : "Save more words while watching, then come back.";
+                show("rtw-empty");
+                return;
+            }
+            startScene(0);
+        })
+        .catch(() => {
+            $("rtw-loading").style.display = "none";
+            $("rtw-empty-headline").textContent = "Couldn't load scenes.";
+            $("rtw-empty-sub").textContent = "Refresh and try again.";
+            show("rtw-empty");
+        });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1615 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Own the Word — Quotable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* ─────────────────────────────────────────────────────────────────────
+       Design system — disciplined.
+       Two motion curves: arrive (overshoot), leave (ease).
+       Two type families: Inter (UI), Space Grotesk (the word + Uzbek prompts + ceremony).
+       Indigo brand. Whitespace does the work.
+       ──────────────────────────────────────────────────────────────────── */
+    :root {
+        --bg:           #0a0b10;
+        --bg-1:         #14151c;
+        --bg-2:         #1a1b24;
+        --bg-3:         #20222e;
+        --line:         rgba(255,255,255,0.08);
+        --line-strong:  rgba(255,255,255,0.16);
+        --text-1:       #ECECF1;
+        --text-2:       #a8a9b4;
+        --text-3:       #6e6f7a;
+        --indigo:       #6366f1;
+        --indigo-hot:   #818cf8;
+        --indigo-glow:  rgba(99,102,241,0.45);
+        --indigo-soft:  rgba(99,102,241,0.10);
+        --emerald:      #4ADE80;
+        --emerald-soft: rgba(74,222,128,0.12);
+        --amber:        #fbbf24;
+        --red:          #ef4444;
+
+        --arrive:    cubic-bezier(0.34, 1.56, 0.64, 1);
+        --leave:     cubic-bezier(0.4, 0, 0.2, 1);
+        --speed-1:   180ms;
+        --speed-2:   320ms;
+        --speed-3:   600ms;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        background: var(--bg);
+        color: var(--text-1);
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: 'cv02', 'cv03', 'cv04';
+        min-height: 100dvh;
+        overflow-x: hidden;
+    }
+
+    .stage {
+        min-height: 100dvh;
+        display: flex; flex-direction: column; align-items: center;
+        padding: 24px 20px 40px;
+        max-width: 720px; margin: 0 auto;
+    }
+
+    .escape {
+        position: fixed; top: 18px; left: 20px; z-index: 50;
+        font-size: 12px; color: var(--text-3);
+        text-decoration: none; padding: 6px 10px;
+        opacity: 0.4; transition: opacity var(--speed-1) var(--leave);
+    }
+    .escape:hover { opacity: 1; color: var(--text-2); }
+
+    /* ── Empty / capped ──────────────────────────────────────────────── */
+    .empty {
+        text-align: center; padding: 80px 20px 40px;
+        max-width: 460px; margin: 0 auto;
+    }
+    .empty .seal {
+        width: 60px; height: 60px; border-radius: 50%;
+        background: var(--emerald-soft);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 24px; color: var(--emerald);
+        font-size: 22px;
+    }
+    .empty h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 28px; font-weight: 600; line-height: 1.2;
+        margin-bottom: 14px; letter-spacing: -0.01em;
+    }
+    .empty p {
+        color: var(--text-2); font-size: 15px; line-height: 1.6;
+        max-width: 380px; margin: 0 auto;
+    }
+    .empty .cta {
+        display: inline-block; margin-top: 28px;
+        padding: 11px 22px; background: var(--indigo);
+        color: #fff; text-decoration: none; font-weight: 500;
+        border-radius: 999px; font-size: 14px;
+        transition: background var(--speed-1) var(--leave);
+    }
+    .empty .cta:hover { background: #5558e6; }
+
+    /* ── Word card — word as hero, Uzbek + English definition beneath ── */
+    .word-mini {
+        text-align: center;
+        margin-bottom: 22px;
+        max-width: 540px;
+        margin-left: auto; margin-right: auto;
+        animation: arrive var(--speed-2) var(--arrive) both;
+    }
+    .word-mini .w {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 36px; font-weight: 600;
+        letter-spacing: -0.015em; color: var(--text-1);
+        line-height: 1.05;
+        display: inline-flex; align-items: center; gap: 10px;
+    }
+    .word-mini .tr {
+        font-size: 15px; color: var(--amber);
+        font-weight: 500;
+        margin-top: 8px;
+    }
+    .word-mini .def {
+        font-size: 13px; line-height: 1.5;
+        color: var(--text-3);
+        font-style: italic;
+        margin-top: 8px;
+        max-width: 460px;
+        margin-left: auto; margin-right: auto;
+    }
+    .word-mini .pron {
+        background: transparent; border: 1px solid var(--line-strong);
+        color: var(--text-2);
+        width: 30px; height: 30px;
+        border-radius: 50%; cursor: pointer;
+        font-size: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all var(--speed-1) var(--leave);
+        flex-shrink: 0;
+    }
+    .word-mini .pron:hover {
+        background: var(--indigo-soft);
+        border-color: var(--indigo);
+        color: var(--text-1);
+    }
+    .word-mini .pron:active { transform: scale(0.94); }
+
+    /* ── Clip — auto-plays once, then dims; tiny custom pause/stop overlay ── */
+    .clip {
+        position: relative;
+        width: 100%; max-width: 380px;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: 12px; overflow: hidden;
+        margin: 0 auto 24px;
+        box-shadow: 0 12px 30px -10px rgba(0,0,0,0.7);
+        transition: opacity var(--speed-3) var(--leave),
+                    transform var(--speed-3) var(--leave);
+    }
+    .clip.dimmed { opacity: 0.45; transform: scale(0.98); }
+    .clip video {
+        width: 100%; height: 100%; object-fit: cover;
+        display: block;
+        pointer-events: none;  /* user controls via overlay buttons only */
+    }
+    .clip.no-clip {
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #1f1f2e, #2a1f3e);
+        color: var(--text-3); font-style: italic; font-size: 13px;
+        padding: 16px; text-align: center;
+        min-height: 80px;
+    }
+    .clip-line {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 26px 14px 12px;
+        background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.85));
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px; line-height: 1.4;
+        color: rgba(255,255,255,0.92);
+        font-style: italic;
+        pointer-events: none;
+    }
+    /* Custom pause/stop overlay — only visible while video is playing */
+    .clip-overlay-controls {
+        position: absolute; top: 8px; right: 8px;
+        display: flex; gap: 6px;
+        opacity: 0;
+        transition: opacity var(--speed-1) var(--leave);
+        z-index: 5;
+        pointer-events: none;
+    }
+    .clip.playing .clip-overlay-controls,
+    .clip.playing:hover .clip-overlay-controls {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .clip-overlay-controls button {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.18);
+        color: white;
+        font-size: 11px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(6px);
+        transition: background var(--speed-1) var(--leave);
+    }
+    .clip-overlay-controls button:hover {
+        background: rgba(0,0,0,0.8);
+    }
+    /* Big centered play button — visible whenever video isn't playing.
+       Tap is a user gesture, which is what unlocks sound in modern browsers. */
+    .clip-play-cue {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.30);
+        cursor: pointer;
+        transition: background var(--speed-1) var(--leave),
+                    opacity var(--speed-1) var(--leave);
+        z-index: 4;
+    }
+    .clip.playing .clip-play-cue {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .clip-play-cue:hover { background: rgba(0,0,0,0.42); }
+    .clip-play-icon {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.94);
+        color: #14151c;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        margin-bottom: 8px;
+        box-shadow: 0 8px 24px -6px rgba(0,0,0,0.6);
+        transition: transform var(--speed-1) var(--leave);
+    }
+    .clip-play-cue:hover .clip-play-icon { transform: scale(1.06); }
+    .clip-play-label {
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.92);
+    }
+
+    /* ── Prompt: Uzbek sentence to translate ─────────────────────────── */
+    .prompt-card {
+        width: 100%;
+        margin-bottom: 28px;
+        animation: arrive var(--speed-2) var(--arrive) both;
+    }
+    @keyframes arrive {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .prompt-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+        color: var(--indigo-hot);
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .prompt-label::before {
+        content: ''; width: 6px; height: 6px;
+        background: var(--indigo-hot); border-radius: 50%;
+        box-shadow: 0 0 8px var(--indigo-glow);
+    }
+    .prompt-step {
+        margin-left: auto;
+        font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+        color: var(--text-3);
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        padding: 3px 8px;
+        border-radius: 999px;
+        text-transform: none;
+    }
+    .prompt-uz {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 26px; line-height: 1.35;
+        color: var(--text-1); font-weight: 500;
+        letter-spacing: -0.005em;
+    }
+    .prompt-task {
+        margin-top: 12px; font-size: 12px;
+        color: var(--text-3);
+        display: flex; align-items: center; gap: 6px;
+    }
+    .prompt-task::before {
+        content: '↳'; color: var(--text-3); opacity: 0.6;
+    }
+    .prompt-task strong {
+        color: var(--text-2);
+        font-weight: 500;
+    }
+
+    /* ── User's translation rendered as artifact ─────────────────────── */
+    .you-said {
+        width: 100%; margin-bottom: 16px;
+        animation: arrive var(--speed-2) var(--arrive) both;
+    }
+    .you-said-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+        color: var(--text-3); text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .you-said-quote {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 17px; line-height: 1.55; color: var(--text-2);
+        padding-left: 14px;
+        border-left: 2px solid var(--indigo);
+        font-style: italic;
+    }
+
+    /* ── Reference reveal ────────────────────────────────────────────── */
+    .reference-reveal {
+        width: 100%; margin-bottom: 28px;
+        padding: 14px 16px;
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        animation: arrive var(--speed-2) var(--arrive) both;
+    }
+    .reference-reveal .ref-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+        color: var(--text-3); text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .reference-reveal .ref-text {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px; line-height: 1.5; color: var(--text-1);
+        font-style: italic;
+    }
+    .reference-reveal .ref-feedback {
+        font-size: 13px; color: var(--text-2);
+        margin-top: 10px; padding-top: 10px;
+        border-top: 1px dashed var(--line);
+    }
+
+    /* ── Input — bidirectional mic ↔ text toggle ─────────────────────── */
+    .input-stage {
+        width: 100%; max-width: 560px;
+        display: flex; flex-direction: column; align-items: center;
+        gap: 14px;
+        animation: arrive var(--speed-2) var(--arrive) both;
+        animation-delay: 80ms;
+    }
+    /* Mic mode (default) */
+    .input-stage[data-mode="mic"] .text-block { display: none; }
+    .input-stage[data-mode="text"] .mic-block { display: none; }
+
+    /* Mic block — patterned after the grammar speaking test
+       (SVG icon + ring + visible live transcript box). */
+    .mic-block {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 14px; width: 100%;
+    }
+    .mic-btn {
+        appearance: none;
+        position: relative;
+        width: 84px; height: 84px;
+        border: none; border-radius: 50%;
+        background: linear-gradient(135deg, var(--indigo), #4f46e5);
+        color: #fff;
+        cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 0 0 rgba(99,102,241,0);
+        transition: transform .12s, box-shadow .2s;
+    }
+    .mic-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 0 6px rgba(99,102,241,0.14);
+    }
+    .mic-btn:active { transform: scale(0.96); }
+    .mic-btn:disabled {
+        opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+    .mic-btn.recording {
+        background: linear-gradient(135deg, #ef4444, #fb7185);
+        box-shadow: 0 0 0 6px rgba(239,68,68,0.22);
+        animation: micPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes micPulse {
+        0%,100% { box-shadow: 0 0 0 6px rgba(239,68,68,0.22); }
+        50%     { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+    }
+    .mic-icon {
+        width: 32px; height: 32px;
+        stroke: currentColor; fill: none; stroke-width: 2;
+    }
+    .mic-ring {
+        position: absolute; inset: -4px;
+        border-radius: 50%;
+        border: 2px solid rgba(99,102,241,0);
+        pointer-events: none;
+        transition: border-color .15s;
+    }
+    .mic-btn.recording .mic-ring { border-color: rgba(239,68,68,0.55); }
+    .mic-status {
+        font-size: 13px;
+        color: var(--text-3);
+        letter-spacing: 0.02em;
+        text-align: center;
+        min-height: 20px;
+        transition: color var(--speed-1) var(--leave);
+    }
+    .mic-status.listening { color: var(--red); font-weight: 600; }
+    .mic-status.error     { color: var(--amber); }
+    .mic-status.done      { color: var(--emerald); }
+    /* Live transcript — visible box, dashed by default, solid when finalized */
+    .transcript-box {
+        min-height: 44px;
+        width: 100%;
+        max-width: 520px;
+        padding: 12px 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 14.5px;
+        color: var(--text-1);
+        background: var(--bg-1);
+        border: 1px dashed var(--line-strong);
+        border-radius: 10px;
+        text-align: center;
+        line-height: 1.5;
+        transition: border-color .15s, background .15s;
+    }
+    .transcript-box:empty::before {
+        content: "— transcript will appear here —";
+        color: var(--text-3);
+        opacity: 0.7;
+    }
+    .transcript-box.done {
+        border-style: solid;
+        border-color: var(--indigo);
+        background: var(--bg-2);
+    }
+
+    /* Text block */
+    .text-block {
+        width: 100%; display: flex; flex-direction: column;
+        gap: 10px; align-items: stretch;
+    }
+    .text-block textarea {
+        width: 100%; min-height: 96px;
+        padding: 16px 18px;
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        color: var(--text-1);
+        font-family: inherit; font-size: 16px;
+        line-height: 1.55; resize: vertical;
+        outline: none;
+        transition: border-color var(--speed-1) var(--leave);
+    }
+    .text-block textarea:focus { border-color: var(--indigo); }
+
+    /* Mode-toggle link — bidirectional, always offers the other path */
+    .mode-toggle {
+        background: transparent; border: none;
+        color: var(--text-3); font-size: 12px;
+        text-decoration: underline; text-underline-offset: 4px;
+        cursor: pointer; font-family: inherit;
+        padding: 4px 8px;
+        transition: color var(--speed-1) var(--leave);
+    }
+    .mode-toggle:hover { color: var(--text-1); }
+
+    /* Send row — always at the bottom, same shape in both modes */
+    .send-row {
+        display: flex; justify-content: center;
+        margin-top: 6px;
+    }
+    .send-btn {
+        padding: 12px 28px;
+        background: var(--indigo); color: white;
+        border: none; border-radius: 999px;
+        font: inherit; font-size: 14px; font-weight: 600;
+        cursor: pointer;
+        transition: background var(--speed-1) var(--leave),
+                    opacity var(--speed-1) var(--leave),
+                    transform var(--speed-1) var(--leave);
+    }
+    .send-btn:hover:not(:disabled) {
+        background: #5558e6;
+        transform: translateY(-1px);
+    }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Staged reveal — each beat fades + lifts in on its own cue ────── */
+    /* Used during the reveal phase so the AI's grade unfolds as a sequence
+       of digestible beats, not a single dashboard dump. */
+    .stage-beat {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 380ms var(--leave),
+                    transform 380ms var(--arrive);
+    }
+    .stage-beat.shown {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    /* Override the default "arrive" animation on the reveal-phase card so the
+       cards don't all rise at once when the phase activates — they're staged. */
+    [data-phase="reveal1"].active .grade-card,
+    [data-phase="reveal1"].active .you-said,
+    [data-phase="reveal1"].active .reference-reveal,
+    [data-phase="reveal1"].active .continue-btn {
+        animation: none;
+    }
+
+    /* ── 4-level grade visual ────────────────────────────────────────── */
+    .grade-card {
+        width: 100%; margin-bottom: 20px;
+        padding: 16px 18px;
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        animation: arrive var(--speed-2) var(--arrive) both;
+    }
+    .grade-bar {
+        display: flex; gap: 5px;
+        margin-bottom: 14px;
+    }
+    .grade-seg {
+        flex: 1; height: 6px;
+        background: var(--bg-3);
+        border-radius: 999px;
+        transition: background var(--speed-2) var(--arrive);
+    }
+    .grade-seg.lit-1 { background: var(--red); }
+    .grade-seg.lit-2 { background: var(--amber); }
+    .grade-seg.lit-3 { background: var(--indigo); }
+    .grade-seg.lit-4 { background: var(--emerald); }
+    .grade-bar.s-1 .grade-seg:nth-child(-n+1) { background: var(--red); }
+    .grade-bar.s-2 .grade-seg:nth-child(-n+2) { background: var(--amber); }
+    .grade-bar.s-3 .grade-seg:nth-child(-n+3) { background: var(--indigo); }
+    .grade-bar.s-4 .grade-seg:nth-child(-n+4) { background: var(--emerald); }
+    .grade-chips {
+        display: flex; gap: 8px; flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .chip {
+        font-size: 11px; font-weight: 600;
+        padding: 4px 10px; border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--text-3);
+        transition: all var(--speed-2) var(--arrive);
+    }
+    .chip.skel {
+        background: var(--bg-3);
+        color: transparent;
+        animation: skel-shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes skel-shimmer {
+        0%, 100% { opacity: 0.4; }
+        50%      { opacity: 0.7; }
+    }
+    .chip.pass {
+        background: var(--emerald-soft);
+        border-color: rgba(74,222,128,0.32);
+        color: #6ee7b7;
+    }
+    .chip.fail {
+        background: rgba(239,68,68,0.10);
+        border-color: rgba(239,68,68,0.32);
+        color: #fca5a5;
+    }
+    .grade-feedback {
+        font-size: 14px; line-height: 1.55;
+        color: var(--text-2);
+        font-style: italic;
+    }
+    .grade-suggestion {
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: var(--amber-dim, rgba(251,191,36,0.10));
+        border-left: 2px solid var(--amber);
+        border-radius: 6px;
+        font-size: 13px; line-height: 1.55;
+        color: #fcd34d;
+    }
+
+    /* "Continue" button below the reference reveal */
+    .continue-btn {
+        margin-top: 18px;
+        padding: 11px 28px;
+        background: var(--indigo); color: white;
+        border: none; border-radius: 999px;
+        font: inherit; font-size: 14px; font-weight: 500;
+        cursor: pointer;
+        animation: arrive var(--speed-2) var(--arrive) 200ms both;
+        transition: background var(--speed-1) var(--leave);
+    }
+    .continue-btn:hover { background: #5558e6; }
+
+    /* ── Thinking ────────────────────────────────────────────────────── */
+    .thinking {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 14px; color: var(--text-3);
+        font-style: italic;
+        padding: 20px 0;
+    }
+    .thinking .dots { display: inline-flex; gap: 4px; }
+    .thinking .dots span {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: var(--text-3);
+        animation: think 1.4s ease-in-out infinite;
+    }
+    .thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes think {
+        0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+        30%           { opacity: 1;   transform: translateY(-3px); }
+    }
+
+    /* ── Ceremony ────────────────────────────────────────────────────── */
+    .ceremony {
+        width: 100%;
+        animation: ceremony-rise var(--speed-3) var(--arrive) both;
+    }
+    @keyframes ceremony-rise {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ceremony .word-display {
+        text-align: center; margin: 32px 0 28px;
+    }
+    .ceremony .word-display .check {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        background: var(--emerald-soft);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 24px; color: var(--emerald);
+        margin-bottom: 20px;
+        animation: check-pop 0.6s var(--arrive) 0.2s both;
+        opacity: 0;
+    }
+    @keyframes check-pop {
+        from { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+        to   { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    .ceremony .word-big {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 48px; font-weight: 600;
+        letter-spacing: -0.02em; line-height: 1;
+        color: var(--text-1);
+        margin-bottom: 8px;
+    }
+    .ceremony .word-tr {
+        font-size: 16px; color: var(--amber); font-weight: 500;
+    }
+
+    .keep-phrase {
+        text-align: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 22px; font-weight: 500; line-height: 1.4;
+        color: var(--indigo-hot); margin: 24px auto 8px;
+        max-width: 480px;
+        letter-spacing: -0.005em;
+        min-height: 1.4em;
+    }
+    .keep-phrase .ch {
+        opacity: 0;
+        display: inline-block;
+        animation: letter-in 380ms var(--arrive) forwards;
+    }
+    @keyframes letter-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .your-translations {
+        margin: 36px auto;
+        max-width: 560px;
+        padding: 24px 26px;
+        background: var(--bg-1);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        animation: arrive var(--speed-3) var(--arrive) 1.2s both;
+    }
+    .your-translations-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+        color: var(--text-3); text-transform: uppercase;
+        margin-bottom: 18px; text-align: center;
+    }
+    .pair-row { margin-bottom: 18px; }
+    .pair-row:last-child { margin-bottom: 0; }
+    .pair-row .uz {
+        font-size: 12px; color: var(--text-3);
+        font-style: italic; margin-bottom: 6px;
+    }
+    .pair-row .yours {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 15px; line-height: 1.55; color: var(--text-1);
+        font-style: italic;
+        padding-left: 12px;
+        border-left: 2px solid var(--indigo);
+        margin-bottom: 6px;
+    }
+    .pair-row .ref {
+        font-size: 12px; color: var(--text-3);
+        padding-left: 12px;
+    }
+    .pair-row .ref strong {
+        color: var(--text-2); font-weight: 500;
+    }
+
+    .conf {
+        max-width: 380px; margin: 28px auto 8px;
+        animation: arrive var(--speed-2) var(--arrive) 1.5s both;
+    }
+    .conf-row {
+        display: flex; justify-content: space-between;
+        align-items: baseline;
+        font-size: 11px; color: var(--text-3);
+        margin-bottom: 8px; letter-spacing: 0.06em;
+        text-transform: uppercase; font-weight: 600;
+    }
+    .conf-num {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px; color: var(--text-1); font-weight: 600;
+        font-style: italic; letter-spacing: 0;
+        text-transform: none;
+    }
+    .conf-num strong { color: var(--emerald); font-weight: 600; }
+    .conf-track {
+        height: 6px;
+        background: var(--bg-3); border-radius: 999px;
+        overflow: hidden;
+    }
+    .conf-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--indigo), var(--emerald));
+        width: 0%;
+        transition: width 1.4s var(--arrive) 1.7s;
+    }
+
+    /* SR bridge — small pill telling the learner when this word returns.
+       Connects the ritual to long-term retention so it's not a one-shot. */
+    .sr-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin: 18px auto 0;
+        padding: 8px 16px;
+        background: var(--bg-1);
+        border: 1px solid var(--indigo-line, var(--indigo-glow));
+        border-radius: 999px;
+        font-size: 12px; color: var(--text-2);
+        opacity: 0; transform: translateY(8px);
+        transition: opacity 460ms var(--leave),
+                    transform 460ms var(--arrive);
+    }
+    .sr-pill.shown { opacity: 1; transform: translateY(0); }
+    .sr-pill::before {
+        content: '↻'; color: var(--indigo-hot);
+        font-size: 14px; font-weight: 700;
+    }
+    .sr-pill strong {
+        color: var(--text-1); font-weight: 600;
+    }
+
+    .ceremony-actions {
+        display: flex; justify-content: center; gap: 12px;
+        margin-top: 36px;
+        animation: arrive var(--speed-2) var(--arrive) 2s both;
+    }
+    .ceremony-actions a {
+        padding: 11px 22px;
+        border-radius: 999px;
+        font-size: 13px; font-weight: 500;
+        text-decoration: none;
+        transition: all var(--speed-1) var(--leave);
+    }
+    .btn-primary { background: var(--indigo); color: white; }
+    .btn-primary:hover { background: #5558e6; }
+    .btn-quiet { color: var(--text-3); border: 1px solid var(--line); }
+    .btn-quiet:hover { color: var(--text-1); border-color: var(--text-3); }
+
+    /* ── Phase visibility — fade-cross with motion ──────────────────── */
+    [data-phase] {
+        display: none;
+        opacity: 0;
+        transform: translateY(8px);
+        width: 100%;
+    }
+    [data-phase].active {
+        display: flex; flex-direction: column; align-items: center;
+        opacity: 1; transform: translateY(0);
+        animation: phase-in var(--speed-2) var(--arrive) both;
+    }
+    @keyframes phase-in {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Shadowing phase 0 — echo the line ───────────────────────────── */
+    .shadow-prompt {
+        text-align: center; width: 100%;
+        margin-bottom: 24px;
+    }
+    .shadow-prompt .badge {
+        display: inline-block;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--indigo-hot);
+        background: var(--indigo-soft);
+        border: 1px solid var(--indigo-glow);
+        padding: 5px 12px; border-radius: 999px;
+        margin-bottom: 18px;
+    }
+    .shadow-line {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 26px; line-height: 1.3;
+        font-weight: 500; color: var(--text-1);
+        max-width: 560px; margin: 0 auto 12px;
+        letter-spacing: -0.005em;
+    }
+    .shadow-line .target {
+        background: linear-gradient(transparent 60%, var(--indigo-soft) 60%);
+        padding: 0 2px;
+    }
+    .shadow-meta {
+        font-size: 13px; color: var(--text-3);
+    }
+    .shadow-replay {
+        background: transparent; border: 1px solid var(--line-strong);
+        color: var(--text-2); font: inherit; font-size: 12px;
+        padding: 6px 14px; border-radius: 999px;
+        cursor: pointer; margin-top: 14px;
+        transition: all var(--speed-1) var(--leave);
+    }
+    .shadow-replay:hover {
+        background: var(--indigo-soft); border-color: var(--indigo);
+        color: var(--text-1);
+    }
+    .shadow-skip {
+        background: transparent; border: none;
+        color: var(--text-3); font-size: 12px;
+        text-decoration: underline; text-underline-offset: 3px;
+        cursor: pointer; font-family: inherit;
+        margin-top: 8px;
+    }
+    .shadow-skip:hover { color: var(--text-1); }
+
+    /* ── Collection card flight at ceremony ──────────────────────────── */
+    .collection-card {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0.6) rotate(-2deg);
+        width: 220px;
+        background: linear-gradient(160deg, var(--bg-1), var(--bg-3));
+        border: 1px solid var(--indigo-glow);
+        border-radius: 14px;
+        padding: 18px 16px;
+        box-shadow: 0 30px 80px -20px rgba(99,102,241,0.55),
+                    inset 0 1px 0 rgba(255,255,255,0.04);
+        opacity: 0;
+        z-index: 200;
+        pointer-events: none;
+        transition: transform 1.0s cubic-bezier(0.6, 0, 0.4, 1),
+                    opacity var(--speed-2) var(--leave);
+    }
+    .collection-card.flying {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0);
+    }
+    .collection-card.docked {
+        opacity: 1;
+        top: 80px; left: auto; right: 28px;
+        transform: scale(0.78) rotate(2.5deg);
+    }
+    .collection-card .cc-label {
+        font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+        color: var(--emerald); text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .collection-card .cc-word {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 22px; font-weight: 600; line-height: 1.1;
+        color: var(--text-1);
+        margin-bottom: 4px;
+    }
+    .collection-card .cc-tr {
+        font-size: 12px; color: var(--text-3);
+    }
+    @media (max-width: 720px) {
+        .collection-card.docked {
+            top: auto; bottom: 24px; right: 16px;
+            transform: scale(0.7) rotate(2.5deg);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .prompt-uz { font-size: 22px; }
+        .ceremony .word-big { font-size: 40px; }
+        .keep-phrase { font-size: 19px; }
+        .mic-btn { width: 84px; height: 84px; font-size: 28px; }
+        .stage { padding: 16px 16px 32px; }
+        .word-mini .w { font-size: 28px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+{% if capped %}
+    <div class="empty">
+        <div class="seal">✓</div>
+        <h2>Two words owned today.</h2>
+        <p>Acquisition takes focus, not volume. The next one waits for tomorrow — your existing words are warm in the practice queue.</p>
+        <a href="{% url 'learning:quiz' %}" class="cta">Open practice queue</a>
+    </div>
+{% elif no_words %}
+    <div class="empty">
+        <h2>Nothing saved yet.</h2>
+        <p>Save a word from a clip you watched, then come back here to make it yours.</p>
+        <a href="{% url 'clips:home' %}" class="cta">Browse clips</a>
+    </div>
+{% else %}
+
+    <a href="{% url 'learning:word_note_list' %}" class="escape" id="escapeLink">leave</a>
+
+    {# Word card — word as hero, Uzbek + English definition beneath. #}
+    {# display_definition falls back: WordNote.definition → LineVocab.description → empty (skip). #}
+    <div class="word-mini">
+        <div class="w">
+            <span>{{ note.word }}</span>
+            <button class="pron" id="pronBtn" type="button" aria-label="Pronounce">🔊</button>
+        </div>
+        {% if note.translation %}
+            <div class="tr">{{ note.translation }}</div>
+        {% endif %}
+        {% if display_definition and display_definition != note.translation %}
+            <div class="def">{{ display_definition }}</div>
+        {% endif %}
+    </div>
+
+    <div id="root"
+         data-note-id="{{ note.id }}"
+         data-word="{{ note.word|escape }}"
+         data-translation="{{ note.translation|default:note.definition|escape }}"
+         {% if clip_url %}data-clip-url="{{ clip_url }}"{% endif %}
+         {% if clip_start is not None %}data-clip-start="{{ clip_start }}"{% endif %}
+         {% if clip_end is not None %}data-clip-end="{{ clip_end }}"{% endif %}
+         data-easy-uz="{{ pair.easy.uz|escape }}"
+         data-easy-ref="{{ pair.easy.en_reference|escape }}"
+         data-harder-uz="{{ pair.harder.uz|escape }}"
+         data-harder-ref="{{ pair.harder.en_reference|escape }}"
+         data-source-line="{{ source_line_en|escape }}"
+         data-shadow-eligible="{% if shadow_eligible %}1{% else %}0{% endif %}"
+         style="width:100%;display:flex;flex-direction:column;align-items:center;">
+
+        {# ── Clip — tap to play (with sound), pause/stop overlay while playing ── #}
+        {% if clip_url and clip_start is not None and clip_end is not None %}
+            <div class="clip" id="clipEl">
+                <video id="clipVideo" preload="auto" playsinline></video>
+                <div class="clip-play-cue" id="clipPlayCue">
+                    <div class="clip-play-icon">▶</div>
+                    <div class="clip-play-label">Tap to play</div>
+                </div>
+                <div class="clip-overlay-controls">
+                    <button type="button" id="clipPauseBtn" aria-label="Pause" title="Pause">⏸</button>
+                    <button type="button" id="clipStopBtn"  aria-label="Stop"  title="Stop">⏹</button>
+                </div>
+                {% if source_line_en %}
+                    <div class="clip-line">"{{ source_line_en }}"</div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="clip no-clip" id="clipEl">
+                {% if source_line_en %}"{{ source_line_en }}"{% else %}— No clip on file for this word —{% endif %}
+            </div>
+        {% endif %}
+
+        {# ── Phase: turn 1 (translate the easy Uzbek sentence) — ALWAYS the entry phase ── #}
+        <div data-phase="turn1" class="active">
+            <div class="prompt-card">
+                <div class="prompt-label">
+                    <span>Translate to English</span>
+                    <span class="prompt-step">1 of 2</span>
+                </div>
+                <div class="prompt-uz">{{ pair.easy.uz }}</div>
+                <div class="prompt-task">use <strong>{{ note.word }}</strong> in your answer</div>
+            </div>
+
+            <div class="input-stage" data-mode="mic" id="inputStage1">
+                <div class="mic-block">
+                    <button type="button" class="mic-btn" id="micBtn1" aria-label="Tap to speak">
+                        <span class="mic-ring"></span>
+                        <svg class="mic-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="3" width="6" height="12" rx="3"/>
+                            <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                    </button>
+                    <div class="mic-status" id="micHint1">Tap the mic and speak</div>
+                    <div class="transcript-box" id="transcript1"></div>
+                    <button type="button" class="mode-toggle" data-toggle="1" data-target="text">type instead</button>
+                </div>
+                <div class="text-block">
+                    <textarea id="textArea1" placeholder="Type your English translation…"
+                              autocapitalize="sentences" spellcheck="true" rows="3"></textarea>
+                    <button type="button" class="mode-toggle" data-toggle="1" data-target="mic">use mic instead</button>
+                </div>
+                <div class="send-row">
+                    <button type="button" class="send-btn" id="sendBtn1" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+
+        {% comment %}
+        Phase reveal-1 (after first translation) — staged reveal.
+        Each child fades+lifts in on its own JS-driven beat. Order:
+          1. their sentence  2. naturalness chip  3. correctness chip
+          4. bar cascades    5. AI feedback line  6. suggestion (if score=2)
+          7. reference card  8. continue button
+        {% endcomment %}
+        <div data-phase="reveal1">
+            <div class="you-said stage-beat" id="youSaidBeat1">
+                <div class="you-said-label">you said</div>
+                <div class="you-said-quote" id="youSaid1Quote"></div>
+            </div>
+            <div class="grade-card stage-beat" id="gradeCard1">
+                <div class="grade-chips" id="gradeChips1">
+                    <span class="chip stage-beat" id="chipNatural1">Tabiiylik</span>
+                    <span class="chip stage-beat" id="chipCorrect1">Aniqlik</span>
+                </div>
+                <div class="grade-bar stage-beat" id="gradeBar1">
+                    <div class="grade-seg"></div>
+                    <div class="grade-seg"></div>
+                    <div class="grade-seg"></div>
+                    <div class="grade-seg"></div>
+                </div>
+                <div class="grade-feedback stage-beat" id="feedback1Text"></div>
+                <div class="grade-suggestion stage-beat" id="suggestion1Text" style="display:none;"></div>
+            </div>
+            <div class="reference-reveal stage-beat" id="referenceCard1">
+                <div class="ref-label">A natural way</div>
+                <div class="ref-text" id="reference1Text">{{ pair.easy.en_reference }}</div>
+            </div>
+            <button type="button" class="continue-btn stage-beat" id="continueBtn1">Next sentence →</button>
+        </div>
+
+        {# ── Phase: turn 2 (translate the harder Uzbek sentence) ── #}
+        <div data-phase="turn2">
+            <div class="prompt-card">
+                <div class="prompt-label">
+                    <span>One more — bit harder</span>
+                    <span class="prompt-step">2 of 2</span>
+                </div>
+                <div class="prompt-uz">{{ pair.harder.uz }}</div>
+                <div class="prompt-task">use <strong>{{ note.word }}</strong> in your answer</div>
+            </div>
+
+            <div class="input-stage" data-mode="mic" id="inputStage2">
+                <div class="mic-block">
+                    <button type="button" class="mic-btn" id="micBtn2" aria-label="Tap to speak">
+                        <span class="mic-ring"></span>
+                        <svg class="mic-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="3" width="6" height="12" rx="3"/>
+                            <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                    </button>
+                    <div class="mic-status" id="micHint2">Tap the mic and speak</div>
+                    <div class="transcript-box" id="transcript2"></div>
+                    <button type="button" class="mode-toggle" data-toggle="2" data-target="text">type instead</button>
+                </div>
+                <div class="text-block">
+                    <textarea id="textArea2" placeholder="Type your English translation…"
+                              autocapitalize="sentences" spellcheck="true" rows="3"></textarea>
+                    <button type="button" class="mode-toggle" data-toggle="2" data-target="mic">use mic instead</button>
+                </div>
+                <div class="send-row">
+                    <button type="button" class="send-btn" id="sendBtn2" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+
+        {# ── Phase: thinking ── #}
+        <div data-phase="thinking">
+            <div class="thinking">
+                <span id="thinkingLabel">Reading your translation</span>
+                <span class="dots"><span></span><span></span><span></span></span>
+            </div>
+        </div>
+
+        {# ── Phase: ceremony ── #}
+        <div data-phase="ceremony">
+            <div class="ceremony">
+                <div class="word-display">
+                    <div class="check">✓</div>
+                    <div class="word-big">{{ note.word }}</div>
+                    <div class="word-tr">{{ note.translation|default:note.definition }}</div>
+                </div>
+                <div class="keep-phrase" id="keepPhrase"></div>
+
+                <div class="your-translations">
+                    <div class="your-translations-label">your translations today</div>
+                    <div class="pair-row">
+                        <div class="uz">"{{ pair.easy.uz }}"</div>
+                        <div class="yours" id="yours1"></div>
+                        <div class="ref"><strong>Natural:</strong> {{ pair.easy.en_reference }}</div>
+                    </div>
+                    <div class="pair-row">
+                        <div class="uz">"{{ pair.harder.uz }}"</div>
+                        <div class="yours" id="yours2"></div>
+                        <div class="ref"><strong>Natural:</strong> {{ pair.harder.en_reference }}</div>
+                    </div>
+                </div>
+
+                <div class="conf">
+                    <div class="conf-row">
+                        <span>Confidence</span>
+                        <span class="conf-num"><span id="confBefore">0</span> → <strong id="confAfter">0</strong></span>
+                    </div>
+                    <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+                </div>
+
+                {# SR bridge — when does this word come back to practice? #}
+                <div style="text-align:center;">
+                    <span class="sr-pill" id="srPill" style="display:inline-flex;">
+                        See this again in <strong id="srDays">—</strong>
+                    </span>
+                </div>
+
+                <div class="ceremony-actions">
+                    <a href="{% url 'learning:own-the-word' %}" class="btn-primary">Next word</a>
+                    <a href="{% url 'learning:word_note_list' %}" class="btn-quiet">My notebook</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# Collection-card — shown floating during ceremony, then docks top-right #}
+    <div class="collection-card" id="collectionCard" aria-hidden="true">
+        <div class="cc-label">✓ Owned</div>
+        <div class="cc-word">{{ note.word }}</div>
+        <div class="cc-tr">{{ note.translation|default:note.definition }}</div>
+    </div>
+{% endif %}
+
+</div>
+
+{% csrf_token %}
+
+<script>
+(function() {
+    'use strict';
+    const root = document.getElementById('root');
+    if (!root) return;  // capped / no_words
+
+    // ── Constants from data-attrs ──
+    const NOTE_ID = root.dataset.noteId;
+    const WORD = root.dataset.word;
+    const TRANSLATION = root.dataset.translation;
+    const CLIP_URL = root.dataset.clipUrl || '';
+    const CLIP_START = parseFloat(root.dataset.clipStart || 'NaN');
+    const CLIP_END = parseFloat(root.dataset.clipEnd || 'NaN');
+    const EASY_UZ = root.dataset.easyUz || '';
+    const EASY_REF = root.dataset.easyRef || '';
+    const HARDER_UZ = root.dataset.harderUz || '';
+    const HARDER_REF = root.dataset.harderRef || '';
+    const SOURCE_LINE = root.dataset.sourceLine || '';
+    const SHADOW_ELIGIBLE = root.dataset.shadowEligible === '1';
+    const CSRF = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+
+    // ── State ──
+    let answer1 = '';
+    let answer2 = '';
+    let score1 = 0;
+    let score2 = 0;
+
+    // ── Phase router ──
+    const phases = root.querySelectorAll('[data-phase]');
+    function gotoPhase(name) {
+        // Force reflow so phase-in animation re-fires.
+        phases.forEach(p => p.classList.remove('active'));
+        void root.offsetWidth;
+        phases.forEach(p => p.classList.toggle('active', p.dataset.phase === name));
+        // Replay the clip once at the ceremony peak.
+        if (name === 'ceremony') {
+            const clip = document.getElementById('clipEl');
+            if (clip && clip.querySelector('video')) playClip();
+        }
+        const esc = document.getElementById('escapeLink');
+        if (esc) esc.style.display = (name === 'ceremony') ? 'none' : 'block';
+    }
+
+    // ── Clip — tap-to-play. The user gesture grants the sound permission
+    // that browsers withhold from programmatic autoplay. Pause/stop work
+    // while playing; the big play button comes back whenever paused/stopped.
+    const video = document.getElementById('clipVideo');
+    const clipEl = document.getElementById('clipEl');
+    const clipPlayCue = document.getElementById('clipPlayCue');
+    const clipPauseBtn = document.getElementById('clipPauseBtn');
+    const clipStopBtn = document.getElementById('clipStopBtn');
+
+    function playClip() {
+        if (!video || !CLIP_URL || !Number.isFinite(CLIP_START) || !Number.isFinite(CLIP_END)) return;
+        try {
+            // Always start unmuted — invoked from a user gesture, so sound works.
+            video.muted = false;
+            if (video.currentTime < CLIP_START - 0.1 || video.currentTime >= CLIP_END - 0.05) {
+                video.currentTime = CLIP_START;
+            }
+            video.play().catch(() => {
+                // If even the gesture-driven play fails (rare — e.g. CORS on src),
+                // fall back to muted as a last resort so something happens.
+                video.muted = true;
+                try { video.play(); } catch {}
+            });
+        } catch {}
+    }
+    function pauseClip() { if (video) try { video.pause(); } catch {} }
+    function stopClip() {
+        if (!video) return;
+        try { video.pause(); video.currentTime = CLIP_START; } catch {}
+    }
+
+    if (video && CLIP_URL && Number.isFinite(CLIP_START) && Number.isFinite(CLIP_END)) {
+        video.src = CLIP_URL + '#t=' + CLIP_START + ',' + CLIP_END;
+        // Position to the snippet start so the first frame is shown.
+        video.addEventListener('loadedmetadata', () => {
+            try { video.currentTime = CLIP_START; } catch {}
+        });
+        // Track playing state for CSS toggling.
+        video.addEventListener('play',   () => clipEl.classList.add('playing'));
+        video.addEventListener('pause',  () => clipEl.classList.remove('playing'));
+        video.addEventListener('ended',  () => clipEl.classList.remove('playing'));
+        // Auto-pause at snippet end (don't run into next scene).
+        video.addEventListener('timeupdate', () => {
+            if (video.currentTime >= CLIP_END - 0.05) {
+                video.pause();
+                try { video.currentTime = CLIP_START; } catch {}
+            }
+        });
+        // Big play cue — user gesture, sound works.
+        if (clipPlayCue) clipPlayCue.addEventListener('click', playClip);
+        // Pause / stop overlay buttons.
+        if (clipPauseBtn) clipPauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (video.paused) playClip();
+            else pauseClip();
+        });
+        if (clipStopBtn) clipStopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stopClip();
+        });
+    }
+
+    // Pronounce
+    document.getElementById('pronBtn').addEventListener('click', () => {
+        try { new Audio('/learning/tts/?text=' + encodeURIComponent(WORD)).play().catch(() => {}); } catch {}
+    });
+
+    // ── Bidirectional input: mic mode ↔ text mode ──
+    // Mic mode is the default — single big mic, "type instead" link below.
+    // Click the link → text mode (textarea, "use mic instead" link).
+    // The textarea is always the source of truth — mic transcripts write into it.
+    // Toggling between modes preserves the content already produced.
+    const SRCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function wireTurnInput(turn) {
+        const stage = document.getElementById('inputStage' + turn);
+        const micBtn = document.getElementById('micBtn' + turn);
+        const hint = document.getElementById('micHint' + turn);
+        const transcript = document.getElementById('transcript' + turn);
+        const ta = document.getElementById('textArea' + turn);
+        const sendBtn = document.getElementById('sendBtn' + turn);
+        if (!ta) return null;
+
+        // The textarea is the single source of truth — mic transcripts and
+        // typed input both flow into it. The transcript-box mirrors the
+        // current value plus any interim speech (for visual feedback).
+        const renderTranscript = (interim = '') => {
+            if (!transcript) return;
+            const finalText = ta.value.trim();
+            const display = (finalText + (interim ? ' ' + interim : '')).trim();
+            transcript.textContent = display;
+        };
+
+        const updateSend = () => {
+            const w = (ta.value.trim().match(/\S+/g) || []).length;
+            if (sendBtn) sendBtn.disabled = w < 3;
+            renderTranscript();
+        };
+        ta.addEventListener('input', updateSend);
+        updateSend();
+        if (sendBtn) sendBtn.addEventListener('click', () => {
+            const txt = ta.value.trim();
+            if (!txt || (txt.match(/\S+/g) || []).length < 3) return;
+            submitAnswer(turn, txt);
+        });
+
+        // Bidirectional mode toggle.
+        stage.querySelectorAll('[data-toggle="' + turn + '"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                stage.dataset.mode = target;
+                if (target === 'text') setTimeout(() => ta.focus(), 80);
+                if (target === 'text' && rec && recording) {
+                    try { rec.stop(); } catch {}
+                }
+            });
+        });
+
+        // Mic — patterns from the grammar speaking test: SVG mic + ring +
+        // visible transcript box that updates with combined final + interim.
+        let rec = null;
+        let recording = false;
+
+        if (!SRCtor || !micBtn) {
+            if (micBtn) {
+                micBtn.disabled = true;
+                micBtn.title = 'Voice input not available in this browser';
+            }
+            if (hint) hint.textContent = 'Voice not supported — tap "type instead"';
+            return null;
+        }
+        rec = new SRCtor();
+        rec.lang = 'en-US';
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.onresult = (e) => {
+            let interim = '';
+            let finalChunk = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const r = e.results[i];
+                if (r.isFinal) finalChunk += (finalChunk ? ' ' : '') + r[0].transcript.trim();
+                else interim += r[0].transcript;
+            }
+            if (finalChunk) {
+                ta.value = (ta.value.trim() + ' ' + finalChunk).trim();
+                updateSend();
+            }
+            renderTranscript(interim);
+        };
+        rec.onstart = () => {
+            recording = true;
+            micBtn.classList.add('recording');
+            hint.classList.add('listening');
+            hint.classList.remove('done');
+            hint.textContent = 'Listening… tap mic to stop';
+            if (transcript) transcript.classList.remove('done');
+        };
+        rec.onend = () => {
+            recording = false;
+            micBtn.classList.remove('recording');
+            hint.classList.remove('listening');
+            renderTranscript();  // strip interim
+            const w = (ta.value.trim().match(/\S+/g) || []).length;
+            if (w >= 3) {
+                hint.classList.add('done');
+                hint.textContent = 'Got it — tap Send (or edit by typing)';
+                if (transcript) transcript.classList.add('done');
+            } else if (w > 0) {
+                hint.textContent = 'A bit more — tap mic again or type';
+            } else {
+                hint.textContent = 'Didn\'t catch that — tap mic again';
+            }
+        };
+        rec.onerror = (ev) => {
+            recording = false;
+            micBtn.classList.remove('recording');
+            hint.classList.remove('listening');
+            hint.classList.add('error');
+            if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+                hint.textContent = 'Mic blocked — tap "type instead"';
+            } else if (ev.error === 'no-speech') {
+                hint.textContent = 'Didn\'t hear you — tap mic again';
+            } else {
+                hint.textContent = 'Mic error — tap "type instead"';
+            }
+            setTimeout(() => hint.classList.remove('error'), 2400);
+        };
+        micBtn.addEventListener('click', () => {
+            if (recording) { try { rec.stop(); } catch {} return; }
+            try { rec.start(); }
+            catch (e) { hint.textContent = 'Couldn\'t start mic — tap "type instead"'; }
+        });
+        return { rec };
+    }
+
+    // Turn 1 input is live from page mount; turn 2 wired lazily after reveal.
+    wireTurnInput(1);
+    let turn2Wired = false;
+
+    function submitAnswer(turn, text) {
+        if (turn === 1) submitTurn1(text);
+        else if (turn === 2) submitTurn2(text);
+    }
+
+    // Render the grade card as a STAGED sequence of beats — not a dashboard dump.
+    // Each beat fades+lifts in on its own delay. The most pedagogically valuable
+    // signal (naturalness, the user's named axis) lands first inside the card,
+    // followed by correctness, then the bar fills, then feedback, then —
+    // only when score=2 — the suggestion expands as the centerpiece WITH an
+    // audio echo of the natural English. Reference card and Continue arrive last.
+    function renderGradeCard(suffix, data, referenceEn) {
+        const beats = {
+            youSaid:    document.getElementById('youSaidBeat' + suffix),
+            card:       document.getElementById('gradeCard' + suffix),
+            chipN:      document.getElementById('chipNatural' + suffix),
+            chipC:      document.getElementById('chipCorrect' + suffix),
+            bar:        document.getElementById('gradeBar' + suffix),
+            feedback:   document.getElementById('feedback' + suffix + 'Text'),
+            suggestion: document.getElementById('suggestion' + suffix + 'Text'),
+            reference:  document.getElementById('referenceCard' + suffix),
+            continue_:  document.getElementById('continueBtn' + suffix),
+        };
+
+        // Reset every beat to hidden state before staging.
+        Object.values(beats).forEach(el => { if (el) el.classList.remove('shown'); });
+
+        const score = Math.max(0, Math.min(3, data.score || 0));
+        const hasSuggestion = !!(data.suggestion_uz && score === 2);
+
+        // Pre-populate content (so each beat reveals fully-formed elements,
+        // not text typing in mid-animation — distracting).
+        beats.chipN.classList.remove('pass', 'fail', 'skel');
+        beats.chipC.classList.remove('pass', 'fail', 'skel');
+        beats.chipN.classList.add(data.is_natural ? 'pass' : 'fail');
+        beats.chipC.classList.add(data.is_correct ? 'pass' : 'fail');
+        beats.chipN.textContent = data.is_natural ? '✓ Tabiiy' : '✗ Tabiiylik';
+        beats.chipC.textContent = data.is_correct ? '✓ Aniq'   : '✗ Aniqlik';
+        beats.bar.classList.remove('s-1', 's-2', 's-3', 's-4');
+        beats.feedback.textContent = data.feedback_uz || '';
+        if (hasSuggestion) {
+            beats.suggestion.style.display = 'block';
+            beats.suggestion.textContent = data.suggestion_uz;
+        } else {
+            beats.suggestion.style.display = 'none';
+        }
+
+        // Stage the beats. Times tuned by feel — total ~3s arc.
+        const reveal = (el, delay) => setTimeout(() => el && el.classList.add('shown'), delay);
+
+        reveal(beats.youSaid,  0);     // their words
+        reveal(beats.card,     500);   // empty card shell
+        reveal(beats.chipN,    700);   // naturalness — the named axis lands first
+        reveal(beats.chipC,    950);   // correctness
+        // Bar fill — tiny extra delay so the bar's own bg-color transition is visible.
+        setTimeout(() => {
+            if (beats.bar) {
+                beats.bar.classList.add('shown');
+                requestAnimationFrame(() => beats.bar.classList.add('s-' + (score + 1)));
+            }
+        }, 1200);
+        reveal(beats.feedback, 1700);  // peer-tone Uzbek line
+        if (hasSuggestion) {
+            reveal(beats.suggestion, 2200);
+            // Audio echo — speak the natural English version aloud as the
+            // suggestion lands. This is the pedagogical peak of the reveal.
+            setTimeout(() => {
+                if (referenceEn) {
+                    try {
+                        new Audio('/learning/tts/?text=' + encodeURIComponent(referenceEn))
+                            .play().catch(() => {});
+                    } catch {}
+                }
+            }, 2350);
+            reveal(beats.reference, 2800);
+            reveal(beats.continue_, 3200);
+        } else {
+            reveal(beats.reference, 2200);
+            reveal(beats.continue_, 2600);
+        }
+    }
+
+    // ── Turn 1: grade + reveal reference ──
+    function submitTurn1(text) {
+        answer1 = text;
+        document.getElementById('thinkingLabel').textContent = 'Checking your translation';
+        gotoPhase('thinking');
+        fetch('{% url "learning:own-the-word-grade" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({
+                note_id: NOTE_ID,
+                reference_en: EASY_REF,
+                user_translation_en: answer1,
+            }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data || !data.ok) { failSoft(); return; }
+            score1 = data.score || 0;
+            document.getElementById('youSaid1Quote').textContent = '"' + answer1 + '"';
+            // Switch to reveal phase first so the children are present, then
+            // start the staged choreography against fully-mounted elements.
+            gotoPhase('reveal1');
+            requestAnimationFrame(() => renderGradeCard('1', data, EASY_REF));
+        })
+        .catch(failSoft);
+    }
+
+    // Continue button → turn 2 (wire turn 2 input lazily)
+    document.getElementById('continueBtn1').addEventListener('click', () => {
+        if (!turn2Wired) { wireTurnInput(2); turn2Wired = true; }
+        gotoPhase('turn2');
+        const ta = document.getElementById('textArea2');
+        if (ta) try { ta.focus(); } catch {}
+    });
+
+    // ── Turn 2: grade in flight, then call close ──
+    function submitTurn2(text) {
+        answer2 = text;
+        document.getElementById('thinkingLabel').textContent = 'Reading your second translation';
+        gotoPhase('thinking');
+        // Sequential: grade turn 2, then close.
+        fetch('{% url "learning:own-the-word-grade" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({
+                note_id: NOTE_ID,
+                reference_en: HARDER_REF,
+                user_translation_en: answer2,
+            }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data || !data.ok) { failSoft(); return; }
+            score2 = data.score || 0;
+            document.getElementById('thinkingLabel').textContent = 'Closing the loop';
+            return fetch('{% url "learning:own-the-word-close" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+                body: JSON.stringify({
+                    note_id: NOTE_ID,
+                    score_1: score1,
+                    score_2: score2,
+                    reference_1: EASY_REF,
+                    reference_2: HARDER_REF,
+                    user_translation_1: answer1,
+                    user_translation_2: answer2,
+                }),
+            });
+        })
+        .then(r => r ? r.json() : null)
+        .then(data => {
+            if (!data || !data.ok) { failSoft(); return; }
+            renderCeremony(data);
+        })
+        .catch(failSoft);
+    }
+
+    function renderCeremony(data) {
+        document.getElementById('yours1').textContent = '"' + answer1 + '"';
+        document.getElementById('yours2').textContent = '"' + answer2 + '"';
+
+        const before = data.confidence_before ?? 0;
+        const after  = data.confidence_after  ?? before;
+        document.getElementById('confBefore').textContent = before;
+        document.getElementById('confAfter').textContent  = after;
+
+        const phrase = data.keep_phrase_uz || (WORD + ' — sizniki.');
+        const kp = document.getElementById('keepPhrase');
+        kp.innerHTML = '';
+        const letters = [...phrase];
+        letters.forEach((ch, i) => {
+            const span = document.createElement('span');
+            span.className = 'ch';
+            span.style.animationDelay = (700 + i * 28) + 'ms';
+            span.textContent = ch === ' ' ? ' ' : ch;
+            kp.appendChild(span);
+        });
+
+        gotoPhase('ceremony');
+
+        const fill = document.getElementById('confFill');
+        fill.style.width = before + '%';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => { fill.style.width = after + '%'; });
+        });
+        try { new Audio('/learning/tts/?text=' + encodeURIComponent(WORD)).play().catch(() => {}); } catch {}
+
+        // Collection card — flies in centred (proof of acquisition), then docks
+        // top-right after the keep-phrase finishes typing. Total ~3s arc.
+        // Only show on owned (score >= 2). Otherwise the card would lie.
+        const cc = document.getElementById('collectionCard');
+        if (cc && data.owned) {
+            setTimeout(() => cc.classList.add('flying'), 2400);
+            setTimeout(() => {
+                cc.classList.remove('flying');
+                cc.classList.add('docked');
+            }, 3600);
+        }
+
+        // ── SR bridge pill — bridges this ritual to the practice queue.
+        // The next_review date is set server-side based on final_score.
+        // Pill arrives last, after the confidence bar finishes filling.
+        const pill = document.getElementById('srPill');
+        const srDaysEl = document.getElementById('srDays');
+        if (pill && srDaysEl) {
+            const days = data.next_review_days || 1;
+            srDaysEl.textContent = (days === 1) ? '1 day' : (days + ' days');
+            // Reveal after the conf bar settles (~3.2s).
+            setTimeout(() => pill.classList.add('shown'), 3300);
+        }
+    }
+
+    function failSoft() {
+        document.getElementById('thinkingLabel').textContent =
+            'Network slipped — refresh to try again';
+    }
+
+    function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+    }
+})();
+</script>
+</body>
+</html>

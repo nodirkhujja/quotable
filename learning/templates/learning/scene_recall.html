@@ -1,0 +1,913 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scene Recall</title>
+<style>
+:root {
+    --bg: #0a0a0c;
+    --bg-elevated: #131318;
+    --text: #f4f4f5;
+    --text-2: #a1a1aa;
+    --text-3: #6b7280;
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.12);
+    --amber: #f59e0b;
+    --amber-soft: rgba(245, 158, 11, 0.12);
+    --red: #ef4444;
+    --red-soft: rgba(239, 68, 68, 0.12);
+    --indigo: #6366f1;
+    --indigo-soft: rgba(99, 102, 241, 0.14);
+    --border: rgba(255,255,255,0.08);
+}
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+.sr-shell {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px 16px 60px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+}
+.sr-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 18px;
+    color: var(--text-3);
+    font-size: 13px;
+}
+.sr-topbar a {
+    color: var(--text-2);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    transition: background .15s;
+}
+.sr-topbar a:hover { background: var(--bg-elevated); }
+
+.sr-counter {
+    text-align: center;
+    color: var(--text-3);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* Video frame */
+.sr-video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.40);
+}
+.sr-video {
+    width: 100%; height: 100%;
+    display: block;
+    object-fit: contain;
+    background: #000;
+}
+/* "muted" badge in the video corner — subtle reminder during recall */
+.sr-muted-badge {
+    position: absolute; top: 10px; right: 12px;
+    background: rgba(0,0,0,0.55);
+    color: rgba(255,255,255,0.72);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity .25s;
+}
+.sr-video-wrap.sound-on .sr-muted-badge { opacity: 0; }
+
+.sr-tap-start {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    color: white;
+    font-size: 14px;
+    background: rgba(0,0,0,0.55);
+    cursor: pointer;
+    z-index: 3;
+}
+.sr-tap-start.shown { display: flex; }
+.sr-tap-start::before {
+    content: '▶';
+    margin-right: 8px;
+    font-size: 22px;
+}
+
+.sr-episode {
+    margin-top: 10px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 12px;
+}
+
+/* RECALL block */
+.sr-recall {
+    margin-top: 22px;
+    text-align: center;
+    display: none;
+}
+.sr-recall.shown { display: block; }
+.sr-pos {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-3);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.sr-translation {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin-bottom: 22px;
+}
+
+/* Mic + status — voice-first */
+.sr-mic-row {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    margin-bottom: 4px;
+}
+.sr-mic-btn {
+    appearance: none; position: relative;
+    width: 84px; height: 84px;
+    border: none; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 0 rgba(99,102,241,0);
+    transition: transform .12s, box-shadow .2s, background .2s;
+}
+.sr-mic-btn:hover { transform: translateY(-2px); box-shadow: 0 0 0 6px var(--indigo-soft); }
+.sr-mic-btn:active { transform: scale(0.96); }
+.sr-mic-btn.recording {
+    background: linear-gradient(135deg, #ef4444, #fb7185);
+    box-shadow: 0 0 0 6px rgba(239,68,68,0.22);
+    animation: srMicPulse 1.4s ease-in-out infinite;
+}
+@keyframes srMicPulse {
+    0%,100% { box-shadow: 0 0 0 6px rgba(239,68,68,0.22); }
+    50%     { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+}
+.sr-mic-btn svg { width: 32px; height: 32px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.sr-status {
+    font-size: 13px;
+    color: var(--text-2);
+    min-height: 18px;
+}
+.sr-status.listening { color: var(--red); font-weight: 600; }
+.sr-status.correct { color: var(--green); font-weight: 600; }
+.sr-status.wrong { color: var(--amber); font-weight: 600; }
+.sr-status.failed { color: var(--red); font-weight: 600; }
+
+.sr-transcript {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text);
+    min-height: 20px;
+    font-style: italic;
+    opacity: 0.85;
+}
+
+/* Fallback type-instead */
+.sr-type-toggle {
+    margin-top: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    font: inherit; font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.sr-type-toggle:hover { color: var(--text-2); }
+.sr-type-row {
+    display: none;
+    margin-top: 14px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+.sr-type-row.shown { display: flex; }
+.sr-input {
+    flex: 1; min-width: 0;
+    background: var(--bg-elevated);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font: inherit; font-size: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.sr-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-soft); }
+.sr-input.correct { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.sr-input.wrong { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.sr-input.failed { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.sr-submit {
+    background: var(--indigo);
+    color: #fff;
+    border: none; border-radius: 10px;
+    padding: 12px 20px;
+    font: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+}
+.sr-submit:hover { background: #4f46e5; }
+.sr-submit:disabled { background: var(--bg-elevated); color: var(--text-3); cursor: not-allowed; }
+
+/* "Show me" — soft skip. Reveals + counts as failed. */
+.sr-show-me {
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font: inherit; font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.sr-show-me:hover { color: var(--text-2); border-color: rgba(255,255,255,0.18); }
+
+/* Reveal phase block */
+.sr-reveal {
+    margin-top: 22px;
+    text-align: center;
+    display: none;
+}
+.sr-reveal.shown { display: block; }
+.sr-answer {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+.sr-answer.failed { color: var(--red); }
+.sr-definition {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 14px;
+}
+.sr-line-with-target {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.55;
+    font-style: italic;
+    margin-bottom: 14px;
+}
+.sr-target {
+    color: var(--green);
+    font-weight: 700;
+    font-style: normal;
+}
+.sr-interval {
+    font-size: 12px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.sr-next-btn {
+    display: block; width: 100%;
+    padding: 16px;
+    margin-top: 18px;
+    border: none; border-radius: 12px;
+    background: var(--green);
+    color: #0a0a0c;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform .12s, background .15s;
+}
+.sr-next-btn:hover { background: #16a34a; }
+.sr-next-btn:active { transform: scale(0.98); }
+
+/* Loading + complete + empty states */
+.sr-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-2);
+}
+.sr-state-headline {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+}
+.sr-state-sub {
+    font-size: 14px;
+    color: var(--text-3);
+    line-height: 1.5;
+}
+.sr-stats {
+    display: inline-flex; gap: 18px; flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 18px;
+    color: var(--text-2);
+    font-size: 13px;
+}
+.sr-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.sr-stats .num { color: var(--text); font-weight: 700; font-size: 15px; }
+
+.sr-test-footer {
+    margin-top: auto;
+    padding: 22px 0 4px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.55;
+}
+</style>
+</head>
+<body>
+<div class="sr-shell">
+    <div class="sr-topbar">
+        <span>Scene Recall · TEST</span>
+        <a href="{% url 'learning:word_note_list' %}">← Back</a>
+    </div>
+
+    <div id="sr-loading" class="sr-state">
+        <div class="sr-state-headline">Loading your due words…</div>
+        <div class="sr-state-sub">One moment.</div>
+    </div>
+
+    <div id="sr-empty" class="sr-state" style="display:none;">
+        <div class="sr-state-headline" id="sr-empty-headline">Nothing due right now.</div>
+        <div class="sr-state-sub" id="sr-empty-sub"></div>
+    </div>
+
+    <div id="sr-active" style="display:none;">
+        <div class="sr-counter">
+            <span id="sr-counter-current">1</span> / <span id="sr-counter-total">5</span>
+        </div>
+        <div class="sr-video-wrap" id="sr-video-wrap">
+            <video id="sr-video" class="sr-video" playsinline preload="auto"></video>
+            <div id="sr-muted-badge" class="sr-muted-badge">muted</div>
+            <div id="sr-tap-start" class="sr-tap-start">tap to play</div>
+        </div>
+        <div id="sr-episode" class="sr-episode"></div>
+
+        <div id="sr-recall" class="sr-recall">
+            <div class="sr-pos" id="sr-pos"></div>
+            <div class="sr-translation" id="sr-translation"></div>
+
+            <div class="sr-mic-row">
+                <button type="button" id="sr-mic-btn" class="sr-mic-btn" aria-label="Tap and say the English word">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="9" y="3" width="6" height="12" rx="3"/>
+                        <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                </button>
+                <div id="sr-status" class="sr-status">Tap the mic and say the English word</div>
+                <div id="sr-transcript" class="sr-transcript"></div>
+                <button type="button" id="sr-type-toggle" class="sr-type-toggle">type instead</button>
+            </div>
+
+            <div id="sr-type-row" class="sr-type-row">
+                <input id="sr-input" class="sr-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the English word…">
+                <button type="button" id="sr-submit" class="sr-submit" disabled>Submit</button>
+            </div>
+
+            <button type="button" id="sr-show-me" class="sr-show-me">show me</button>
+        </div>
+
+        <div id="sr-reveal" class="sr-reveal">
+            <div class="sr-answer" id="sr-answer"></div>
+            <div class="sr-definition" id="sr-definition"></div>
+            <div class="sr-line-with-target" id="sr-line-with-target"></div>
+            <div class="sr-interval" id="sr-interval"></div>
+            <button type="button" id="sr-next-btn" class="sr-next-btn">Next →</button>
+        </div>
+    </div>
+
+    <div id="sr-complete" class="sr-state" style="display:none;">
+        <div class="sr-state-headline" id="sr-complete-headline">Done.</div>
+        <div class="sr-state-sub" id="sr-complete-sub"></div>
+        <div class="sr-stats" id="sr-stats"></div>
+        <a href="{% url 'learning:word_note_list' %}" class="sr-next-btn" style="display:inline-block;width:auto;margin-top:24px;text-decoration:none;text-align:center;padding:14px 28px;">Back to your words</a>
+    </div>
+
+    <div class="sr-test-footer">test · /learning/scene-recall/</div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+    const CSRF = '{{ csrf_token }}';
+    const $ = (id) => document.getElementById(id);
+
+    // ── Module state ─────────────────────────────────────────────
+    let words = [];
+    let totalDue = 0;
+    let nextDueAt = null;
+    let idx = 0;
+    let attempts = 0;          // 0 = haven't tried this word yet, 1 = first attempt failed
+    let phase = "loading";     // loading | scene | recall | reveal | complete
+    let typeMode = false;      // user toggled "type instead"
+    let sessionStats = { firstTry: 0, secondTry: 0, revealed: 0 };
+
+    // SR (browser SpeechRecognition) state
+    const SRCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recog = null;
+    let recording = false;
+    let recogTimer = null;
+
+    // ── Helpers ──────────────────────────────────────────────────
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s == null ? "" : String(s);
+        return d.innerHTML;
+    }
+
+    function show(elId) {
+        ["sr-loading", "sr-empty", "sr-active", "sr-complete"].forEach(id => {
+            const el = $(id);
+            if (el) el.style.display = (id === elId) ? "" : "none";
+        });
+    }
+    function showRecall(on) { $("sr-recall").classList.toggle("shown", !!on); }
+    function showReveal(on) { $("sr-reveal").classList.toggle("shown", !!on); }
+
+    // Lightweight Levenshtein for typo tolerance (≥6 chars only).
+    function levenshtein(a, b) {
+        const m = a.length, n = b.length;
+        if (Math.abs(m - n) > 2) return 99;  // short-circuit
+        const dp = Array.from({length: m + 1}, (_, i) => [i].concat(Array(n).fill(0)));
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                dp[i][j] = a[i-1] === b[j-1]
+                    ? dp[i-1][j-1]
+                    : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+            }
+        }
+        return dp[m][n];
+    }
+
+    function normalize(s) {
+        return (s || "").toLowerCase().trim()
+            .replace(/[^a-z' ]/g, "")  // strip punctuation
+            .replace(/\s+/g, " ");
+    }
+
+    // Match user's said/typed answer against the target word. Tolerates:
+    //  • case + punctuation differences
+    //  • bracket annotations: "fixate on [something]" matches "fixate on"
+    //  • single-char typo for words ≥6 chars
+    //  • any variant where the user produced the target's first content word
+    function checkAnswer(userInput, target) {
+        const u = normalize(userInput);
+        const t = normalize(target);
+        if (!u || !t) return false;
+        if (u === t) return true;
+
+        // Strip bracketed slot placeholders like [something] / [someone].
+        const tStripped = t.replace(/\s*\[[^\]]*\]\s*/g, " ").replace(/\s+/g, " ").trim();
+        if (u === tStripped) return true;
+
+        // Stem on first content word — accepts inflections (walked/walking).
+        const tFirst = tStripped.split(" ").filter(Boolean)[0] || "";
+        const uTokens = u.split(" ").filter(Boolean);
+        if (tFirst && tFirst.length >= 4) {
+            for (const ut of uTokens) {
+                const ms = Math.min(ut.length, tFirst.length, 4);
+                if (ut.slice(0, ms) === tFirst.slice(0, ms)) return true;
+            }
+        }
+        // Levenshtein-1 only for ≥6 char single-word answers (avoids
+        // accepting "make"→"made" as a match).
+        if (!t.includes(" ") && t.length >= 6 && levenshtein(u, t) <= 1) return true;
+        return false;
+    }
+
+    function setStatus(text, cls) {
+        const el = $("sr-status");
+        el.textContent = text;
+        el.className = "sr-status";
+        if (cls) el.classList.add(cls);
+    }
+
+    // ── SR (microphone) ──────────────────────────────────────────
+    function startMic(onResult) {
+        if (!SRCtor) {
+            // No browser support — drop into type mode permanently
+            switchToTypeMode();
+            return;
+        }
+        if (recording) return;
+        recog = new SRCtor();
+        recog.lang = "en-US";
+        recog.continuous = false;
+        recog.interimResults = true;
+        recog.maxAlternatives = 3;
+
+        $("sr-mic-btn").classList.add("recording");
+        recording = true;
+        setStatus("Listening — say the English word", "listening");
+        $("sr-transcript").textContent = "";
+
+        let finalText = "";
+        const alts = [];
+        recog.onresult = (e) => {
+            let interim = "";
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const r = e.results[i];
+                if (r.isFinal) {
+                    finalText += r[0].transcript;
+                    for (let a = 0; a < Math.min(3, r.length); a++) {
+                        alts.push(r[a].transcript);
+                    }
+                } else {
+                    interim += r[0].transcript;
+                }
+            }
+            $("sr-transcript").textContent = (finalText + interim).trim();
+        };
+        recog.onerror = (ev) => {
+            const err = (ev && ev.error) || "";
+            stopMicHard();
+            if (err === "not-allowed" || err === "service-not-allowed") {
+                switchToTypeMode();
+                setStatus("Mic blocked — type your answer", "wrong");
+            } else if (err === "no-speech") {
+                setStatus("Didn't hear anything — tap the mic and try again");
+            } else {
+                setStatus("Voice error — type instead");
+                switchToTypeMode();
+            }
+        };
+        recog.onend = () => {
+            stopMicHard();
+            const transcript = ($("sr-transcript").textContent || "").trim();
+            if (transcript) {
+                onResult(transcript, alts);
+            } else {
+                setStatus("Didn't hear anything — tap the mic and try again");
+            }
+        };
+        try { recog.start(); }
+        catch (e) {
+            stopMicHard();
+            switchToTypeMode();
+            setStatus("Voice not available — type your answer", "wrong");
+        }
+
+        // Hard 8-second cap (most utterances are 2-3s).
+        if (recogTimer) clearTimeout(recogTimer);
+        recogTimer = setTimeout(() => {
+            try { recog.stop(); } catch {}
+        }, 8000);
+    }
+    function stopMicHard() {
+        if (recogTimer) { clearTimeout(recogTimer); recogTimer = null; }
+        recording = false;
+        $("sr-mic-btn").classList.remove("recording");
+    }
+    function abortMic() {
+        if (recog) {
+            try { recog.onresult = recog.onerror = recog.onend = null; } catch {}
+            try { recog.abort(); } catch {}
+        }
+        stopMicHard();
+    }
+
+    // ── Type-instead toggle ──────────────────────────────────────
+    function switchToTypeMode() {
+        typeMode = true;
+        $("sr-type-row").classList.add("shown");
+        $("sr-mic-btn").style.display = "none";
+        $("sr-type-toggle").style.display = "none";
+        setTimeout(() => $("sr-input").focus(), 60);
+    }
+
+    // ── Phase 1: SCENE — muted playback ──────────────────────────
+    function startScene(i) {
+        if (i >= words.length) {
+            return finishSession();
+        }
+        idx = i;
+        attempts = 0;
+        const w = words[idx];
+        phase = "scene";
+        show("sr-active");
+        showRecall(false);
+        showReveal(false);
+
+        $("sr-counter-current").textContent = String(idx + 1);
+        $("sr-counter-total").textContent = String(words.length);
+        $("sr-episode").textContent = (w.season != null && w.episode_number != null)
+            ? `${w.episode_title} · S${w.season}E${String(w.episode_number).padStart(2, "0")}`
+            : (w.episode_title || "");
+
+        // Reset video — muted on first watch (the recall cue moment).
+        const v = $("sr-video");
+        const wrap = $("sr-video-wrap");
+        const tap = $("sr-tap-start");
+        wrap.classList.remove("sound-on");
+        $("sr-muted-badge").style.opacity = "";
+        tap.classList.remove("shown");
+        v.muted = true;
+        v.playbackRate = 1.0;
+        v.src = w.video_url;
+        v.currentTime = 0;
+
+        const onLoaded = () => {
+            try { v.currentTime = w.video_start || 0; } catch {}
+            const p = v.play();
+            if (p && p.catch) p.catch(() => {
+                tap.classList.add("shown");
+                tap.onclick = () => {
+                    tap.classList.remove("shown");
+                    try { v.currentTime = w.video_start || 0; } catch {}
+                    v.muted = true;
+                    v.play().catch(() => {});
+                };
+            });
+        };
+        v.removeEventListener("loadedmetadata", v._srOnLoaded || (() => {}));
+        v._srOnLoaded = onLoaded;
+        v.addEventListener("loadedmetadata", onLoaded, { once: true });
+
+        // Pause at video_end → flip to RECALL phase.
+        const onTime = () => {
+            if (w.video_end && v.currentTime >= w.video_end - 0.05) {
+                try { v.pause(); } catch {}
+                v.removeEventListener("timeupdate", onTime);
+                enterRecall();
+            }
+        };
+        v.removeEventListener("timeupdate", v._srOnTime || (() => {}));
+        v._srOnTime = onTime;
+        v.addEventListener("timeupdate", onTime);
+        v.onended = () => enterRecall();
+
+        v.load();
+    }
+
+    // ── Phase 2: RECALL — Uzbek + mic ────────────────────────────
+    function enterRecall() {
+        if (phase === "recall") return;
+        phase = "recall";
+        const w = words[idx];
+        $("sr-pos").textContent = w.pos || "";
+        $("sr-translation").textContent = w.translation || "(no translation saved)";
+        setStatus(typeMode ? "Type the English word" : "Tap the mic and say the English word");
+        $("sr-transcript").textContent = "";
+        $("sr-input").value = "";
+        $("sr-input").className = "sr-input";
+        $("sr-submit").disabled = true;
+        showRecall(true);
+        if (typeMode) setTimeout(() => $("sr-input").focus(), 80);
+    }
+
+    // ── Grade the user's attempt ─────────────────────────────────
+    function gradeAttempt(userText) {
+        const w = words[idx];
+        attempts++;
+        const candidates = [userText];
+        // (browser SR may have provided alts — we currently pass only the
+        // best transcript; alts could be threaded through later.)
+        let correct = false;
+        for (const c of candidates) {
+            if (checkAnswer(c, w.word)) { correct = true; break; }
+        }
+
+        if (correct) {
+            const status = "correct";
+            if (attempts === 1) sessionStats.firstTry++;
+            else sessionStats.secondTry++;
+            playReward(w, /*isCorrect*/ true);
+            setStatus(attempts === 1 ? "Nice — that's it." : "Got it.", status);
+            $("sr-input").classList.add(status);
+            postAnswer(w.id, true, attempts);
+            setTimeout(() => enterReveal(w, /*failed*/ false), 250);
+        } else if (attempts === 1) {
+            // First attempt wrong — replay with audio + slow-mo, let them try again.
+            setStatus("Not quite — listen and try again", "wrong");
+            $("sr-input").classList.add("wrong");
+            $("sr-transcript").textContent = "";
+            $("sr-input").value = "";
+            playReward(w, /*isCorrect*/ false);
+            setTimeout(() => {
+                $("sr-input").classList.remove("wrong");
+                setStatus(typeMode ? "Try again — type the English word" : "Tap the mic and try again");
+                if (typeMode) $("sr-input").focus();
+            }, 1200);
+        } else {
+            // Second attempt wrong — reveal.
+            sessionStats.revealed++;
+            $("sr-input").classList.add("failed");
+            postAnswer(w.id, false, 3);
+            playReward(w, /*isCorrect*/ false);
+            setTimeout(() => enterReveal(w, /*failed*/ true), 250);
+        }
+    }
+
+    // Replay video — UNMUTED — so the learner hears the character say
+    // the word. On wrong answers, slow it to 0.6× over the slow window.
+    function playReward(w, isCorrect) {
+        const v = $("sr-video");
+        const wrap = $("sr-video-wrap");
+        wrap.classList.add("sound-on");
+        v.muted = false;
+        v.playbackRate = isCorrect ? 1.0 : 0.6;
+        try { v.currentTime = isCorrect ? (w.video_start || 0) : (w.slow_start || w.video_start || 0); } catch {}
+        const p = v.play();
+        if (p && p.catch) p.catch(() => {});
+        const stopAt = isCorrect ? (w.video_end || 0) : ((w.slow_end || w.video_end || 0) + 0.05);
+        const onTime = () => {
+            if (stopAt && v.currentTime >= stopAt - 0.05) {
+                try { v.pause(); } catch {}
+                v.playbackRate = 1.0;
+                v.removeEventListener("timeupdate", onTime);
+            }
+        };
+        v.addEventListener("timeupdate", onTime);
+    }
+
+    // ── Phase 3 / Reveal ─────────────────────────────────────────
+    function enterReveal(w, failed) {
+        phase = "reveal";
+        showRecall(false);
+        const ans = $("sr-answer");
+        ans.textContent = w.word || "";
+        ans.classList.toggle("failed", !!failed);
+        $("sr-definition").textContent = w.definition || "";
+        // Highlight the target inside the original transcript line.
+        const line = w.transcript_text || "";
+        const re = new RegExp("(" + escapeRegExp((w.word || "").split(/\s+/)[0]) + ")\\w*", "gi");
+        const lineHtml = escHtml(line).replace(re, '<span class="sr-target">$1</span>');
+        $("sr-line-with-target").innerHTML = lineHtml || '<span style="opacity:0.5;">—</span>';
+        $("sr-interval").textContent = failed
+            ? "Coming back in 10 minutes."
+            : (attempts === 1 ? "Nailed it — see you in a few days."
+                              : "Got it — back tomorrow for another pass.");
+        showReveal(true);
+
+        // Auto-advance after correct, manual after failed (let it land).
+        if (!failed) {
+            setTimeout(() => { if (phase === "reveal") startScene(idx + 1); }, 3000);
+        }
+    }
+    function escapeRegExp(s) { return (s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+    // POST the result to the SR engine.
+    function postAnswer(noteId, correct, attemptsCount) {
+        fetch("/learning/scene-recall/answer/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": CSRF,
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({
+                note_id: noteId,
+                correct: !!correct,
+                attempts: attemptsCount,
+            }),
+        }).catch(() => { /* silent — UI flow continues regardless */ });
+    }
+
+    // ── Phase 4: SESSION COMPLETE ────────────────────────────────
+    function finishSession() {
+        phase = "complete";
+        $("sr-complete-headline").textContent =
+            `${words.length} word${words.length === 1 ? "" : "s"} reviewed.`;
+        const remaining = Math.max(0, totalDue - words.length);
+        $("sr-complete-sub").textContent = remaining > 0
+            ? `${remaining} more due — come back later.`
+            : "All caught up. New ones unlock as you save them.";
+        $("sr-stats").innerHTML =
+            `<span><span class="num">${sessionStats.firstTry}</span> first-try ✓</span>` +
+            `<span><span class="num">${sessionStats.secondTry}</span> second-try</span>` +
+            `<span><span class="num">${sessionStats.revealed}</span> revealed</span>`;
+        show("sr-complete");
+    }
+
+    // ── Wire UI ──────────────────────────────────────────────────
+    $("sr-mic-btn").addEventListener("click", () => {
+        if (phase !== "recall") return;
+        if (recording) {
+            try { recog && recog.stop(); } catch {}
+            return;
+        }
+        startMic((said) => gradeAttempt(said));
+    });
+
+    $("sr-type-toggle").addEventListener("click", switchToTypeMode);
+
+    $("sr-input").addEventListener("input", () => {
+        $("sr-submit").disabled = !($("sr-input").value || "").trim();
+    });
+    $("sr-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && ($("sr-input").value || "").trim()) {
+            e.preventDefault();
+            gradeAttempt($("sr-input").value.trim());
+        }
+    });
+    $("sr-submit").addEventListener("click", () => {
+        const v = ($("sr-input").value || "").trim();
+        if (v) gradeAttempt(v);
+    });
+
+    // "Show me" — soft skip. Counts as failed (3 attempts), reveals.
+    $("sr-show-me").addEventListener("click", () => {
+        if (phase !== "recall") return;
+        abortMic();
+        const w = words[idx];
+        sessionStats.revealed++;
+        attempts = 3;
+        postAnswer(w.id, false, 3);
+        playReward(w, /*isCorrect*/ false);
+        setTimeout(() => enterReveal(w, /*failed*/ true), 200);
+    });
+
+    $("sr-next-btn").addEventListener("click", () => startScene(idx + 1));
+
+    // ── Bootstrap ────────────────────────────────────────────────
+    fetch("/learning/scene-recall/data/", {
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" },
+    })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.ok) {
+                $("sr-loading").style.display = "none";
+                $("sr-empty-headline").textContent = "Couldn't load.";
+                $("sr-empty-sub").textContent = "Refresh and try again.";
+                show("sr-empty");
+                return;
+            }
+            words = data.words || [];
+            totalDue = data.total_due || 0;
+            nextDueAt = data.next_due_at || null;
+
+            if (words.length === 0) {
+                $("sr-empty-headline").textContent = "No words due right now.";
+                if (nextDueAt) {
+                    const dt = new Date(nextDueAt);
+                    const diffMs = dt - new Date();
+                    if (diffMs > 0) {
+                        const h = Math.round(diffMs / 36e5);
+                        $("sr-empty-sub").textContent = h <= 1
+                            ? "Next word due in less than an hour."
+                            : `Next word due in about ${h} hours.`;
+                    } else {
+                        $("sr-empty-sub").textContent = "Save more words while watching.";
+                    }
+                } else {
+                    $("sr-empty-sub").textContent = "Save some words first, then come back.";
+                }
+                show("sr-empty");
+                return;
+            }
+            startScene(0);
+        })
+        .catch(() => {
+            $("sr-loading").style.display = "none";
+            $("sr-empty-headline").textContent = "Couldn't load.";
+            $("sr-empty-sub").textContent = "Refresh and try again.";
+            show("sr-empty");
+        });
+})();
+</script>
+</body>
+</html>

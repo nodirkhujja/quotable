@@ -5,30 +5,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grammar — Quotable</title>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% include "learning/_tokens.html" %}
     <style>
         :root {
-            --bg:      #0a0a0a;
-            --bg-2:    #111111;
-            --bg-3:    #1a1a1a;
-            --border:  #1f1f1f;
-            --border-2:#2e2e2e;
-            --text:    #ffffff;
-            --text-2:  #a3a3a3;
-            --text-3:  #525252;
-            --accent:  #ff6b35;
-            --amber:   #f59e0b;
-            --emerald: #10b981;
+            /* Dark theater "library mode" — quiet reading vibe on dark surfaces. */
+            --paper:       #0D0E14;   /* page */
+            --paper-2:     #12131A;   /* elevated */
+            --card:        #17181F;   /* card */
+            --ink:         #ECECF1;   /* primary text */
+            --ink-2:       #B4B5C0;
+            --ink-3:       #8E8F9B;
+            --rule:        rgba(255,255,255,0.08);
+            --accent:      #FF6B35;   /* English-side — brand orange */
+            --accent-soft: rgba(255,107,53,0.14);
+            --uzbek:       #4ADE80;   /* mint — Uzbek-side (semantic "correct/native") */
+            --uzbek-soft:  rgba(74,222,128,0.14);
+            --good:        #4ADE80;
+            --bad:         #ef4444;
+
+            /* Legacy aliases so the existing stylesheet picks up the new values
+               without having to rewrite every selector. */
+            --bg:       var(--paper);
+            --bg-2:     var(--paper-2);
+            --bg-3:     var(--card);
+            --border:   var(--rule);
+            --border-2: rgba(255,255,255,0.14);
+            --text:     var(--ink);
+            --text-2:   var(--ink-2);
+            --text-3:   var(--ink-3);
+            --amber:    var(--accent);
+            --emerald:  var(--good);
+            --red:      var(--bad);
+
+            --font-display: 'Space Grotesk', 'Inter', sans-serif;
+            --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+            /* Aliases for shared includes (e.g. users/_account_menu.html) */
+            --accent-hot:   #FF8558;
+            --accent-dim:   var(--accent-soft);
+            --accent-ring:  rgba(255,107,53,0.35);
+            --bg-3:         var(--card);
+            --bg-4:         #20222C;
+            --border-2:     rgba(255,255,255,0.14);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+        body {
+            background: var(--app-bg);
+            color: var(--ink);
+            font-family: var(--font-sans);
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            background-image:
+                radial-gradient(800px circle at 90% 0%, rgba(255,107,53,0.06), transparent 55%),
+                radial-gradient(600px circle at 10% 100%, rgba(139,92,246,0.04), transparent 60%);
+            background-attachment: fixed;
+        }
+        /* Utility type classes. */
+        .serif { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; }
+        .mono  { font-family: var(--font-mono); }
+        ::selection { background: var(--accent); color: #fff; }
+
+        /* Headings → Space Grotesk. Unit titles, section titles, rank stamps. */
+        .nav-title,
+        .unit-title,
+        .section-title,
+        .lesson-title,
+        .complete-title,
+        .practice-title,
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        /* Labels / eyebrows / numerals → JetBrains Mono. */
+        .nav-sub,
+        .eyebrow,
+        .label,
+        .mono-label,
+        .meta-label {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
 
         /* ── NAV ── */
         .nav {
             position:sticky; top:0; z-index:100; height:56px;
             display:flex; align-items:center; padding:0 24px; gap:16px;
-            background:rgba(10,10,10,0.92); backdrop-filter:blur(20px);
-            border-bottom:1px solid var(--border);
+            background:rgba(13,14,20,0.88); backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--rule);
         }
         .back-btn {
             display:flex; align-items:center; justify-content:center;
@@ -41,17 +113,173 @@
         .back-btn svg { width:18px; height:18px; stroke:currentColor; fill:none; }
         .nav-title { font-size:15px; font-weight:600; }
         .nav-sub { font-size:12px; color:var(--text-3); margin-left:auto; }
+        .nav-xp {
+            display:flex; align-items:center; gap:5px;
+            font-size:13px; font-weight:700; color:var(--amber);
+            margin-left:auto; margin-right:12px;
+        }
+        .nav-xp .xp-icon {
+            width:16px; height:16px; border-radius:50%;
+            background:var(--amber); color:var(--paper);
+            display:flex; align-items:center; justify-content:center;
+            font-size:9px; font-weight:900;
+        }
+
+        /* ── BADGES SHOWCASE ── */
+        .badges-showcase {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:14px; padding:16px 18px; margin-bottom:20px;
+        }
+        .badges-showcase .section-label { margin-bottom:10px; }
+        .badges-showcase-grid {
+            display:flex; gap:8px; flex-wrap:wrap;
+        }
+        .badge-item {
+            display:flex; align-items:center; gap:6px;
+            padding:6px 14px; border-radius:20px;
+            font-size:12px; font-weight:600;
+            background:rgba(255,107,53,0.08); border:1px solid rgba(255,107,53,0.15);
+            color:var(--amber);
+        }
+        .badge-item.locked {
+            opacity:.5; filter:grayscale(1);
+            color:var(--text-3); border-color:var(--border);
+            background:var(--bg-3);
+        }
+        .badge-progress {
+            display:flex; align-items:center; gap:6px;
+            margin-top:4px; width:100%;
+        }
+        .badge-progress-bar {
+            flex:1; height:4px; border-radius:2px;
+            background:var(--bg-3); overflow:hidden;
+        }
+        .badge-progress-fill {
+            height:100%; border-radius:2px;
+            background:var(--amber);
+            transition:width .4s ease;
+        }
+        .badge-progress-text {
+            font-size:10px; color:var(--text-3);
+            white-space:nowrap; font-variant-numeric:tabular-nums;
+        }
+        .badge-item-wrap {
+            display:flex; flex-direction:column; align-items:center;
+            gap:2px; padding:8px 14px; border-radius:12px;
+            font-size:12px; font-weight:600; min-width:90px;
+            background:rgba(255,107,53,0.08); border:1px solid rgba(255,107,53,0.15);
+            color:var(--amber); text-align:center;
+        }
+        .badge-item-wrap.locked {
+            opacity:.6; color:var(--text-3);
+            border-color:var(--border); background:var(--bg-3);
+        }
+        .badge-item-wrap.locked .badge-progress-fill { background:var(--text-3); }
+        .badge-item-wrap.unlocked { filter:none; }
+        .badge-emoji { font-size:20px; }
+        .badge-label { font-size:11px; line-height:1.2; }
+
+        /* ── STREAK URGENCY ── */
+        .streak-urgency {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:10px; padding:10px 16px; margin-bottom:20px;
+            font-size:13px; color:var(--text-2);
+        }
+        .streak-urgency .flame { font-size:18px; }
+        .streak-timer { color:var(--amber); font-weight:700; font-variant-numeric:tabular-nums; }
+        .streak-urgency.danger .streak-timer { color:var(--red); }
+        .streak-urgency.danger { border-color:rgba(239,68,68,0.2); }
 
         /* ── PAGE ── */
         .page { max-width:600px; margin:0 auto; padding:40px 24px 80px; }
-        .page-header { margin-bottom:32px; }
-        .page-title { font-size:1.5rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
-        .page-sub { font-size:13.5px; color:var(--text-2); }
+
+        /* ── YOUR PATH (diagnostic) ── */
+        .path-card {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:22px 20px;
+            margin-bottom:28px;
+        }
+        .path-greeting {
+            font-size:15px; font-weight:600; margin-bottom:6px;
+        }
+        .path-message {
+            font-size:13.5px; color:var(--text-2); line-height:1.6;
+            margin-bottom:18px;
+        }
+        .path-message .g { color:var(--emerald); font-weight:500; }
+        .path-message .a { color:var(--amber); font-weight:500; }
+
+        /* Strength / focus chips */
+        .path-section {
+            margin-bottom:14px;
+        }
+        .path-label {
+            font-size:10.5px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.06em; color:var(--text-3);
+            margin-bottom:8px;
+        }
+        .path-chips {
+            display:flex; flex-wrap:wrap; gap:6px;
+        }
+        .path-chip {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:5px 10px; border-radius:6px;
+            font-size:12px; font-weight:500;
+        }
+        .path-chip.strong {
+            background:rgba(74,222,128,0.08); color:var(--emerald);
+            border:1px solid rgba(74,222,128,0.15);
+        }
+        .path-chip.strong::before { content:''; display:block; width:5px; height:5px; border-radius:50%; background:var(--emerald); }
+        .path-chip.grow {
+            background:rgba(255,107,53,0.08); color:var(--amber);
+            border:1px solid rgba(255,107,53,0.15);
+        }
+
+        /* Numbered learning path */
+        .path-steps {
+            display:flex; flex-direction:column; gap:0;
+            margin-top:16px;
+        }
+        .path-step {
+            display:flex; align-items:center; gap:12px;
+            padding:10px 0;
+        }
+        .path-step + .path-step {
+            border-top:1px solid var(--border);
+        }
+        .path-step-num {
+            width:24px; height:24px;
+            display:flex; align-items:center; justify-content:center;
+            border-radius:50%;
+            font-size:11px; font-weight:700;
+            background:rgba(255,107,53,0.12); color:var(--amber);
+            flex-shrink:0;
+        }
+        .path-step-text {
+            font-size:13px; font-weight:500; flex:1;
+        }
+        .path-step-why {
+            font-size:11px; color:var(--text-3); font-weight:400;
+        }
+        .path-step-go {
+            display:flex; align-items:center; justify-content:center;
+            width:28px; height:28px; border-radius:7px;
+            background:var(--amber); color:var(--paper);
+            text-decoration:none;
+            flex-shrink:0;
+            transition:opacity .15s;
+        }
+        .path-step-go:hover { opacity:0.85; }
+        .path-step-go svg { width:14px; height:14px; stroke:currentColor; fill:none; }
 
         /* ── PROGRESS BAR ── */
         .progress-strip {
             display:flex; align-items:center; gap:12px;
-            margin-bottom:28px;
+            margin-bottom:20px;
         }
         .progress-bar-bg {
             flex:1; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden;
@@ -65,6 +293,13 @@
             white-space:nowrap;
         }
 
+        /* Section label */
+        .section-label {
+            font-size:11px; font-weight:600; text-transform:uppercase;
+            letter-spacing:.06em; color:var(--text-3);
+            margin-bottom:12px;
+        }
+
         /* ── UNIT CARDS ── */
         .unit-list { display:flex; flex-direction:column; gap:10px; }
 
@@ -73,56 +308,180 @@
             background:var(--bg-2);
             border:1px solid var(--border);
             border-radius:12px;
-            padding:18px 20px;
+            padding:16px 18px;
             text-decoration:none;
             color:var(--text);
-            transition:border-color .15s, transform .1s, opacity .15s;
+            transition:border-color .15s, transform .1s;
             cursor:pointer;
+            position:relative;
         }
         .unit-card:hover {
-            border-color:var(--amber);
+            border-color:var(--border-2);
             transform:translateY(-1px);
         }
-        .unit-card.locked {
-            opacity:0.35;
-            pointer-events:none;
-        }
         .unit-card.completed {
-            border-color:rgba(16,185,129,0.3);
+            border-color:rgba(74,222,128,0.25);
+        }
+        .unit-card.recommended {
+            border-color:rgba(255,107,53,0.35);
+            background:rgba(255,107,53,0.03);
+        }
+        .unit-card.recommended:hover {
+            border-color:var(--amber);
         }
 
         .unit-num {
-            width:40px; height:40px;
+            width:36px; height:36px;
             display:flex; align-items:center; justify-content:center;
-            border-radius:10px;
-            font-size:15px; font-weight:700;
+            border-radius:9px;
+            font-size:14px; font-weight:700;
             flex-shrink:0;
-            background:rgba(245,158,11,0.1);
-            color:var(--amber);
-        }
-        .unit-card.completed .unit-num {
-            background:rgba(16,185,129,0.12);
-            color:var(--emerald);
-        }
-        .unit-card.locked .unit-num {
             background:var(--bg-3);
             color:var(--text-3);
         }
+        .unit-card.completed .unit-num {
+            background:rgba(74,222,128,0.10);
+            color:var(--emerald);
+        }
+        .unit-card.recommended .unit-num {
+            background:rgba(255,107,53,0.10);
+            color:var(--amber);
+        }
 
         .unit-body { flex:1; min-width:0; }
-        .unit-title { font-size:14.5px; font-weight:600; margin-bottom:2px; }
+        .unit-title { font-size:14px; font-weight:600; margin-bottom:1px; display:flex; align-items:center; gap:8px; }
         .unit-desc { font-size:12px; color:var(--text-2); line-height:1.4; }
 
-        .unit-status {
+        /* Inline badge on unit card */
+        .unit-badge {
+            display:inline-flex; align-items:center; gap:3px;
+            padding:2px 7px; border-radius:4px;
+            font-size:10px; font-weight:600;
+            letter-spacing:.02em;
             flex-shrink:0;
-            width:28px; height:28px;
-            display:flex; align-items:center; justify-content:center;
         }
-        .unit-status svg { width:18px; height:18px; stroke:currentColor; fill:none; }
+        .unit-badge.solid {
+            background:rgba(74,222,128,0.10); color:var(--emerald);
+        }
+        .unit-badge.almost {
+            background:rgba(255,107,53,0.10); color:var(--amber);
+        }
+        .unit-badge.new-topic {
+            background:rgba(255,107,53,0.10); color:var(--amber);
+        }
+        .unit-badge.start-here {
+            background:var(--amber); color:var(--paper);
+        }
 
-        .unit-check { color:var(--emerald); }
-        .unit-lock { color:var(--text-3); }
-        .unit-arrow { color:var(--text-3); }
+        .unit-arrow {
+            flex-shrink:0;
+            color:var(--text-3);
+        }
+        .unit-arrow svg { width:16px; height:16px; stroke:currentColor; fill:none; }
+        .unit-card.completed .unit-arrow { color:var(--emerald); }
+        .unit-card.recommended .unit-arrow { color:var(--amber); }
+        .unit-card.locked {
+            opacity:0.45; cursor:not-allowed; pointer-events:none;
+        }
+        .unit-card.locked .unit-num {
+            background:var(--bg-3); color:var(--text-3);
+        }
+
+        /* ── DAILY CHALLENGE ── */
+        .daily-card {
+            background:var(--bg-2);
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:22px 20px;
+            margin-bottom:28px;
+            position:relative;
+            overflow:hidden;
+        }
+        .daily-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(90deg, var(--amber), var(--accent), var(--red));
+        }
+        .daily-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:14px;
+        }
+        .daily-title {
+            font-size:15px; font-weight:700;
+            display:flex; align-items:center; gap:8px;
+        }
+        .daily-title .flame { font-size:18px; }
+        .daily-streak {
+            display:flex; align-items:center; gap:5px;
+            padding:4px 10px; border-radius:6px;
+            font-size:12px; font-weight:600;
+            background:rgba(255,107,53,0.10); color:var(--amber);
+        }
+        .daily-streak.hot { background:rgba(239,68,68,0.10); color:var(--red); }
+        .daily-body { font-size:13.5px; color:var(--text-2); line-height:1.6; margin-bottom:16px; }
+        .daily-progress-row {
+            display:flex; align-items:center; gap:10px; margin-bottom:16px;
+        }
+        .daily-dots { display:flex; gap:6px; }
+        .daily-dot {
+            width:10px; height:10px; border-radius:50%;
+            background:var(--bg-3); border:1.5px solid var(--border-2);
+            transition:all .3s;
+        }
+        .daily-dot.done { background:var(--emerald); border-color:var(--emerald); }
+        .daily-dot.wrong { background:var(--red); border-color:var(--red); }
+        .daily-dot.current { border-color:var(--amber); box-shadow:0 0 0 3px rgba(255,107,53,0.15); }
+        .daily-score { font-size:12px; color:var(--text-3); font-weight:600; margin-left:auto; }
+
+        /* Daily quiz inline question */
+        .daily-q { margin-bottom:6px; }
+        .daily-q-sentence {
+            font-size:15px; font-weight:500; line-height:1.6; margin-bottom:12px;
+        }
+        .daily-q-sentence .blank {
+            display:inline-block; min-width:60px; padding:0 8px;
+            border-bottom:2px solid var(--amber); color:var(--amber);
+            font-weight:700; text-align:center;
+        }
+        .daily-opts { display:flex; flex-wrap:wrap; gap:8px; }
+        .daily-opt {
+            padding:8px 16px; border-radius:8px;
+            background:var(--bg-3); border:1.5px solid var(--border-2);
+            color:var(--text); font-size:13px; font-weight:500;
+            cursor:pointer; transition:all .15s;
+        }
+        .daily-opt:hover { border-color:var(--amber); background:rgba(255,107,53,0.05); }
+        .daily-opt.correct-pick { background:rgba(74,222,128,0.12); border-color:var(--emerald); color:var(--emerald); }
+        .daily-opt.wrong-pick { background:rgba(239,68,68,0.12); border-color:var(--red); color:var(--red); }
+        .daily-opt.dim { opacity:0.35; pointer-events:none; }
+
+        .daily-feedback {
+            margin-top:12px; padding:10px 14px; border-radius:8px;
+            font-size:13px; font-weight:500; display:none;
+        }
+        .daily-feedback.correct { display:block; background:rgba(74,222,128,0.08); color:var(--emerald); }
+        .daily-feedback.wrong { display:block; background:rgba(239,68,68,0.08); color:var(--red); }
+
+        .daily-next-btn {
+            margin-top:12px; padding:10px 20px; border-radius:8px;
+            background:var(--amber); color:var(--paper); font-size:13px; font-weight:600;
+            border:none; cursor:pointer; display:none;
+        }
+        .daily-next-btn.visible { display:inline-block; }
+
+        .daily-start-btn {
+            padding:12px 24px; border-radius:10px;
+            background:var(--amber); color:var(--paper); font-size:14px; font-weight:700;
+            border:none; cursor:pointer; width:100%;
+            transition:opacity .15s;
+        }
+        .daily-start-btn:hover { opacity:0.85; }
+
+        .daily-complete {
+            text-align:center; padding:8px 0;
+        }
+        .daily-complete-icon { font-size:32px; margin-bottom:6px; }
+        .daily-complete-text { font-size:14px; font-weight:600; margin-bottom:4px; }
+        .daily-complete-sub { font-size:12px; color:var(--text-2); }
 
         @media (max-width:600px) {
             .nav { padding:0 16px; }
@@ -131,6 +490,8 @@
     </style>
 </head>
 <body>
+{% include "learning/_coins_hud.html" %}
+
 
 <nav class="nav">
     <a href="{% url 'learning:practice' %}" class="back-btn">
@@ -139,35 +500,65 @@
         </svg>
     </a>
     <span class="nav-title">Grammar</span>
+    <div class="nav-xp">
+        <div class="xp-icon">XP</div>
+        <span id="hubXpVal">0</span>
+    </div>
     <span class="nav-sub" id="navProgress"></span>
+    {% include "users/_account_menu.html" %}
 </nav>
 
 <div class="page">
-    <div class="page-header">
-        <div class="page-title">Grammar</div>
-        <p class="page-sub">8 essential rules for everyday English</p>
+
+    <div id="pathCard"></div>
+
+    <!-- ═══ BADGES SHOWCASE ═══ -->
+    <div class="badges-showcase" id="badgesShowcase" style="display:none;">
+        <div class="section-label">Achievements</div>
+        <div class="badges-showcase-grid" id="badgesGrid"></div>
+    </div>
+
+    <!-- ═══ STREAK URGENCY ═══ -->
+    <div class="streak-urgency" id="streakUrgency" style="display:none;">
+        <span class="flame">🔥</span>
+        <span id="streakUrgencyText"></span>
+    </div>
+
+    <!-- ═══ DAILY GRAMMAR CHALLENGE ═══ -->
+    <div class="daily-card" id="dailyCard">
+        <div class="daily-header">
+            <div class="daily-title"><span class="flame">🔥</span> Daily Challenge</div>
+            <div class="daily-streak" id="dailyStreak"></div>
+        </div>
+        <div id="dailyContent"></div>
     </div>
 
     <div class="progress-strip">
         <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
         </div>
-        <span class="progress-label" id="progressLabel">0/8</span>
+        <span class="progress-label" id="progressLabel">0/11</span>
     </div>
 
+    <div class="section-label">All units</div>
     <div class="unit-list" id="unitList"></div>
 </div>
 
 <script>
+const DIAGNOSTIC = {{ diagnostic_json|safe }};
+
 const UNITS = [
-    { id:1, title:"Present Simple",        desc:"Habits, routines & facts" },
-    { id:2, title:"Present Continuous",     desc:"What's happening right now" },
-    { id:3, title:"Past Simple",            desc:"Finished actions & stories" },
-    { id:4, title:"Future (will / going to)", desc:"Plans, promises & predictions" },
-    { id:5, title:"Articles (a / the / \u2205)", desc:"When to use a, the, or nothing" },
-    { id:6, title:"Prepositions (in/on/at)", desc:"Time & place words" },
-    { id:7, title:"Modal Verbs",            desc:"Can, should, must, have to" },
-    { id:8, title:"Conditionals",           desc:"If-clauses & what-if scenarios" },
+    { id:1, title:"Present Simple",          desc:"Habits, routines & facts",         why:"You'll use this in 70% of conversations" },
+    { id:2, title:"Present Continuous",       desc:"What's happening right now",       why:"Talk about what's going on around you" },
+    { id:3, title:"Past Simple",              desc:"Finished actions & stories",       why:"Tell stories and share experiences" },
+    { id:4, title:"Future (will / going to)", desc:"Plans, promises & predictions",    why:"Make plans and talk about what's next" },
+    { id:5, title:"Articles (a / the / \u2205)",   desc:"When to use a, the, or nothing",   why:"Hardest part for Uzbek speakers \u2014 worth mastering" },
+    { id:6, title:"Prepositions (in/on/at)",  desc:"Time & place words",               why:"Stop guessing \u2014 know exactly which one to use" },
+    { id:7, title:"Modal Verbs",              desc:"Can, should, must, have to",       why:"Express opinions, give advice, talk about ability" },
+    { id:8, title:"Conditionals",             desc:"If-clauses & what-if scenarios",   why:"Reason about possibilities like a native speaker" },
+    { id:9, title:"Present Perfect",          desc:"Past actions with present results", why:"The most confusing tense for Uzbek speakers" },
+    { id:10, title:"Relative Clauses",         desc:"Who, which, that — connecting ideas", why:"Turn simple sentences into natural, fluent speech" },
+    { id:11, title:"Linking Words",             desc:"Because, so, although — sentence glue", why:"Stop sounding like a robot — connect your ideas" },
 ];
 
 const STORAGE_KEY = 'grammar_progress';
@@ -180,54 +571,477 @@ function loadProgress() {
     } catch { return { completed: [] }; }
 }
 
-function isUnlocked(unitId, completed) {
-    if (unitId <= 1) return true;
-    return completed.includes(unitId - 1);
+// Build a lookup: unit_id → onboarding score data
+function getScoreMap() {
+    if (!DIAGNOSTIC || !DIAGNOSTIC.scores) return {};
+    const m = {};
+    DIAGNOSTIC.scores.forEach(s => { m[s.unit_id] = s; });
+    return m;
 }
 
 function render() {
     const progress = loadProgress();
     const completed = progress.completed || [];
+    const completedSet = new Set(completed);
     const list = document.getElementById('unitList');
     list.innerHTML = '';
+    const scoreMap = getScoreMap();
+    const startUnit = DIAGNOSTIC ? DIAGNOSTIC.start_unit : null;
+    // Find first recommended unit that isn't completed
+    const activeRec = startUnit && !completedSet.has(startUnit) ? startUnit : null;
 
     UNITS.forEach(u => {
-        const done = completed.includes(u.id);
-        const unlocked = isUnlocked(u.id, completed);
+        const done = completedSet.has(u.id);
+        const isRec = u.id === activeRec;
+        const score = scoreMap[u.id];
+        // Units 1-3 always unlocked; unit N unlocked if unit N-1 is completed
+        const locked = u.id > 3 && !completedSet.has(u.id - 1);
 
         const a = document.createElement('a');
-        a.className = 'unit-card' + (done ? ' completed' : '') + (!unlocked && !done ? ' locked' : '');
-        a.href = unlocked || done ? `/learning/grammar/${u.id}/` : '#';
+        if (!locked) a.href = `/learning/grammar/${u.id}/`;
 
-        let statusIcon;
+        let cls = 'unit-card';
+        if (locked) cls += ' locked';
+        else if (done) cls += ' completed';
+        else if (isRec) cls += ' recommended';
+        a.className = cls;
+
+        // Badge logic
+        let badge = '';
         if (done) {
-            statusIcon = `<div class="unit-status unit-check"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
-        } else if (!unlocked) {
-            statusIcon = `<div class="unit-status unit-lock"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>`;
-        } else {
-            statusIcon = `<div class="unit-status unit-arrow"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+            badge = '';  // checkmark in unit-num is enough
+        } else if (isRec) {
+            badge = '<span class="unit-badge start-here">Start here</span>';
+        } else if (score) {
+            if (score.pct >= 80) {
+                badge = '<span class="unit-badge solid">Solid</span>';
+            } else if (score.pct >= 50) {
+                badge = '<span class="unit-badge almost">Brush up</span>';
+            } else {
+                badge = '<span class="unit-badge new-topic">New</span>';
+            }
         }
 
+        // Num content
+        let numContent = u.id;
+        if (done) {
+            numContent = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        }
+
+        // Arrow / lock
+        const arrowSvg = locked
+            ? '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+            : done
+                ? '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                : '<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
         a.innerHTML = `
-            <div class="unit-num">${done ? '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : u.id}</div>
+            <div class="unit-num">${numContent}</div>
             <div class="unit-body">
-                <div class="unit-title">${u.title}</div>
+                <div class="unit-title">${u.title} ${badge}</div>
                 <div class="unit-desc">${u.desc}</div>
             </div>
-            ${statusIcon}
+            <div class="unit-arrow">${arrowSvg}</div>
         `;
         list.appendChild(a);
     });
 
     // Progress bar
-    const pct = Math.round((completed.length / 8) * 100);
+    const pct = Math.round((completed.length / UNITS.length) * 100);
     document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent = completed.length + '/8';
-    document.getElementById('navProgress').textContent = completed.length + '/8 completed';
+    document.getElementById('progressLabel').textContent = completed.length + '/' + UNITS.length;
+    document.getElementById('navProgress').textContent = completed.length + '/' + UNITS.length + ' completed';
+}
+
+function renderPath() {
+    const container = document.getElementById('pathCard');
+    if (!DIAGNOSTIC || !DIAGNOSTIC.scores || !DIAGNOSTIC.scores.length) {
+        // No onboarding data — show a simple welcome
+        container.innerHTML = `
+            <div class="path-card">
+                <div class="path-greeting">Your grammar journey</div>
+                <div class="path-message">11 essential rules that cover everyday English. Each unit teaches one rule with real examples, then you practice building sentences.</div>
+            </div>`;
+        return;
+    }
+
+    const progress = loadProgress();
+    const completedSet = new Set(progress.completed || []);
+    const scoreMap = getScoreMap();
+    const unitNames = {};
+    const unitWhys = {};
+    UNITS.forEach(u => { unitNames[u.id] = u.title; unitWhys[u.id] = u.why; });
+
+    const strongIds = (DIAGNOSTIC.strong_ids || []).filter(id => !completedSet.has(id));
+    const weakIds = (DIAGNOSTIC.weak_ids || []).filter(id => !completedSet.has(id));
+
+    // If user completed all weak units already, show congratulations
+    if (!weakIds.length && (DIAGNOSTIC.weak_ids || []).length > 0) {
+        const remaining = UNITS.filter(u => !completedSet.has(u.id));
+        if (!remaining.length) {
+            container.innerHTML = `
+                <div class="path-card">
+                    <div class="path-greeting">All units completed</div>
+                    <div class="path-message">You've practiced every grammar rule. Come back anytime to review.</div>
+                </div>`;
+        } else {
+            container.innerHTML = `
+                <div class="path-card">
+                    <div class="path-greeting">Great progress</div>
+                    <div class="path-message">You've covered your weak areas. Keep going with the remaining units to build a complete foundation.</div>
+                </div>`;
+        }
+        return;
+    }
+
+    // Build the message — psychology: lead with strengths, frame gaps as opportunity
+    const strongNames = strongIds.map(id => unitNames[id]);
+
+    let greeting = 'Your learning path';
+    let message = '';
+
+    if (strongNames.length >= 2) {
+        message += `You already have a feel for <span class="g">${strongNames.slice(0, 2).join('</span> and <span class="g">')}</span>`;
+        if (strongNames.length > 2) message += ` and ${strongNames.length - 2} more`;
+        message += '. ';
+    } else if (strongNames.length === 1) {
+        message += `You have a good feel for <span class="g">${strongNames[0]}</span>. `;
+    }
+
+    if (weakIds.length === 1) {
+        message += `<span class="a">${unitNames[weakIds[0]]}</span> is new territory \u2014 ${unitWhys[weakIds[0]].toLowerCase()}.`;
+    } else if (weakIds.length > 1) {
+        message += `Here\u2019s where to focus next \u2014 in order of what will help you most:`;
+    } else {
+        message += `Strong across the board. Pick any unit to sharpen your skills.`;
+    }
+
+    // Build the step-by-step learning path (ordered weak units)
+    let stepsHtml = '';
+    if (weakIds.length > 1) {
+        // Sort by score ascending (weakest first)
+        const weakSorted = weakIds.slice().sort((a, b) => (scoreMap[a]?.pct || 0) - (scoreMap[b]?.pct || 0));
+
+        stepsHtml = '<div class="path-steps">';
+        weakSorted.forEach((id, i) => {
+            stepsHtml += `
+                <div class="path-step">
+                    <div class="path-step-num">${i + 1}</div>
+                    <div class="path-step-text">
+                        ${unitNames[id]}
+                        <div class="path-step-why">${unitWhys[id]}</div>
+                    </div>
+                    <a href="/learning/grammar/${id}/" class="path-step-go">
+                        <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                </div>`;
+        });
+        stepsHtml += '</div>';
+    } else if (weakIds.length === 1) {
+        // Single unit — just a go button
+        stepsHtml = `
+            <div class="path-steps">
+                <div class="path-step">
+                    <div class="path-step-num">1</div>
+                    <div class="path-step-text">
+                        ${unitNames[weakIds[0]]}
+                        <div class="path-step-why">${unitWhys[weakIds[0]]}</div>
+                    </div>
+                    <a href="/learning/grammar/${weakIds[0]}/" class="path-step-go">
+                        <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                </div>
+            </div>`;
+    }
+
+    // Strength chips
+    let strengthsHtml = '';
+    if (strongNames.length) {
+        strengthsHtml = `
+            <div class="path-section">
+                <div class="path-label">You know these</div>
+                <div class="path-chips">${strongNames.map(n => `<span class="path-chip strong">${n}</span>`).join('')}</div>
+            </div>`;
+    }
+
+    container.innerHTML = `
+        <div class="path-card">
+            <div class="path-greeting">${greeting}</div>
+            <div class="path-message">${message}</div>
+            ${strengthsHtml}
+            ${stepsHtml}
+        </div>`;
 }
 
 render();
+renderPath();
+
+/* ═══ DAILY GRAMMAR CHALLENGE ═══ */
+const DAILY_QUESTIONS = {% include "learning/grammar_questions.json" %};
+const DAILY_KEY = 'grammar_daily_challenge';
+const DAILY_COUNT = 5;
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function loadDaily() {
+    try { return JSON.parse(localStorage.getItem(DAILY_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveDaily(d) { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); }
+
+function getDailyQuestions() {
+    // Seed a deterministic set of 5 MCQ questions from random units based on today's date
+    const today = todayStr();
+    let seed = 0;
+    for (let i = 0; i < today.length; i++) seed = (seed * 31 + today.charCodeAt(i)) & 0x7fffffff;
+    function rng() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed >>> 16) / 32768; }
+
+    // Collect all MCQ questions from units 1-8
+    const pool = [];
+    for (let uid = 1; uid <= 8; uid++) {
+        const qs = DAILY_QUESTIONS[String(uid)] || [];
+        qs.filter(q => q.type === 'mcq').forEach(q => pool.push({...q, unit_id: uid}));
+    }
+    if (pool.length === 0) return [];
+
+    // Shuffle with seeded RNG so same day = same questions
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, DAILY_COUNT);
+}
+
+function renderDaily() {
+    const data = loadDaily();
+    const today = todayStr();
+    const container = document.getElementById('dailyContent');
+    const streakEl = document.getElementById('dailyStreak');
+
+    // Calculate streak
+    let streak = data.streak || 0;
+    if (data.lastCompleted) {
+        const lastDate = new Date(data.lastCompleted);
+        const todayDate = new Date(today);
+        const diff = Math.round((todayDate - lastDate) / 86400000);
+        if (diff > 1) streak = 0; // Streak broken
+    }
+    streakEl.textContent = streak > 0 ? `${streak} day streak` : 'Start streak';
+    if (streak >= 3) streakEl.classList.add('hot');
+    else streakEl.classList.remove('hot');
+
+    // Already completed today?
+    if (data.date === today && data.completed) {
+        const score = data.correct || 0;
+        container.innerHTML = `
+            <div class="daily-complete">
+                <div class="daily-complete-icon">${score >= 4 ? '🏆' : score >= 3 ? '👏' : '💪'}</div>
+                <div class="daily-complete-text">${score}/${DAILY_COUNT} correct</div>
+                <div class="daily-complete-sub">Come back tomorrow for a new challenge</div>
+            </div>`;
+        return;
+    }
+
+    // In progress?
+    if (data.date === today && data.idx != null) {
+        renderDailyQuestion(data);
+        return;
+    }
+
+    // Not started — show start button
+    container.innerHTML = `
+        <div class="daily-body">${DAILY_COUNT} quick questions from random units. Keep your streak alive!</div>
+        <button class="daily-start-btn" onclick="startDaily()">Start Today's Challenge</button>`;
+}
+
+function startDaily() {
+    const questions = getDailyQuestions();
+    if (questions.length === 0) return;
+    const data = { date: todayStr(), idx: 0, correct: 0, results: [], questions, completed: false, streak: loadDaily().streak || 0, lastCompleted: loadDaily().lastCompleted };
+    saveDaily(data);
+    renderDailyQuestion(data);
+}
+
+function renderDailyQuestion(data) {
+    const q = data.questions[data.idx];
+    const container = document.getElementById('dailyContent');
+
+    // Progress dots
+    let dotsHtml = '<div class="daily-dots">';
+    for (let i = 0; i < DAILY_COUNT; i++) {
+        let cls = 'daily-dot';
+        if (i < data.results.length) cls += data.results[i] ? ' done' : ' wrong';
+        else if (i === data.idx) cls += ' current';
+        dotsHtml += `<div class="${cls}"></div>`;
+    }
+    dotsHtml += '</div>';
+
+    // Unit name lookup
+    const unitName = UNITS.find(u => u.id === q.unit_id)?.title || `Unit ${q.unit_id}`;
+
+    let sentenceHtml = q.sentence.replace('___', '<span class="blank">___</span>');
+
+    let optsHtml = '<div class="daily-opts">';
+    q.options.forEach((opt, i) => {
+        optsHtml += `<button class="daily-opt" data-idx="${i}" onclick="pickDailyAnswer(${i})">${opt}</button>`;
+    });
+    optsHtml += '</div>';
+
+    container.innerHTML = `
+        <div class="daily-progress-row">
+            ${dotsHtml}
+            <div class="daily-score">${data.idx + 1}/${DAILY_COUNT} · ${unitName}</div>
+        </div>
+        <div class="daily-q">
+            <div class="daily-q-sentence">${sentenceHtml}</div>
+            ${q.translation ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">${q.translation}</div>` : ''}
+            ${optsHtml}
+        </div>
+        <div class="daily-feedback" id="dailyFeedback"></div>
+        <button class="daily-next-btn" id="dailyNextBtn" onclick="nextDailyQuestion()">Continue</button>`;
+}
+
+function pickDailyAnswer(optIdx) {
+    const data = loadDaily();
+    if (!data.questions || data.idx == null) return;
+    const q = data.questions[data.idx];
+
+    // Prevent double pick
+    const btns = document.querySelectorAll('.daily-opt');
+    if (btns[0]?.classList.contains('dim') || btns[0]?.classList.contains('correct-pick') || btns[0]?.classList.contains('wrong-pick')) return;
+
+    const isCorrect = optIdx === q.answer;
+    if (isCorrect) data.correct++;
+    data.results.push(isCorrect);
+
+    // Visual feedback
+    btns.forEach((b, i) => {
+        if (i === q.answer) b.classList.add('correct-pick');
+        else if (i === optIdx && !isCorrect) b.classList.add('wrong-pick');
+        if (i !== q.answer && i !== optIdx) b.classList.add('dim');
+    });
+
+    const fb = document.getElementById('dailyFeedback');
+    const correctText = q.sentence.replace('___', q.options[q.answer]);
+    if (isCorrect) {
+        fb.className = 'daily-feedback correct';
+        fb.textContent = '✓ ' + correctText;
+    } else {
+        fb.className = 'daily-feedback wrong';
+        fb.textContent = '✗ Correct: ' + correctText;
+    }
+
+    // Update dots
+    const dots = document.querySelectorAll('.daily-dot');
+    dots[data.idx].classList.remove('current');
+    dots[data.idx].classList.add(isCorrect ? 'done' : 'wrong');
+
+    saveDaily(data);
+
+    document.getElementById('dailyNextBtn').classList.add('visible');
+    document.getElementById('dailyNextBtn').textContent = data.idx + 1 >= DAILY_COUNT ? 'See Results' : 'Continue';
+}
+
+function nextDailyQuestion() {
+    const data = loadDaily();
+    data.idx++;
+    if (data.idx >= DAILY_COUNT) {
+        // Completed!
+        data.completed = true;
+        let streak = data.streak || 0;
+        if (data.lastCompleted) {
+            const diff = Math.round((new Date(todayStr()) - new Date(data.lastCompleted)) / 86400000);
+            if (diff <= 1) streak++;
+            else streak = 1;
+        } else {
+            streak = 1;
+        }
+        data.streak = streak;
+        data.lastCompleted = todayStr();
+        saveDaily(data);
+        renderDaily();
+        return;
+    }
+    saveDaily(data);
+    renderDailyQuestion(data);
+}
+
+renderDaily();
+
+/* ═══ XP & BADGES ON HUB ═══ */
+const totalXP = parseInt(localStorage.getItem('grammar_xp') || '0');
+document.getElementById('hubXpVal').textContent = totalXP;
+
+const completedUnits = (loadProgress().completed || []).length;
+
+const BADGE_DEFS = [
+    { id: 'first_perfect', icon: '💎', label: 'First Perfect', progressFn: null },
+    { id: 'speed_demon', icon: '⚡', label: 'Speed Demon', progressFn: null },
+    { id: 'streak_5', icon: '🔥', label: 'On Fire', progressFn: null },
+    { id: 'streak_10', icon: '🌟', label: 'Unstoppable', progressFn: null },
+    { id: 'xp_500', icon: '🏆', label: 'Scholar', progressFn: () => ({ current: totalXP, target: 500 }) },
+    { id: 'all_units', icon: '👑', label: 'Grammar King', progressFn: () => ({ current: completedUnits, target: 11 }) },
+];
+(function renderBadges() {
+    const unlocked = JSON.parse(localStorage.getItem('grammar_badges') || '[]');
+    const grid = document.getElementById('badgesGrid');
+    const showcase = document.getElementById('badgesShowcase');
+    grid.innerHTML = BADGE_DEFS.map(b => {
+        const got = unlocked.includes(b.id);
+        const prog = b.progressFn && !got ? b.progressFn() : null;
+        let progressHtml = '';
+        if (prog) {
+            const pct = Math.min(100, Math.round((prog.current / prog.target) * 100));
+            progressHtml = `<div class="badge-progress">
+                <div class="badge-progress-bar"><div class="badge-progress-fill" style="width:${pct}%"></div></div>
+                <span class="badge-progress-text">${prog.current}/${prog.target}</span>
+            </div>`;
+        }
+        return `<div class="badge-item-wrap${got ? ' unlocked' : ' locked'}">
+            <span class="badge-emoji">${b.icon}</span>
+            <span class="badge-label">${b.label}</span>
+            ${got ? '<span style="font-size:10px;color:var(--emerald);">✓ Unlocked</span>' : progressHtml}
+        </div>`;
+    }).join('');
+    showcase.style.display = '';
+})();
+
+/* ═══ STREAK URGENCY ═══ */
+(function renderStreakUrgency() {
+    const daily = JSON.parse(localStorage.getItem('grammar_daily_challenge') || '{}');
+    const el = document.getElementById('streakUrgency');
+    if (!daily.streak || daily.streak < 1) return;
+
+    const lastDate = daily.lastCompleted;
+    if (!lastDate) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (lastDate === today) {
+        // Already done today — show encouragement
+        el.style.display = 'flex';
+        document.getElementById('streakUrgencyText').innerHTML =
+            `<span class="streak-timer">${daily.streak} day streak</span> — see you tomorrow!`;
+        return;
+    }
+
+    // Check if streak is at risk (last completed yesterday)
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (lastDate === yesterday) {
+        // Streak alive but not done today — urgency!
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0);
+        const hoursLeft = Math.floor((midnight - now) / 3600000);
+        const minsLeft = Math.floor(((midnight - now) % 3600000) / 60000);
+
+        el.style.display = 'flex';
+        if (hoursLeft < 3) el.classList.add('danger');
+        document.getElementById('streakUrgencyText').innerHTML =
+            `<span class="streak-timer">${daily.streak} day streak</span> expires in <span class="streak-timer">${hoursLeft}h ${minsLeft}m</span> — do today's challenge!`;
+    }
+})();
 </script>
 
+{% include "learning/_page_tracker.html" with page_name="grammar" %}
 </body>
 </html>
