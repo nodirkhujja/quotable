@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0006_sceneblock"),
         ("learning", "0016_add_frequency_definition"),

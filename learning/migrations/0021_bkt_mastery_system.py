@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0020_add_vocabmastery_quizattempt"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

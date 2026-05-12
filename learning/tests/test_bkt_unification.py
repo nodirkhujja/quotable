@@ -95,8 +95,7 @@ class BKTReplacesLadderTests(TestCase):
         self.assertGreater(
             note.confidence,
             80,
-            f"BKT bump should be much larger than the old ladder's +5; "
-            f"got {note.confidence} (was 50, expected >80).",
+            f"BKT bump should be much larger than the old ladder's +5; got {note.confidence} (was 50, expected >80).",
         )
 
     def test_wrong_answer_uses_bkt_math(self):
@@ -110,7 +109,7 @@ class BKTReplacesLadderTests(TestCase):
         self.assertLess(
             note.confidence,
             75,
-            f"BKT wrong-answer drop should exceed the old -5 flat; " f"got {note.confidence} (was 80, expected <75).",
+            f"BKT wrong-answer drop should exceed the old -5 flat; got {note.confidence} (was 80, expected <75).",
         )
 
 
@@ -130,7 +129,7 @@ class SpacingEffectGateTests(TestCase):
         # BKT will drive confidence well past 85 by the second or third correct.
         # The age-gate (≥24h since created_at) MUST keep stage at "learning".
         self.assertGreaterEqual(
-            note.confidence, 85, "BKT should drive confidence past 85 quickly — " "if this fails, the math regressed."
+            note.confidence, 85, "BKT should drive confidence past 85 quickly — if this fails, the math regressed."
         )
         self.assertEqual(
             note.stage,

@@ -83,9 +83,7 @@ class SmartMcqDistractorTests(TestCase):
                         collisions.append((lv.vocab_id, i, j, opts[i], opts[j]))
 
         if collisions:
-            msg_lines = [
-                f"{len(collisions)} same-root-verb collisions across " f"{len(self.sample)} MCQs (expected 0):"
-            ]
+            msg_lines = [f"{len(collisions)} same-root-verb collisions across {len(self.sample)} MCQs (expected 0):"]
             for vid, i, j, oi, oj in collisions[:10]:  # cap output
                 msg_lines.append(f"  {vid}: opt[{i}]={oi!r} vs opt[{j}]={oj!r}")
             self.fail("\n".join(msg_lines))
@@ -124,7 +122,7 @@ class SmartMcqDistractorTests(TestCase):
         self.assertGreater(total, 0, "no distractors generated — augmenter broken")
 
         # Print the distribution for visibility (test runner shows on -v 2).
-        print(f"\nTier distribution across {total} distractors " f"({len(self.sample)} MCQs): {tier_counts}")
+        print(f"\nTier distribution across {total} distractors ({len(self.sample)} MCQs): {tier_counts}")
 
         # Floor: ≥30% from confusable_with. The lexicon stat says 64% of
         # phrasal verbs have ≥2 confusables — 30% is a conservative floor

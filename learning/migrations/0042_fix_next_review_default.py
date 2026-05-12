@@ -25,7 +25,6 @@ def noop_reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0041_add_saved_sentence"),
     ]

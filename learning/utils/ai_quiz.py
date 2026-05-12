@@ -241,7 +241,7 @@ def generate_scene_for_word(
     prompt = f"""Design ONE vocabulary production challenge.
 
 Target word: "{word}"
-Uzbek meaning (reference): "{word_translation_uz or 'infer from word'}"
+Uzbek meaning (reference): "{word_translation_uz or "infer from word"}"
 {pos_line}{name_line}{level_line}{interest_line}{source_line}
 
 THE METHOD (think in this order, do not skip):
@@ -786,7 +786,7 @@ def grade_personal_sentence(
         return {
             "accepted": False,
             "feedback_uz": (
-                f"'{word}' so'zini ishlatib biror gap yozing — bugungi kuningiz " f"yoki yaqin odamlaringiz haqida."
+                f"'{word}' so'zini ishlatib biror gap yozing — bugungi kuningiz yoki yaqin odamlaringiz haqida."
             ),
             "best_text": primary or "",
             "ai_unavailable": False,
@@ -992,9 +992,7 @@ def grade_free_production(
         return {
             "score": 0,
             "correct": False,
-            "feedback_uz": (
-                f"Kamida 2 ta to'liq gap yozing — \"{word}\" so'zini ishlatib " f"o'zingiz haqida bo'lsin."
-            ),
+            "feedback_uz": (f"Kamida 2 ta to'liq gap yozing — \"{word}\" so'zini ishlatib o'zingiz haqida bo'lsin."),
             "axes": {
                 "phrase_used_correctly": False,
                 "phrase_semantic": False,
@@ -1012,7 +1010,7 @@ def grade_free_production(
             "score": 0,
             "correct": False,
             "feedback_uz": (
-                f'"{word}" so\'zini gapingizda ishlatishni unutdingiz. ' f"Qaytadan yozing va shu so'zni qo'shing."
+                f"\"{word}\" so'zini gapingizda ishlatishni unutdingiz. Qaytadan yozing va shu so'zni qo'shing."
             ),
             "axes": {
                 "phrase_used_correctly": False,

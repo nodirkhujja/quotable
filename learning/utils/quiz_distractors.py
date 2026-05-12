@@ -34,7 +34,7 @@ from __future__ import annotations
 import logging
 import random
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
 

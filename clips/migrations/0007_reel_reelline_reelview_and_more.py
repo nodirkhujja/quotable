@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0006_sceneblock"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

@@ -31,19 +31,60 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 package-mode = false
 
-[tool.black]
+[tool.ruff]
 line-length = 119
-skip-string-normalization = false
+target-version = "py313"
 
-[tool.isort]
-profile = "black"
-line_length = 119
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "A", "C9"]
+ignore = ["A003", "C901", "E402", "E203", "B033", "E501"]
 
-[tool.flake8]
-max-line-length = 119
+[tool.ruff.lint.per-file-ignores]
+"learning/management/commands/seed_vocab.py" = ["E241", "E231"]
+"learning/management/commands/extract_vocab.py" = ["B007"]
+"learning/management/commands/import_learn.py" = ["F841"]
+"learning/management/commands/import_translations.py" = ["F401", "F841"]
+"learning/management/commands/import_transcript_translations.py" = ["B007"]
+"learning/management/commands/import_usage.py" = ["F401"]
+"learning/management/commands/seed_mastery_from_onboarding.py" = ["F401"]
+"learning/views/__init__.py" = ["F401"]
+"learning/views/_old.py" = ["F401", "F811", "F821"]
+"learning/views/grammar.py" = ["F401", "F811"]
+"learning/views/review.py" = ["F401"]
+"learning/views/tracking.py" = ["F401", "F811"]
+"learning/views/notebook.py" = ["F401"]
+"learning/views/practice.py" = ["F401", "F811", "F821", "F841"]
+"learning/views/onboarding.py" = ["F401", "B007"]
+"learning/views/progress.py" = ["F401", "F811", "F821"]
+"learning/utils/ai_grammar.py" = ["F401", "F541"]
+"learning/utils/ai_own_word.py" = ["F841"]
+"learning/utils/ai_word_bridge.py" = ["F401", "F841"]
+"learning/utils/activity.py" = ["F401"]
+"learning/utils/coach_engine.py" = ["F401", "F841", "F541"]
+"learning/utils/quiz_engine.py" = ["F401", "F841", "E731", "B007"]
+"learning/admin.py" = ["UP031"]
+"learning/services/notebook.py" = []
+"learning/models.py" = ["F401", "F821"]
+"clips/management/commands/generate_scenes.py" = ["B904"]
+"clips/management/commands/import_transcript.py" = ["B904"]
+"clips/management/commands/process_subs.py" = ["B904"]
+"learning/tests/test_bkt_unification.py" = ["F401"]
+"learning/tests/test_free_production.py" = ["F401"]
+"quiz/views.py" = ["F401", "F811", "F821", "F841"]
+"quiz/tests.py" = ["F401"]
+"scripts/batch_translate.py" = ["F401", "F541", "F841", "B007"]
+"scripts/validate_grammar.py" = ["F401"]
+"vocab/admin.py" = ["F401"]
+"vocab/tests.py" = ["F401"]
+"vocab/views.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 
 [dependency-groups]
 dev = [
-    "pre-commit (>=4.5.1,<5.0.0)"
+    "pre-commit (>=4.5.1,<5.0.0)",
+    "ruff (>=0.9.0)"
 ]

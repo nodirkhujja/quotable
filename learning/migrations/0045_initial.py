@@ -5,7 +5,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0044_phonemeweakness_pronunciationassessment"),
     ]

@@ -963,4 +963,4 @@ class SceneCoverage(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} · transcript={self.transcript_id} · {int(self.coverage*100)}%"
+        return f"{self.user.username} · transcript={self.transcript_id} · {int(self.coverage * 100)}%"

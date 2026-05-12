@@ -55,15 +55,15 @@ def check_sentence(
     name_line = f"\nLearner name: {user_name}" if user_name else ""
     level_line = f"\nLearner CEFR level: {user_level}" if user_level else ""
     known_line = (
-        f'\nWords the learner already knows (they saved these): {", ".join(known_words[:10])}' if known_words else ""
+        f"\nWords the learner already knows (they saved these): {', '.join(known_words[:10])}" if known_words else ""
     )
 
     prompt = f"""You are an English teacher helping an Uzbek speaker learn English.
 
 Target word/phrase: "{word}"
 Uzbek translation: "{translation}"
-{f'Example usage: "{example.split(" / ")[0]}"' if example else ''}
-{f'Grammar pattern: {pattern}' if pattern else ''}{name_line}{level_line}{interests_line}{known_line}
+{f'Example usage: "{example.split(" / ")[0]}"' if example else ""}
+{f"Grammar pattern: {pattern}" if pattern else ""}{name_line}{level_line}{interests_line}{known_line}
 
 The learner wrote this sentence:
 "{user_sentence}"

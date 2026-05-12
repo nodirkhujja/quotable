@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0004_transcript_source_alter_transcript_episode"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

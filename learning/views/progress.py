@@ -831,9 +831,7 @@ class ProgressView(LoginRequiredMixin, View):
             return (s.replace(" ", "<")[:n] + ("<" * n))[:n]
 
         line1 = (
-            f"P<{passport_country}"
-            f"{_mrz_pad(passport_lastname or 'LEARNER', 30)}"
-            f"<<{_mrz_pad(passport_holder, 14)}"
+            f"P<{passport_country}{_mrz_pad(passport_lastname or 'LEARNER', 30)}<<{_mrz_pad(passport_holder, 14)}"
         )[:44]
         line2 = (
             f"{str(total_words).zfill(6)}"

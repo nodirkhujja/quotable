@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0006_sceneblock"),
         ("learning", "0027_add_shadowing_grammar_daily_tracking"),

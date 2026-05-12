@@ -104,7 +104,7 @@ def generate_translation_pair(
     source_block = ""
     if source_line_en:
         source_block = (
-            f'\nOriginally saved from: "{source_line_en}"\n' "Same general theme is fine, but write fresh sentences.\n"
+            f'\nOriginally saved from: "{source_line_en}"\nSame general theme is fine, but write fresh sentences.\n'
         )
 
     interests = (interests or [])[:6]

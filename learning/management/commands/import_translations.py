@@ -48,7 +48,7 @@ def parse_timestamp(ts):
 
 def _detect_format(filepath):
     """Detect if file is CSV or pipe-delimited."""
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -65,7 +65,7 @@ def _parse_csv(filepath):
     import csv
 
     entries = []
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         reader = csv.reader(f)
         header = None
         for row in reader:
@@ -136,7 +136,7 @@ def parse_file(filepath):
     entries = []
     current_level = ""
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:

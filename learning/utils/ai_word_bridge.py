@@ -20,9 +20,13 @@ import hashlib
 
 # Reuse private helpers from ai_grammar — same model + cache infrastructure,
 # avoids duplicating ~400 LOC of error handling and key rotation.
-from learning.utils.ai_grammar import _CHECK_MODEL_NAME  # gemini-2.5-flash-lite — cheap for grading
-from learning.utils.ai_grammar import _GEN_FALLBACK_MODEL_NAME  # gemini-2.5-flash — cheap for generation
-from learning.utils.ai_grammar import _CACHE_NAMESPACE, _call_gemini, _sanitize_learner_text
+from learning.utils.ai_grammar import (
+    _CACHE_NAMESPACE,
+    _CHECK_MODEL_NAME,  # gemini-2.5-flash-lite — cheap for grading
+    _GEN_FALLBACK_MODEL_NAME,  # gemini-2.5-flash — cheap for generation
+    _call_gemini,
+    _sanitize_learner_text,
+)
 
 # Two-pass architecture (Pass 1 = English, Pass 2 = Uzbek translation).
 # Mixed-model picks for quality + speed:
@@ -96,7 +100,7 @@ Write ONE English sentence for an Uzbek learner. The sentence is a translation d
 # LEARNER
 - Word: "{word}"
 - Saved Uzbek meaning: "{translation}"  ← chooses which English sense
-{def_line.lstrip() if def_line else ''}- {user_name + ' · ' if user_name else ''}CEFR {user_level}{interest_line}{grammar_block}{length_math_line}{variant_line}
+{def_line.lstrip() if def_line else ""}- {user_name + " · " if user_name else ""}CEFR {user_level}{interest_line}{grammar_block}{length_math_line}{variant_line}
 
 # THE FOUR RULES (orthogonal — every output passes ALL FOUR)
 

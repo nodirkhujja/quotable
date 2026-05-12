@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0005_watchhistory"),
         ("learning", "0008_onboarding"),

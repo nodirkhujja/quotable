@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0006_sceneblock"),
         ("learning", "0042_fix_next_review_default"),

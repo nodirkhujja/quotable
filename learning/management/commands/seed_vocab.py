@@ -158,8 +158,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Done — {created_count} created, {updated_count} updated. "
-                f"Total: {VocabWord.objects.count()} words."
+                f"Done — {created_count} created, {updated_count} updated. Total: {VocabWord.objects.count()} words."
             )
         )
 

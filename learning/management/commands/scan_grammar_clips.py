@@ -255,9 +255,9 @@ class Command(BaseCommand):
             top = unique[:limit]
             result[str(unit_id)] = top
 
-            self.stdout.write(f"  Unit {unit_id} ({unit_info['name']}): " f"{len(unique)} unique → top {len(top)}")
+            self.stdout.write(f"  Unit {unit_id} ({unit_info['name']}): {len(unique)} unique → top {len(top)}")
             for clip in top:
-                self.stdout.write(f"    [{clip['episode']}] \"{clip['text']}\" " f"(score={clip['score']})")
+                self.stdout.write(f'    [{clip["episode"]}] "{clip["text"]}" (score={clip["score"]})')
 
         # Write JSON
         output = Path(output_path)

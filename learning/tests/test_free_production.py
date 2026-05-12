@@ -50,7 +50,7 @@ class GradeFreeProductionTests(TestCase):
             word="pull out",
             translation="chiqarib olmoq",
             user_answer=(
-                "Yesterday my friend pulled out his keys to open the door. " "I was waiting outside in the cold."
+                "Yesterday my friend pulled out his keys to open the door. I was waiting outside in the cold."
             ),
             user_level="B1",
             kind="phrasal_verb",

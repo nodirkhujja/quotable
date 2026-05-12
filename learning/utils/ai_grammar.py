@@ -170,10 +170,12 @@ _UNIT_PATTERN_HINTS = {
         # those swallow past-form verbs as participles, which would otherwise
         # let "has scored" pass as past simple.
         "validate": (
-            lambda s: bool(_RE_PAST_SIMPLE_VERB.search(s))
-            and not _RE_PRESENT_PERFECT.search(s)
-            and not _RE_PAST_PERFECT.search(s)
-            and not _RE_PRESENT_PERFECT_CONT.search(s)
+            lambda s: (
+                bool(_RE_PAST_SIMPLE_VERB.search(s))
+                and not _RE_PRESENT_PERFECT.search(s)
+                and not _RE_PAST_PERFECT.search(s)
+                and not _RE_PRESENT_PERFECT_CONT.search(s)
+            )
         ),
     },
     "Past Continuous": {
@@ -215,7 +217,7 @@ _UNIT_PATTERN_HINTS = {
         ),
     },
     "Past Perfect": {
-        "must_use_label": "Past Perfect — had + past participle (event before another " "past event)",
+        "must_use_label": "Past Perfect — had + past participle (event before another past event)",
         "examples": [
             "Messi had already scored twice before halftime.",
             "I had been stuck in silver before I finally ranked up.",
@@ -300,7 +302,7 @@ _UNIT_PATTERN_HINTS = {
         "validate": (lambda s: bool(re.search(r"\b(in|on|at)\b", s, re.IGNORECASE))),
     },
     "Relative Clauses (who / which / that)": {
-        "must_use_label": "a relative clause connecting two ideas, using who / which / " "that / whose / whom",
+        "must_use_label": "a relative clause connecting two ideas, using who / which / that / whose / whom",
         "examples": [
             "The midfielder who scored last night signed for Barcelona today.",
             "The episode that ends with Ross saying the wrong name still kills me.",
@@ -336,7 +338,7 @@ _UNIT_PATTERN_HINTS = {
         ),
     },
     "Conditionals": {
-        "must_use_label": "a conditional structure — if + clause, ... + would / will / " "could / had + p.p.",
+        "must_use_label": "a conditional structure — if + clause, ... + would / will / could / had + p.p.",
         "examples": [
             "If Messi plays the final, Argentina will win the cup.",
             "If I had practised more, I would have ranked up by now.",
@@ -710,7 +712,7 @@ With the learner's pick, the sentence would read:
 
 The correct sentence is:
 "{correct_sentence}"
-{f'Uzbek translation of the correct sentence: "{translation_uz}"' if translation_uz else ''}
+{f'Uzbek translation of the correct sentence: "{translation_uz}"' if translation_uz else ""}
 
 Your task: Write a SHORT explanation in UZBEK (Latin script) explaining
 specifically why "{chosen}" is wrong HERE — not a generic rule lecture.
@@ -1281,7 +1283,7 @@ CRITICAL:
 
     if not story or not isinstance(raw_bugs, list) or len(raw_bugs) != 3:
         log.warning(
-            "grammar_ai.bug_story.validation op=bug_story.generate " "reason=bad_shape bugs_len=%d",
+            "grammar_ai.bug_story.validation op=bug_story.generate reason=bad_shape bugs_len=%d",
             len(raw_bugs) if isinstance(raw_bugs, list) else -1,
         )
         return {}

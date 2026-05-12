@@ -45,7 +45,7 @@ def _bar(value, max_val=100, color="#a855f7", width=80):
 def _badge(text, bg="#666"):
     return mark_safe(
         '<span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;'
-        'color:#fff;background:%s;">%s</span>' % (bg, text)
+        f'color:#fff;background:{bg};">{text}</span>'
     )
 
 
@@ -72,7 +72,7 @@ def _time_ago(dt):
         return mark_safe('<span style="color:#666;">never</span>')
     from django.utils.timesince import timesince
 
-    return mark_safe('<span style="color:#888;">%s ago</span>' % timesince(dt))
+    return mark_safe(f'<span style="color:#888;">{timesince(dt)} ago</span>')
 
 
 # ─────────────────────────────────────────────
@@ -120,7 +120,7 @@ class VocabMasteryAdmin(admin.ModelAdmin):
 
     @admin.display(description="Difficulty", ordering="difficulty")
     def elo_col(self, obj):
-        return "%.0f" % obj.difficulty
+        return f"{obj.difficulty:.0f}"
 
     @admin.display(description="Last Review", ordering="last_reviewed")
     def reviewed_col(self, obj):
@@ -175,9 +175,9 @@ class UserLearningProfileAdmin(admin.ModelAdmin):
         label = "Expert" if r >= 1200 else "Strong" if r >= 1000 else "Average" if r >= 800 else "Beginner"
         return mark_safe(
             '<div style="padding:16px 20px;background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;max-width:300px;">'
-            '<div style="font-size:32px;font-weight:800;color:%s;">%.0f</div>'
-            '<div style="font-size:13px;color:#888;margin-top:4px;">%s &mdash; compared to word difficulty</div>'
-            "</div>" % (color, r, label)
+            f'<div style="font-size:32px;font-weight:800;color:{color};">{r:.0f}</div>'
+            f'<div style="font-size:13px;color:#888;margin-top:4px;">{label} &mdash; compared to word difficulty</div>'
+            "</div>"
         )
 
     @admin.display(description="Accuracy")
@@ -209,13 +209,13 @@ class UserLearningProfileAdmin(admin.ModelAdmin):
             color = "#666"
         else:
             txt = "new words per day (7-day average)"
-            val = "%.1f" % r
+            val = f"{r:.1f}"
             color = "#3b82f6"
         return mark_safe(
             '<div style="padding:16px 20px;background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;max-width:300px;">'
-            '<div style="font-size:28px;font-weight:800;color:%s;">%s</div>'
-            '<div style="font-size:13px;color:#888;margin-top:4px;">%s</div>'
-            "</div>" % (color, val, txt)
+            f'<div style="font-size:28px;font-weight:800;color:{color};">{val}</div>'
+            f'<div style="font-size:13px;color:#888;margin-top:4px;">{txt}</div>'
+            "</div>"
         )
 
     @admin.display(description="Retention Rate")
@@ -232,9 +232,9 @@ class UserLearningProfileAdmin(admin.ModelAdmin):
         label = "Excellent" if r >= 80 else "Good" if r >= 60 else "Needs work"
         return mark_safe(
             '<div style="padding:16px 20px;background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;max-width:300px;">'
-            '<div style="font-size:28px;font-weight:800;color:%s;">%.0f%%</div>'
-            '<div style="font-size:13px;color:#888;margin-top:4px;">%s &mdash; words retained after 7 days</div>'
-            "</div>" % (color, r, label)
+            f'<div style="font-size:28px;font-weight:800;color:{color};">{r:.0f}%</div>'
+            f'<div style="font-size:13px;color:#888;margin-top:4px;">{label} &mdash; words retained after 7 days</div>'
+            "</div>"
         )
 
     @admin.display(description="Weakness Map")
@@ -265,21 +265,21 @@ class UserLearningProfileAdmin(admin.ModelAdmin):
             rows += (
                 '<div style="margin-bottom:12px;">'
                 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-                '<span style="font-size:13px;font-weight:600;color:#ddd;">%s</span>'
-                '<span style="font-size:11px;color:%s;font-weight:600;">%s</span>'
+                f'<span style="font-size:13px;font-weight:600;color:#ddd;">{label}</span>'
+                f'<span style="font-size:11px;color:{color};font-weight:600;">{status}</span>'
                 "</div>"
-                '<div style="width:100%%;height:8px;background:#2a2a2a;border-radius:4px;overflow:hidden;">'
-                '<div style="width:%.0f%%;height:100%%;background:%s;border-radius:4px;transition:width 0.3s;"></div>'
+                '<div style="width:100%;height:8px;background:#2a2a2a;border-radius:4px;overflow:hidden;">'
+                f'<div style="width:{display_pct:.0f}%;height:100%;background:{color};border-radius:4px;transition:width 0.3s;"></div>'
                 "</div>"
-                "</div>" % (label, color, status, display_pct, color)
+                "</div>"
             )
         return mark_safe(
             '<div style="padding:16px 20px;background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;max-width:400px;">'
-            "%s"
+            f"{rows}"
             '<div style="font-size:11px;color:#666;margin-top:8px;border-top:1px solid #2a2a2a;padding-top:8px;">'
             "Score range: -1.0 (very weak) to +1.0 (very strong). "
             "The system quizzes weak areas 2x more often.</div>"
-            "</div>" % rows
+            "</div>"
         )
 
 
@@ -292,8 +292,7 @@ class ConfusionPairAdmin(admin.ModelAdmin):
     @admin.display(description="Confused Pair")
     def pair_col(self, obj):
         return mark_safe(
-            '<strong>%s</strong> <span style="color:#f59e0b;">\u2194</span> <strong>%s</strong>'
-            % (obj.word_a, obj.word_b)
+            f'<strong>{obj.word_a}</strong> <span style="color:#f59e0b;">\u2194</span> <strong>{obj.word_b}</strong>'
         )
 
     @admin.display(description="Times")
@@ -591,7 +590,7 @@ class ShadowingLogAdmin(admin.ModelAdmin):
     def speed_col(self, obj):
         s = obj.max_speed
         color = "#10b981" if s >= 1.5 else "#3b82f6" if s >= 1.0 else "#f59e0b"
-        return mark_safe('<span style="color:%s;">%.1fx</span>' % (color, s))
+        return mark_safe(f'<span style="color:{color};">{s:.1f}x</span>')
 
     @admin.display(description="No Subs")
     def subs_col(self, obj):
@@ -650,7 +649,7 @@ class GrammarPracticeLogAdmin(admin.ModelAdmin):
             return "—"
         secs = ms / 1000
         color = "#10b981" if secs < 3 else "#f59e0b" if secs < 8 else "#ef4444"
-        return mark_safe('<span style="color:%s;">%.1fs</span>' % (color, secs))
+        return mark_safe(f'<span style="color:{color};">{secs:.1f}s</span>')
 
     @admin.display(description="When", ordering="created_at")
     def when_col(self, obj):
@@ -842,7 +841,7 @@ class FlashcardAttemptAdmin(admin.ModelAdmin):
             return "—"
         secs = obj.time_on_card_ms / 1000
         color = "#10b981" if secs < 5 else "#f59e0b" if secs < 15 else "#ef4444"
-        return mark_safe('<span style="color:%s;">%.1fs</span>' % (color, secs))
+        return mark_safe(f'<span style="color:{color};">{secs:.1f}s</span>')
 
     @admin.display(description="When", ordering="created_at")
     def when_col(self, obj):

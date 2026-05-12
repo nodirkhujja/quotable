@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0040_grammaraiexplanation"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

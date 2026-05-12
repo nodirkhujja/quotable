@@ -889,7 +889,7 @@ def _build_priority_actions(**kw):
                 "type": "watch",
                 "icon": "play",
                 "title": "Continue watching",
-                "subtitle": f"{src['source_title']}" f"{' · ' + src['ep_label'] if src['ep_label'] else ''}",
+                "subtitle": f"{src['source_title']}{' · ' + src['ep_label'] if src['ep_label'] else ''}",
                 "btn_text": "Watch",
                 "btn_url": src["url"],
                 "urgency": "low",

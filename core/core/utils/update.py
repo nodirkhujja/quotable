@@ -1,7 +1,6 @@
 def deep_update(base_dict, update_with):
 
     for key, value in update_with.items():
-
         if isinstance(value, dict):
             base_dict_value = base_dict.get(key)
 

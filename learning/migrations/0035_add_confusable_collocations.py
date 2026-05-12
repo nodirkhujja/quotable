@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0034_dailyactivity_words_mastered_dailyactivity_xp_earned"),
     ]

@@ -56,7 +56,7 @@ def _azure_assess(audio_path: str, reference_text: str) -> AssessmentResult:
         import azure.cognitiveservices.speech as speechsdk
     except ImportError as e:
         raise RuntimeError(
-            "azure-cognitiveservices-speech not installed — " "`poetry add azure-cognitiveservices-speech`"
+            "azure-cognitiveservices-speech not installed — `poetry add azure-cognitiveservices-speech`"
         ) from e
 
     config = speechsdk.SpeechConfig(subscription=key, region=region)

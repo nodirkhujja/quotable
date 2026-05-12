@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("clips", "0006_sceneblock"),
         ("learning", "0018_add_word_translation"),

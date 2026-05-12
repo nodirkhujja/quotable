@@ -56,7 +56,6 @@ def bkt_update(p_known: float, quiz_type: str, correct: bool, response_time_ms: 
 
 
 class WordNote(models.Model):
-
     class PostType(models.TextChoices):
         VERB = "v", "Verb"
         NOUN = "n", "Noun"

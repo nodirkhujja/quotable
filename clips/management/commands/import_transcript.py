@@ -101,7 +101,7 @@ class Command(BaseCommand):
                     f'Episode S{season:02d}E{ep_num:02d} not found under source "{source}" (id={source_id}). '
                     f"Check the episode exists in the database."
                 )
-            self.stdout.write(f'Episode: S{season:02d}E{ep_num:02d} — {episode.title or "untitled"} (id={episode.id})')
+            self.stdout.write(f"Episode: S{season:02d}E{ep_num:02d} — {episode.title or 'untitled'} (id={episode.id})")
         else:
             self.stdout.write(f'Movie: attaching transcripts directly to source "{source}"')
 

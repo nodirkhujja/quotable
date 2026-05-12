@@ -50,5 +50,5 @@ class Command(BaseCommand):
         for u in user_q:
             stats = recalculate_for_user(u, source_filter=source_filter)
             self.stdout.write(
-                f"{stats['user']:30s}  processed={stats['transcripts_processed']}  " f"buckets={stats['buckets']}"
+                f"{stats['user']:30s}  processed={stats['transcripts_processed']}  buckets={stats['buckets']}"
             )

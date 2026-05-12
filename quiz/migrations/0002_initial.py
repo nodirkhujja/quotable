@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("quiz", "0001_initial"),
         ("vocab", "0001_initial"),

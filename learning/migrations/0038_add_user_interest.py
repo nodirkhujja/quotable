@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("learning", "0037_wordnote_last_reviewed_at_wordnote_next_review_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
